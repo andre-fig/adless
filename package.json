@@ -1,0 +1,20 @@
+{
+  "name": "adless",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Adless iOS app and landing page monorepo",
+  "workspaces": [
+    "apps/landing-page"
+  ],
+  "scripts": {
+    "dev:landing": "npm --workspace @adless/landing-page run dev",
+    "build": "npm run build:landing",
+    "build:landing": "npm --workspace @adless/landing-page run build",
+    "lint": "npm --workspace @adless/landing-page run lint",
+    "preview:landing": "npm --workspace @adless/landing-page run preview"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "npm@10.9.4"
+}

@@ -1,44 +1,34 @@
 # Adless
 
-Adless is a system-wide DNS sinkhole for iOS built with SwiftUI and a NetworkExtension DNS Proxy. It blocks ads and trackers locally without routing traffic to external VPN servers.
+Monorepo do Adless, com o aplicativo iOS e sua landing page no mesmo repositório.
 
-## Features
+## Estrutura
 
-- Local-only DNS proxy using `NEDNSProxyProvider`
-- Blocklists in hosts format (OISD, Energized, StevenBlack, etc.)
-- Manual and automatic updates (stub for weekly refresh)
-- Whitelist support
-- Upstream resolvers: Cloudflare (1.1.1.1) and Google (8.8.8.8)
-- App Group shared blocklist cache
+```text
+apps/
+├── ios/            # Aplicativo iOS em SwiftUI + NetworkExtension
+└── landing-page/   # Landing page em React + Vite
+```
 
-## Targets
+## Landing page
 
-- `Adless` (iOS app, SwiftUI)
-- `AdlessDNSProxy` (DNS proxy extension)
+Requer Node.js 20+ e npm.
 
-## Architecture (textual)
+```sh
+npm install
+npm run dev:landing
+```
 
-- UI (SwiftUI): `AdlessApp` → `ContentView` bound to `AppViewModel`
-- Managers: `VPNManager` (NEDNSProxyManager enable/disable), `BlocklistManager` (download/parse/cache), `WhitelistStore` (UserDefaults)
-- Models: `BlocklistSource`, `WhitelistEntry`
-- Network Extension: `DNSProxyProvider` + `DNSMessage` parser running in `AdlessDNSProxy` target
-- Shared data: App Group `group.com.adless.shared` storing `blocklist.txt`
+Outros comandos úteis:
 
-## App Store Compliance
+```sh
+npm run build:landing
+npm run lint
+npm run preview:landing
+```
 
-- Uses only public NetworkExtension APIs
-- VPN is local; does not change IP/geolocation
-- No analytics, login, or data collection
-- `NSNetworkExtensionUsageDescription` explains local DNS filtering
+## Aplicativo iOS
 
-## Build & Run
+Abra `apps/ios/Adless.xcodeproj` no Xcode, configure o Team e o App Group `group.com.adless.shared` para os targets `Adless` e `AdlessDNSProxy`, e execute o scheme `Adless`.
 
-1. Open `Adless.xcodeproj` in Xcode.
-2. Set a valid Team and App Group identifier `group.com.adless.shared` for both targets (app + extension).
-3. Ensure Signing & Capabilities include Network Extensions (DNS Proxy) and App Group.
-4. Select the `Adless` scheme and run on iOS 15+ device or simulator.
-
-## Notes
-
-- The DNS proxy needs a real device for full interception; simulator limitations apply.
-- Packet handling is simplified; production apps should implement full DNS parsing and error handling.
+Consulte os READMEs de [apps/ios](apps/ios/README.md) e [apps/landing-page](apps/landing-page/README.md) para detalhes específicos de cada projeto.

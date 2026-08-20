@@ -94,3 +94,23 @@ Icon
 *.cer
 *.p12
 *.certSigningRequest
+
+# Node.js / landing page
+node_modules/
+dist/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+bun-debug.log*
+
+# Package manager artifacts
+.npm/
+.yarn/
+
+# Local environment files
+.env
+.env.*
+!.env.example
