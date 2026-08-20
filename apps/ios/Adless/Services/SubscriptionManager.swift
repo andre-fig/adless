@@ -67,17 +67,17 @@ final class SubscriptionManager: ObservableObject {
                 await transaction.finish()
                 await refreshEntitlement()
             case .success(.unverified):
-                message = "Não foi possível verificar a compra"
+                message = "The purchase could not be verified"
             case .userCancelled:
                 break
             case .pending:
-                message = "A compra está aguardando aprovação"
+                message = "The purchase is awaiting approval"
             @unknown default:
-                message = "Não foi possível concluir a compra"
+                message = "The purchase could not be completed"
             }
         } catch {
             os_log("Subscription purchase failed: %{public}@", log: .default, type: .error, error.localizedDescription)
-            message = "Não foi possível concluir a compra"
+            message = "The purchase could not be completed"
         }
     }
 
@@ -91,7 +91,7 @@ final class SubscriptionManager: ObservableObject {
             await refreshEntitlement()
         } catch {
             os_log("Subscription restore failed: %{public}@", log: .default, type: .error, error.localizedDescription)
-            message = "Não foi possível restaurar as compras"
+            message = "Purchases could not be restored"
         }
     }
 
@@ -100,19 +100,30 @@ final class SubscriptionManager: ObservableObject {
     }
 
     private func loadProducts() async {
-        do {
-            let loaded = try await Product.products(for: SubscriptionConfiguration.productIDs)
-            products = loaded.sorted { lhs, rhs in
-                let lhsIndex = SubscriptionConfiguration.productIDs.firstIndex(of: lhs.id) ?? .max
-                let rhsIndex = SubscriptionConfiguration.productIDs.firstIndex(of: rhs.id) ?? .max
-                return lhsIndex < rhsIndex
+        for attempt in 0..<3 {
+            do {
+                let loaded = try await Product.products(for: SubscriptionConfiguration.productIDs)
+                products = loaded.sorted { lhs, rhs in
+                    let lhsIndex = SubscriptionConfiguration.productIDs.firstIndex(of: lhs.id) ?? .max
+                    let rhsIndex = SubscriptionConfiguration.productIDs.firstIndex(of: rhs.id) ?? .max
+                    return lhsIndex < rhsIndex
+                }
+                os_log("Loaded %{public}d subscription products", log: .default, type: .info, products.count)
+                if !products.isEmpty || attempt == 2 {
+                    if products.isEmpty { state = .unavailable }
+                    return
+                }
+            } catch {
+                os_log("Subscription products unavailable (attempt %{public}d): %{public}@", log: .default, type: .error, attempt + 1, error.localizedDescription)
+                if attempt == 2 {
+                    if !hasValidCachedEntitlement() {
+                        state = .unavailable
+                    }
+                    return
+                }
             }
-            if products.isEmpty { state = .unavailable }
-        } catch {
-            os_log("Subscription products unavailable: %{public}@", log: .default, type: .error, error.localizedDescription)
-            if !hasValidCachedEntitlement() {
-                state = .unavailable
-            }
+
+            try? await Task.sleep(nanoseconds: 750_000_000)
         }
     }
 

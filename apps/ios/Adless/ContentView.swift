@@ -27,11 +27,11 @@ struct ContentView: View {
                         .clipShape(Circle())
                 }
                 .accessibilityLabel(viewModel.hasSubscription
-                                    ? (viewModel.isOn ? "Desativar bloqueio" : "Ativar bloqueio")
-                                    : "Assinar para ativar o bloqueio")
+                                    ? (viewModel.isOn ? "Turn off blocking" : "Turn on blocking")
+                                    : "Subscribe to turn on blocking")
                 .accessibilityHint(viewModel.hasSubscription
-                                   ? "Ativa ou desativa o bloqueio DNS"
-                                   : "Abre as opções de assinatura")
+                                   ? "Turns DNS blocking on or off"
+                                   : "Opens subscription options")
 
                 Text(viewModel.statusText)
                     .font(.headline)

@@ -5,10 +5,10 @@
       "displayPrice" : "4.90",
       "familyShareable" : false,
       "id" : "com.orbeworks.adless.pro.monthly",
-      "locale" : "pt_BR",
+      "locale" : "en_US",
       "productType" : "RecurringSubscription",
       "recurringSubscriptionPeriod" : "P1M",
-      "referenceName" : "Adless Mensal",
+      "referenceName" : "Adless Monthly",
       "subscriptionGroupIdentifier" : "adless.pro",
       "introductoryOffer" : {
         "duration" : "P1W",
@@ -20,10 +20,10 @@
       "displayPrice" : "29.90",
       "familyShareable" : false,
       "id" : "com.orbeworks.adless.pro.yearly",
-      "locale" : "pt_BR",
+      "locale" : "en_US",
       "productType" : "RecurringSubscription",
       "recurringSubscriptionPeriod" : "P1Y",
-      "referenceName" : "Adless Anual",
+      "referenceName" : "Adless Annual",
       "subscriptionGroupIdentifier" : "adless.pro",
       "introductoryOffer" : {
         "duration" : "P1W",
@@ -33,7 +33,7 @@
     }
   ],
   "settings" : {
-    "_locale" : "pt_BR",
+    "_locale" : "en_US",
     "_storefront" : "BRA",
     "billingGracePeriod" : 0,
     "defaultSubscriptionRenewalRate" : 100,

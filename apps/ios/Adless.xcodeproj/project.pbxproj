@@ -8,7 +8,7 @@
 
 /* Begin PBXFileReference section */
 		A432D6DD2EF4DE1800F87DE0 /* Adless.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Adless.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		C10000000000000000000001 /* Adless.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Adless.storekit; sourceTree = "<group>"; };
+		C10000000000000000000001 /* Adless.storekit */ = {isa = PBXFileReference; lastKnownFileType = "com.apple.dt.storekit"; path = Adless.storekit; sourceTree = "<group>"; };
 		B10000000000000000000001 /* AdlessDNSProxy.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AdlessDNSProxy.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000016 /* AdlessTests.xctest */ = {isa = PBXFileReference; explicitFileType = "wrapper.cfbundle"; includeInIndex = 0; path = AdlessTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */

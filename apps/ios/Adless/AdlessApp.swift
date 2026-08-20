@@ -15,7 +15,7 @@ struct AdlessApp: App {
 
 final class AppViewModel: ObservableObject {
     @Published var isOn: Bool = false
-    @Published var statusText: String = "Desativado"
+    @Published var statusText: String = "Off"
     @Published private(set) var hasSubscription = false
     @Published var isSubscriptionPresented = false
 
@@ -57,7 +57,7 @@ final class AppViewModel: ObservableObject {
             }
             await refreshStatus()
         } catch {
-            statusText = "Não foi possível alterar o bloqueio"
+            statusText = "Could not change blocking status"
         }
     }
 
@@ -66,17 +66,17 @@ final class AppViewModel: ObservableObject {
         let state = await vpnManager.currentStatus()
         isOn = hasSubscription && (state == .connected || state == .connecting)
         if !hasSubscription {
-            statusText = "Assinatura necessária"
+            statusText = "Subscription required"
             return
         }
         switch state {
-        case .invalid: statusText = "Inválido"
-        case .disconnected: statusText = "Desativado"
-        case .connecting: statusText = "Conectando"
-        case .connected: statusText = "Ativo"
-        case .reasserting: statusText = "Restabelecendo"
-        case .disconnecting: statusText = "Desconectando"
-        @unknown default: statusText = "Desconhecido"
+        case .invalid: statusText = "Invalid"
+        case .disconnected: statusText = "Off"
+        case .connecting: statusText = "Connecting"
+        case .connected: statusText = "On"
+        case .reasserting: statusText = "Reconnecting"
+        case .disconnecting: statusText = "Disconnecting"
+        @unknown default: statusText = "Unknown"
         }
     }
 
@@ -101,6 +101,6 @@ final class AppViewModel: ObservableObject {
         guard state == .connected || state == .connecting else { return }
         try? await vpnManager.stop()
         isOn = false
-        statusText = "Assinatura necessária"
+        statusText = "Subscription required"
     }
 }

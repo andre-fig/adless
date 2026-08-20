@@ -11,10 +11,10 @@ struct SubscriptionView: View {
                 VStack(spacing: 20) {
                     AdlessLogoView(size: 96)
 
-                    Text("Proteja sua navegação")
+                    Text("Protect your browsing")
                         .font(.title2.weight(.semibold))
 
-                    Text("O Adless bloqueia anúncios e rastreadores diretamente no aparelho.")
+                    Text("Adless blocks ads and trackers directly on your device.")
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
 
@@ -35,7 +35,7 @@ struct SubscriptionView: View {
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                     if product.subscription?.introductoryOffer != nil {
-                                        Text("7 dias grátis para novos assinantes")
+                                        Text("7 days free for new subscribers")
                                             .font(.subheadline.weight(.medium))
                                             .foregroundStyle(.green)
                                     }
@@ -50,28 +50,28 @@ struct SubscriptionView: View {
                     }
 
                     if manager.products.isEmpty {
-                        Text("As opções de assinatura estarão disponíveis em breve.")
+                        Text("Subscription options will be available soon.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                     }
 
-                    Button("Restaurar compras") {
+                    Button("Restore Purchases") {
                         Task { await manager.restorePurchases() }
                     }
                     .disabled(manager.isProcessing)
 
-                    Text("A assinatura é renovada automaticamente até ser cancelada. O pagamento é processado pela App Store.")
+                    Text("Your subscription renews automatically until canceled. Payment is processed by the App Store.")
                         .font(.footnote)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
                 }
                 .padding()
             }
-            .navigationTitle("Assinatura")
+            .navigationTitle("Subscription")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fechar") { dismiss() }
+                    Button("Close") { dismiss() }
                 }
             }
             .overlay {
@@ -82,7 +82,7 @@ struct SubscriptionView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
             }
-            .alert("Assinatura", isPresented: Binding(
+            .alert("Subscription", isPresented: Binding(
                 get: { manager.message != nil },
                 set: { if !$0 { manager.clearMessage() } }
             )) {
