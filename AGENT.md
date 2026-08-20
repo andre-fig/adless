@@ -127,7 +127,7 @@ O app e a extensão compartilham a lista em:
 Library/Application Support/Blocklists/blocklist.txt
 ```
 
-Esse caminho usa o App Group existente `group.com.usefulish.adless`. Não use
+Esse caminho usa o App Group existente `group.com.orbeworks.adless`. Não use
 `Documents`, não exponha a lista ao usuário e não altere entitlements ou
 capabilities sem verificar os dois targets e documentar o motivo.
 
@@ -136,8 +136,8 @@ capabilities sem verificar os dois targets e documentar o motivo.
 O app usa StoreKit 2, sem backend ou conta própria. Os product IDs são:
 
 ```text
-com.usefulish.adless.pro.monthly
-com.usefulish.adless.pro.yearly
+com.orbeworks.adless.pro.monthly
+com.orbeworks.adless.pro.yearly
 ```
 
 Os dois produtos devem pertencer ao mesmo Subscription Group no App Store

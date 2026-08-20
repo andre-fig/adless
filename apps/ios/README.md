@@ -12,7 +12,7 @@ Adless is a system-wide DNS sinkhole for iOS built with SwiftUI and a NetworkExt
 
 1. From the monorepo root, open `apps/ios/Adless.xcodeproj` in Xcode.
 2. Set a valid Team and the existing App Group identifier
-   `group.com.usefulish.adless` for both `Adless` and `AdlessDNSProxy`.
+   `group.com.orbeworks.adless` for both `Adless` and `AdlessDNSProxy`.
 3. Ensure the App ID has App Groups and Network Extensions (DNS Proxy)
    enabled. The project does not create or manage Apple Developer accounts.
 4. Select the `Adless` scheme and run on a compatible device. The simulator
@@ -47,8 +47,8 @@ The DNS proxy needs a real device for full interception; simulator limitations a
 The app uses StoreKit 2 and does not have a subscription backend or user login.
 The product identifiers expected by the app are:
 
-- `com.usefulish.adless.pro.monthly`;
-- `com.usefulish.adless.pro.yearly`.
+- `com.orbeworks.adless.pro.monthly`;
+- `com.orbeworks.adless.pro.yearly`.
 
 Create both auto-renewable products in one Subscription Group in App Store
 Connect and configure a 7-day free Introductory Offer for eligible new

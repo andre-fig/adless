@@ -120,14 +120,14 @@ final class BlocklistTests: XCTestCase {
         let now = Date(timeIntervalSince1970: 10_000)
         let active = SubscriptionAccessSnapshot(
             isEntitled: true,
-            productID: "com.usefulish.adless.pro.monthly",
+            productID: "com.orbeworks.adless.pro.monthly",
             effectiveUntil: now.addingTimeInterval(60),
             inGracePeriod: false,
             lastVerifiedAt: now
         )
         let grace = SubscriptionAccessSnapshot(
             isEntitled: true,
-            productID: "com.usefulish.adless.pro.monthly",
+            productID: "com.orbeworks.adless.pro.monthly",
             effectiveUntil: now.addingTimeInterval(60),
             inGracePeriod: true,
             lastVerifiedAt: now
@@ -146,7 +146,7 @@ final class BlocklistTests: XCTestCase {
         let now = Date(timeIntervalSince1970: 20_000)
         let snapshot = SubscriptionAccessSnapshot(
             isEntitled: true,
-            productID: "com.usefulish.adless.pro.yearly",
+            productID: "com.orbeworks.adless.pro.yearly",
             effectiveUntil: now.addingTimeInterval(3600),
             inGracePeriod: false,
             lastVerifiedAt: now

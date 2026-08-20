@@ -2,8 +2,8 @@ import Foundation
 
 enum SubscriptionConfiguration {
     static let productIDs = [
-        "com.usefulish.adless.pro.monthly",
-        "com.usefulish.adless.pro.yearly"
+        "com.orbeworks.adless.pro.monthly",
+        "com.orbeworks.adless.pro.yearly"
     ]
 
     static let introductoryOfferDays = 7

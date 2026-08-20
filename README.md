@@ -30,7 +30,7 @@ npm run preview:landing
 ## Aplicativo iOS
 
 Abra `apps/ios/Adless.xcodeproj` no Xcode, configure o Team e o App Group
-`group.com.usefulish.adless` para os targets `Adless` e `AdlessDNSProxy`, e
+`group.com.orbeworks.adless` para os targets `Adless` e `AdlessDNSProxy`, e
 execute o scheme `Adless`. O target `AdlessDNSProxy` precisa da capability
 Network Extension (DNS Proxy) no App ID correspondente.
 

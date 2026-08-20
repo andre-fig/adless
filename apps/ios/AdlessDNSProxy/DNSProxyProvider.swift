@@ -8,7 +8,7 @@ final class DNSProxyProvider: NEDNSProxyProvider {
     private let upstreamPrimary = "1.1.1.1"
     private let upstreamSecondary = "8.8.8.8"
     private let appGroupKey = "appGroup"
-    private let appGroupIdentifier = "group.com.usefulish.adless"
+    private let appGroupIdentifier = "group.com.orbeworks.adless"
     private let subscriptionStatePath = "Library/Application Support/Subscription/subscription-state.json"
 
     override func startProxy(options: [String : Any]? = nil, completionHandler: @escaping (Error?) -> Void) {

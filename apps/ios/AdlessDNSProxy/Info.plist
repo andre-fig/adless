@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.usefulish.adless.dnsproxy</string>
+	<string>com.orbeworks.adless.dnsproxy</string>
 	<key>CFBundleName</key>
 	<string>AdlessDNSProxy</string>
 	<key>CFBundlePackageType</key>
