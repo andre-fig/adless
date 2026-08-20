@@ -94,6 +94,7 @@ Icon
 *.cer
 *.p12
 *.certSigningRequest
+*.p8
 
 # Node.js / landing page
 node_modules/
