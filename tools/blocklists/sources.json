@@ -1,0 +1,20 @@
+{
+  "sources": [
+    {
+      "id": "oisd-small",
+      "name": "OISD Small",
+      "enabled": true,
+      "url": "https://small.oisd.nl/",
+      "format": "adblock"
+    }
+  ],
+  "policy": {
+    "minimumDomainCount": 10000,
+    "maximumDomainCount": 200000,
+    "maximumChangeRatio": 0.35,
+    "maximumSourceBytes": 25000000,
+    "minimumSourceBytes": 1000,
+    "maximumManifestBytes": 262144,
+    "maximumPayloadBytes": 25000000
+  }
+}

@@ -20,7 +20,7 @@ const Index = () => {
         <meta property="og:title" content={t("pageTitle")} />
         <meta property="og:description" content={t("pageDescription")} />
         <meta name="twitter:card" content="summary_large_image" />
-        <link rel="canonical" href="https://adless.app" />
+        <link rel="canonical" href="https://andre-fig.github.io/adless/" />
       </Helmet>
 
       <LanguageSelector />

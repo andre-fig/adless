@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "version": "v01f7c2b21a008b4b",
+  "generatedAt": "2026-08-20T02:12:34Z",
+  "file": "blocklist.txt.gz",
+  "downloadUrl": "blocklist.txt.gz",
+  "compression": "gzip",
+  "sha256": "645557d7dfa854934cea12bb16041bdd0f2cc7fd6447beb7d3857a1b1a0868ff",
+  "sizeBytes": 496380,
+  "uncompressedSizeBytes": 1140928,
+  "domainCount": 59049,
+  "sources": [
+    {
+      "id": "oisd-small",
+      "name": "OISD Small"
+    }
+  ]
+}

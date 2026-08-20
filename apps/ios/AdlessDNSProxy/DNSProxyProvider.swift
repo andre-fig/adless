@@ -6,6 +6,7 @@ final class DNSProxyProvider: NEDNSProxyProvider {
     private let upstreamPrimary = "1.1.1.1"
     private let upstreamSecondary = "8.8.8.8"
     private let appGroupKey = "appGroup"
+    private let appGroupIdentifier = "group.com.usefulish.adless"
 
     override func startProxy(options: [String : Any]? = nil, completionHandler: @escaping (Error?) -> Void) {
         loadBlocklist()
@@ -75,15 +76,35 @@ final class DNSProxyProvider: NEDNSProxyProvider {
     }
 
     private func isBlocked(domain: String) -> Bool {
-        let normalized = domain.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return blocklist.contains(normalized)
+        guard let normalized = normalize(domain) else { return false }
+        return blocklist.contains(normalized) || blocklist.contains(where: { normalized.hasSuffix("." + $0) })
     }
 
     private func loadBlocklist() {
-        let group = "group.com.adless.shared"
-        guard let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: group)?.appendingPathComponent("blocklist.txt"),
-              let content = try? String(contentsOf: container) else { return }
-        blocklist = Set(content.components(separatedBy: CharacterSet.newlines).filter { !$0.isEmpty })
+        guard let group = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) else { return }
+        let current = group.appendingPathComponent("Library/Application Support/Blocklists/blocklist.txt")
+        let legacy = group.appendingPathComponent("blocklist.txt")
+        guard let content = (try? String(contentsOf: current)) ?? (try? String(contentsOf: legacy)) else { return }
+        blocklist = Set(content.components(separatedBy: .newlines).compactMap { normalize($0) })
+    }
+
+    private func normalize(_ value: String) -> String? {
+        let candidate = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "."))
+            .lowercased()
+        guard !candidate.isEmpty, !candidate.contains("*"), !candidate.contains("/"), !candidate.contains("|") else {
+            return nil
+        }
+        guard candidate.unicodeScalars.allSatisfy({ $0.value < 128 }) else { return nil }
+        guard candidate.contains("."), !candidate.contains(":") else { return nil }
+        let labels = candidate.split(separator: ".", omittingEmptySubsequences: false)
+        guard labels.allSatisfy({ label in
+            guard !label.isEmpty, label.count <= 63,
+                  label.first!.isLetter || label.first!.isNumber,
+                  label.last!.isLetter || label.last!.isNumber else { return false }
+            return label.allSatisfy { $0.isLetter || $0.isNumber || $0 == "-" }
+        }) else { return nil }
+        return candidate
     }
 }
 

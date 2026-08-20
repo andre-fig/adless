@@ -2,86 +2,39 @@ import SwiftUI
 
 struct ContentView: View {
     @ObservedObject var viewModel: AppViewModel
-    @State private var whitelistEntry: String = ""
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        NavigationView {
-            List {
-                Section(header: Text("Status")) {
-                    HStack {
-                        Text("VPN")
-                        Spacer()
-                        Text(viewModel.statusText)
-                            .foregroundStyle(viewModel.isOn ? .green : .secondary)
-                    }
-                    HStack {
-                        Text("Domínios bloqueados")
-                        Spacer()
-                        Text("\(viewModel.blockedCount)")
-                            .monospacedDigit()
-                    }
-                    Toggle(isOn: Binding(get: { viewModel.isOn }, set: { _ in Task { await viewModel.toggle() } })) {
-                        Text(viewModel.isOn ? "Desativar" : "Ativar")
-                    }
-                    .disabled(viewModel.isUpdating)
-                }
+        ZStack {
+            Color(.systemBackground).ignoresSafeArea()
+            VStack(spacing: 24) {
+                Spacer()
 
-                Section(header: Text("Blocklists"), footer: footerText) {
-                    if viewModel.availableSources.isEmpty {
-                        Text("Nenhuma lista configurada")
-                    } else {
-                        ForEach($viewModel.availableSources) { $source in
-                            Toggle(isOn: $source.isEnabled) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(source.name)
-                                    Text(source.url.absoluteString)
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-                    }
-                    Button(action: { Task { await viewModel.updateBlocklists() } }) {
-                        if viewModel.isUpdating {
-                            ProgressView().progressViewStyle(.circular)
-                        } else {
-                            Text("Atualizar blocklists")
-                        }
-                    }
-                    .disabled(viewModel.isUpdating)
+                Button {
+                    Task { await viewModel.toggle() }
+                } label: {
+                    Image(systemName: viewModel.isOn ? "shield.fill" : "shield")
+                        .font(.system(size: 56, weight: .medium))
+                        .frame(width: 144, height: 144)
+                        .foregroundStyle(viewModel.isOn ? .white : .primary)
+                        .background(viewModel.isOn ? Color.green : Color.secondary.opacity(0.14))
+                        .clipShape(Circle())
                 }
+                .accessibilityLabel(viewModel.isOn ? "Desativar bloqueio" : "Ativar bloqueio")
+                .accessibilityHint("Ativa ou desativa o bloqueio DNS")
 
-                Section(header: Text("Whitelist")) {
-                    HStack {
-                        TextField("ex: example.com", text: $whitelistEntry)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                        Button("Adicionar") {
-                            guard !whitelistEntry.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-                            viewModel.addWhitelist(domain: whitelistEntry.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())
-                            whitelistEntry = ""
-                        }
-                    }
-                    ForEach(Array(viewModel.whitelist.enumerated()), id: \.offset) { index, domain in
-                        Text(domain)
-                    }
-                    .onDelete(perform: viewModel.removeWhitelist)
-                }
+                Text(viewModel.statusText)
+                    .font(.headline)
+                    .foregroundStyle(viewModel.isOn ? .green : .secondary)
 
-                Section(header: Text("Notas")) {
-                    Label("Nenhum dado sai do dispositivo", systemImage: "lock.shield")
-                    Label("DNS via proxy local, sem mudar IP", systemImage: "network")
-                    Label("Sem analytics ou login", systemImage: "nosign")
-                }
+                Spacer()
             }
-            .navigationTitle("Adless")
+            .padding()
         }
-    }
-
-    private var footerText: some View {
-        Text("As listas são aplicadas localmente e respostas bloqueadas retornam 0.0.0.0. Upstream: 1.1.1.1/8.8.8.8.")
-            .font(.footnote)
-            .foregroundStyle(.secondary)
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task { await viewModel.applicationDidBecomeActive() }
+        }
     }
 }
 

@@ -16,22 +16,22 @@ struct AdlessApp: App {
 final class AppViewModel: ObservableObject {
     @Published var isOn: Bool = false
     @Published var statusText: String = "Desativado"
-    @Published var blockedCount: Int = 0
-    @Published var isUpdating: Bool = false
-    @Published var availableSources: [BlocklistSource]
-    @Published var whitelist: [String]
 
     private let blocklistManager = BlocklistManager()
     private let vpnManager = VPNManager()
-    private let whitelistStore = WhitelistStore()
 
     init() {
-        availableSources = BlocklistSource.defaultSources()
-        whitelist = whitelistStore.entries.map { $0.domain }
         Task {
             await refreshStatus()
-            await loadBlocklistCount()
+            let result = await blocklistManager.refreshIfNeeded()
+            if case .updated = result, isOn {
+                await vpnManager.reloadProviderBlocklist()
+            }
         }
+    }
+
+    var blockedCount: Int {
+        blocklistManager.cachedCount
     }
 
     @MainActor
@@ -40,12 +40,12 @@ final class AppViewModel: ObservableObject {
             if isOn {
                 try await vpnManager.stop()
             } else {
-                try await ensureBlocklists()
+                _ = try blocklistManager.ensureActiveBlocklist()
                 try await vpnManager.start()
             }
             await refreshStatus()
         } catch {
-            statusText = "Erro: \(error.localizedDescription)"
+            statusText = "Não foi possível alterar o bloqueio"
         }
     }
 
@@ -65,41 +65,11 @@ final class AppViewModel: ObservableObject {
     }
 
     @MainActor
-    func updateBlocklists() async {
-        guard !isUpdating else { return }
-        isUpdating = true
-        do {
-            let enabled = availableSources.filter { $0.isEnabled }
-            blockedCount = try await blocklistManager.updateBlocklists(sources: enabled)
+    func applicationDidBecomeActive() async {
+        await refreshStatus()
+        let result = await blocklistManager.refreshIfNeeded()
+        if case .updated = result, isOn {
             await vpnManager.reloadProviderBlocklist()
-        } catch {
-            statusText = "Erro ao atualizar listas: \(error.localizedDescription)"
         }
-        isUpdating = false
-    }
-
-    @MainActor
-    func addWhitelist(domain: String) {
-        whitelistStore.add(domain: domain)
-        whitelist = whitelistStore.entries.map { $0.domain }
-    }
-
-    @MainActor
-    func removeWhitelist(at offsets: IndexSet) {
-        for index in offsets {
-            let domain = whitelist[index]
-            whitelistStore.remove(domain: domain)
-        }
-        whitelist = whitelistStore.entries.map { $0.domain }
-    }
-
-    private func ensureBlocklists() async throws {
-        if blocklistManager.cachedCount == 0 {
-            _ = try await blocklistManager.updateBlocklists(sources: availableSources.filter { $0.isEnabled })
-        }
-    }
-
-    private func loadBlocklistCount() async {
-        blockedCount = blocklistManager.cachedCount
     }
 }

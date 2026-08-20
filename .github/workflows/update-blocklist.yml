@@ -1,0 +1,92 @@
+name: Update Adless blocklist
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      allow_large_change:
+        description: "Allow a reviewed change above the configured variation limit"
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: adless-blocklist-update
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run blocklist unit tests
+        run: python -m unittest discover -s tools/blocklists/tests -v
+
+      - name: Generate and validate artifacts
+        env:
+          ALLOW_LARGE_CHANGE: ${{ inputs.allow_large_change || false }}
+        run: |
+          args=(--sync-seed)
+          if [[ "$ALLOW_LARGE_CHANGE" == "true" ]]; then
+            args+=(--allow-large-change)
+          fi
+          python tools/blocklists/generate_blocklist.py "${args[@]}"
+          python tools/blocklists/validate_blocklist.py
+          python tools/blocklists/validate_blocklist.py --seed apps/ios/Adless/Resources/SeedBlocklist.txt
+
+      - name: Reject unexpected changes
+        shell: bash
+        run: |
+          allowed=(
+            "apps/landing-page/public/blocklists/manifest.json"
+            "apps/landing-page/public/blocklists/blocklist.txt"
+            "apps/landing-page/public/blocklists/blocklist.txt.gz"
+            "apps/landing-page/public/blocklists/blocklist.sha256"
+            "apps/ios/Adless/Resources/SeedBlocklist.txt"
+          )
+
+          while IFS= read -r line; do
+            path="${line:3}"
+            case " ${allowed[*]} " in
+              *" $path "*) ;;
+              *) echo "Unexpected generated change: $path"; exit 1 ;;
+            esac
+          done < <(git status --porcelain --untracked-files=all)
+
+      - name: Commit changed artifacts
+        shell: bash
+        run: |
+          paths=(
+            apps/landing-page/public/blocklists/manifest.json
+            apps/landing-page/public/blocklists/blocklist.txt
+            apps/landing-page/public/blocklists/blocklist.txt.gz
+            apps/landing-page/public/blocklists/blocklist.sha256
+            apps/ios/Adless/Resources/SeedBlocklist.txt
+          )
+
+          if git diff --quiet -- "${paths[@]}"; then
+            echo "The generated blocklist content did not change."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "${paths[@]}"
+          if git diff --cached --quiet; then
+            echo "No staged blocklist changes."
+            exit 0
+          fi
+          git commit -m "chore(blocklist): update generated list"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

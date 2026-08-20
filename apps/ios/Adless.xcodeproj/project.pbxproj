@@ -8,15 +8,30 @@
 
 /* Begin PBXFileReference section */
 		A432D6DD2EF4DE1800F87DE0 /* Adless.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Adless.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000001 /* AdlessDNSProxy.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AdlessDNSProxy.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000016 /* AdlessTests.xctest */ = {isa = PBXFileReference; explicitFileType = "wrapper.cfbundle"; includeInIndex = 0; path = AdlessTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXBuildFile section */
+		B10000000000000000000008 /* AdlessDNSProxy.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* AdlessDNSProxy.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
 		A432D71D2EF4E2C300F87DE0 /* Exceptions for "Adless" folder in "Adless" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Resources/Adless.entitlements,
 				Resources/Info.plist,
 			);
 			target = A432D6DC2EF4DE1800F87DE0 /* Adless */;
+		};
+		B10000000000000000000011 /* Exceptions for "AdlessDNSProxy" folder in "AdlessDNSProxy" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				DNSProxy.entitlements,
+				Info.plist,
+			);
+			target = B10000000000000000000003 /* AdlessDNSProxy */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -29,6 +44,19 @@
 			path = Adless;
 			sourceTree = "<group>";
 		};
+		B10000000000000000000002 /* AdlessDNSProxy */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B10000000000000000000011 /* Exceptions for "AdlessDNSProxy" folder in "AdlessDNSProxy" target */,
+			);
+			path = AdlessDNSProxy;
+			sourceTree = "<group>";
+		};
+		B10000000000000000000017 /* AdlessTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = AdlessTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,13 +67,43 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B10000000000000000000005 /* AdlessDNSProxy Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B10000000000000000000020 /* AdlessTests Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B10000000000000000000007 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B10000000000000000000008 /* AdlessDNSProxy.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXGroup section */
 		A432D6D42EF4DE1800F87DE0 = {
 			isa = PBXGroup;
 			children = (
 				A432D6DF2EF4DE1800F87DE0 /* Adless */,
+				B10000000000000000000002 /* AdlessDNSProxy */,
+				B10000000000000000000017 /* AdlessTests */,
 				A432D6DE2EF4DE1800F87DE0 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,6 +112,8 @@
 			isa = PBXGroup;
 			children = (
 				A432D6DD2EF4DE1800F87DE0 /* Adless.app */,
+				B10000000000000000000001 /* AdlessDNSProxy.appex */,
+				B10000000000000000000016 /* AdlessTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -68,10 +128,13 @@
 				A432D6D92EF4DE1800F87DE0 /* Sources */,
 				A432D6DA2EF4DE1800F87DE0 /* Frameworks */,
 				A432D6DB2EF4DE1800F87DE0 /* Resources */,
+				B10000000000000000000015 /* Validate embedded blocklist */,
+				B10000000000000000000007 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				B10000000000000000000010 /* Adless depends on AdlessDNSProxy */,
 			);
 			fileSystemSynchronizedGroups = (
 				A432D6DF2EF4DE1800F87DE0 /* Adless */,
@@ -83,7 +146,82 @@
 			productReference = A432D6DD2EF4DE1800F87DE0 /* Adless.app */;
 			productType = "com.apple.product-type.application";
 		};
+		B10000000000000000000003 /* AdlessDNSProxy */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B10000000000000000000012 /* Build configuration list for PBXNativeTarget "AdlessDNSProxy" */;
+			buildPhases = (
+				B10000000000000000000004 /* Sources */,
+				B10000000000000000000005 /* Frameworks */,
+				B10000000000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				B10000000000000000000002 /* AdlessDNSProxy */,
+			);
+			name = AdlessDNSProxy;
+			packageProductDependencies = (
+			);
+			productName = AdlessDNSProxy;
+			productReference = B10000000000000000000001 /* AdlessDNSProxy.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		B10000000000000000000018 /* AdlessTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B10000000000000000000025 /* Build configuration list for PBXNativeTarget "AdlessTests" */;
+			buildPhases = (
+				B10000000000000000000019 /* Sources */,
+				B10000000000000000000020 /* Frameworks */,
+				B10000000000000000000021 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B10000000000000000000023 /* AdlessTests depends on Adless */,
+			);
+			fileSystemSynchronizedGroups = (
+				B10000000000000000000017 /* AdlessTests */,
+			);
+			name = AdlessTests;
+			packageProductDependencies = (
+			);
+			productName = AdlessTests;
+			productReference = B10000000000000000000016 /* AdlessTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+		B10000000000000000000009 /* Container proxy for AdlessDNSProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A432D6D52EF4DE1800F87DE0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B10000000000000000000003;
+			remoteInfo = AdlessDNSProxy;
+		};
+		B10000000000000000000022 /* Container proxy for Adless */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A432D6D52EF4DE1800F87DE0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A432D6DC2EF4DE1800F87DE0;
+			remoteInfo = Adless;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		B10000000000000000000010 /* Adless depends on AdlessDNSProxy */ = {
+			isa = PBXTargetDependency;
+			target = B10000000000000000000003 /* AdlessDNSProxy */;
+			targetProxy = B10000000000000000000009 /* Container proxy for AdlessDNSProxy */;
+		};
+		B10000000000000000000023 /* AdlessTests depends on Adless */ = {
+			isa = PBXTargetDependency;
+			target = A432D6DC2EF4DE1800F87DE0 /* Adless */;
+			targetProxy = B10000000000000000000022 /* Container proxy for Adless */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		A432D6D52EF4DE1800F87DE0 /* Project object */ = {
@@ -95,6 +233,13 @@
 				TargetAttributes = {
 					A432D6DC2EF4DE1800F87DE0 = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					B10000000000000000000003 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					B10000000000000000000018 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = A432D6DC2EF4DE1800F87DE0;
 					};
 				};
 			};
@@ -113,6 +258,8 @@
 			projectRoot = "";
 			targets = (
 				A432D6DC2EF4DE1800F87DE0 /* Adless */,
+				B10000000000000000000003 /* AdlessDNSProxy */,
+				B10000000000000000000018 /* AdlessTests */,
 			);
 		};
 /* End PBXProject section */
@@ -125,10 +272,58 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B10000000000000000000006 /* AdlessDNSProxy Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B10000000000000000000021 /* AdlessTests Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		B10000000000000000000015 /* Validate embedded blocklist */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/../../tools/blocklists/validate_blocklist.py",
+				"$(SRCROOT)/Adless/Resources/SeedBlocklist.txt",
+			);
+			name = "Validate embedded blocklist";
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/blocklist-validation.stamp",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "python3 \"${SRCROOT}/../../tools/blocklists/validate_blocklist.py\" --seed \"${SRCROOT}/Adless/Resources/SeedBlocklist.txt\"\ntouch \"${DERIVED_FILE_DIR}/blocklist-validation.stamp\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A432D6D92EF4DE1800F87DE0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B10000000000000000000004 /* AdlessDNSProxy Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B10000000000000000000019 /* AdlessTests Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -282,7 +477,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.1;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = usefulish.Adless;
+				CODE_SIGN_ENTITLEMENTS = Adless/Resources/Adless.entitlements;
+				PRODUCT_BUNDLE_IDENTIFIER = com.usefulish.adless;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -326,7 +522,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.1;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = usefulish.Adless;
+				CODE_SIGN_ENTITLEMENTS = Adless/Resources/Adless.entitlements;
+				PRODUCT_BUNDLE_IDENTIFIER = com.usefulish.adless;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -339,6 +536,74 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
+		B10000000000000000000013 /* AdlessDNSProxy Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = AdlessDNSProxy/DNSProxy.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = J728Z86KY5;
+				INFOPLIST_FILE = AdlessDNSProxy/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.usefulish.adless.dnsproxy;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B10000000000000000000014 /* AdlessDNSProxy Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = AdlessDNSProxy/DNSProxy.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = J728Z86KY5;
+				INFOPLIST_FILE = AdlessDNSProxy/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.usefulish.adless.dnsproxy;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		B10000000000000000000026 /* AdlessTests Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = J728Z86KY5;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.usefulish.adless.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Adless.app/Adless";
+			};
+			name = Debug;
+		};
+		B10000000000000000000027 /* AdlessTests Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = J728Z86KY5;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.usefulish.adless.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Adless.app/Adless";
 			};
 			name = Release;
 		};
@@ -359,6 +624,24 @@
 			buildConfigurations = (
 				A432D6E92EF4DE1900F87DE0 /* Debug */,
 				A432D6EA2EF4DE1900F87DE0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B10000000000000000000012 /* Build configuration list for PBXNativeTarget "AdlessDNSProxy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B10000000000000000000013 /* AdlessDNSProxy Debug */,
+				B10000000000000000000014 /* AdlessDNSProxy Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B10000000000000000000025 /* Build configuration list for PBXNativeTarget "AdlessTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B10000000000000000000026 /* AdlessTests Debug */,
+				B10000000000000000000027 /* AdlessTests Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

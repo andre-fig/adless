@@ -1,0 +1,4 @@
+! Title: oisd small fixture
+! Syntax: Adblock Plus Filter List
+||ads.example.com^
+||tracker.example.net^

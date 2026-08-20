@@ -1,0 +1,6 @@
+! Small parser fixture
+0.0.0.0 Ads.Example.com # inline comment
+127.0.0.1 tracker.example.com
+||cdn.example.net^
+safe.example.org.
+0.0.0.0 localhost

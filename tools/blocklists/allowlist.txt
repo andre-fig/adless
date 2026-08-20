@@ -1,0 +1,2 @@
+# One normalized domain per line. Blank lines and lines starting with # are ignored.
+# A parent domain also allows all of its subdomains.
