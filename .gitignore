@@ -106,6 +106,10 @@ yarn-error.log*
 pnpm-debug.log*
 bun-debug.log*
 
+# Python test artifacts
+__pycache__/
+*.py[cod]
+
 # Package manager artifacts
 .npm/
 .yarn/
