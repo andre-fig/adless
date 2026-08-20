@@ -1,44 +1,116 @@
 {
-  "identifier" : "Adless-Local-StoreKit",
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "F05845B3",
+  "nonRenewingSubscriptions" : [
+
+  ],
   "products" : [
-    {
-      "displayPrice" : "4.90",
-      "familyShareable" : false,
-      "id" : "com.orbeworks.adless.pro.monthly",
-      "locale" : "en_US",
-      "productType" : "RecurringSubscription",
-      "recurringSubscriptionPeriod" : "P1M",
-      "referenceName" : "Adless Monthly",
-      "subscriptionGroupIdentifier" : "adless.pro",
-      "introductoryOffer" : {
-        "duration" : "P1W",
-        "numberOfPeriods" : 1,
-        "paymentMode" : "free"
-      }
-    },
-    {
-      "displayPrice" : "29.90",
-      "familyShareable" : false,
-      "id" : "com.orbeworks.adless.pro.yearly",
-      "locale" : "en_US",
-      "productType" : "RecurringSubscription",
-      "recurringSubscriptionPeriod" : "P1Y",
-      "referenceName" : "Adless Annual",
-      "subscriptionGroupIdentifier" : "adless.pro",
-      "introductoryOffer" : {
-        "duration" : "P1W",
-        "numberOfPeriods" : 1,
-        "paymentMode" : "free"
-      }
-    }
+
   ],
   "settings" : {
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : false,
+    "_billingIssuesEnabled" : false,
+    "_disableDialogs" : false,
+    "_failTransactionsEnabled" : false,
     "_locale" : "en_US",
+    "_renewalBillingIssuesEnabled" : false,
     "_storefront" : "BRA",
-    "billingGracePeriod" : 0,
-    "defaultSubscriptionRenewalRate" : 100,
-    "failTransactions" : false,
-    "subscriptionRenewalRate" : 100
+    "_storeKitErrors" : [
+
+    ],
+    "_timeRate" : 0
   },
-  "version" : 1
+  "subscriptionGroups" : [
+    {
+      "id" : "ADLESSPRO",
+      "localizations" : [
+
+      ],
+      "name" : "Adless Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.90",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "ADL00001",
+          "introductoryOffer" : {
+            "displayPrice" : "0.00",
+            "internalID" : "ADLTRIAL1",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+            {
+              "description" : "Adless Pro monthly plan.",
+              "displayName" : "Adless Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.orbeworks.adless.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Adless Monthly",
+          "subscriptionGroupID" : "ADLESSPRO",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "29.90",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "ADL00002",
+          "introductoryOffer" : {
+            "displayPrice" : "0.00",
+            "internalID" : "ADLTRIAL2",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+            {
+              "description" : "Adless Pro annual plan.",
+              "displayName" : "Adless Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.orbeworks.adless.pro.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Adless Annual",
+          "subscriptionGroupID" : "ADLESSPRO",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
 }
