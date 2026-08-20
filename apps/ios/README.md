@@ -63,6 +63,18 @@ The DNS proxy reads that state and refuses to start or process DNS flows after
 the entitlement expires. No personal identity or payment data is stored by the
 app.
 
+### Local subscription testing
+
+The shared `Adless` scheme is configured with `Adless.storekit`. It contains
+both production product identifiers, the Brazilian prices, the same subscription
+group, and a one-week local introductory offer. This lets the paywall and
+entitlement flow be tested before App Store review and without a real charge.
+
+In Xcode, select the `Adless` scheme and run the app. Use **Debug > StoreKit >
+Manage Transactions** to inspect or reset purchases. The local configuration
+is only for development; TestFlight and production continue to use the
+products configured in App Store Connect.
+
 Enable Billing Grace Period in App Store Connect after testing it in Sandbox.
 The first auto-renewable subscription must be submitted together with an app
 version for review. Product metadata, prices, availability, the Subscription

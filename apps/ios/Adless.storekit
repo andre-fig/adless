@@ -1,0 +1,44 @@
+{
+  "identifier" : "Adless-Local-StoreKit",
+  "products" : [
+    {
+      "displayPrice" : "4.90",
+      "familyShareable" : false,
+      "id" : "com.orbeworks.adless.pro.monthly",
+      "locale" : "pt_BR",
+      "productType" : "RecurringSubscription",
+      "recurringSubscriptionPeriod" : "P1M",
+      "referenceName" : "Adless Mensal",
+      "subscriptionGroupIdentifier" : "adless.pro",
+      "introductoryOffer" : {
+        "duration" : "P1W",
+        "numberOfPeriods" : 1,
+        "paymentMode" : "free"
+      }
+    },
+    {
+      "displayPrice" : "29.90",
+      "familyShareable" : false,
+      "id" : "com.orbeworks.adless.pro.yearly",
+      "locale" : "pt_BR",
+      "productType" : "RecurringSubscription",
+      "recurringSubscriptionPeriod" : "P1Y",
+      "referenceName" : "Adless Anual",
+      "subscriptionGroupIdentifier" : "adless.pro",
+      "introductoryOffer" : {
+        "duration" : "P1W",
+        "numberOfPeriods" : 1,
+        "paymentMode" : "free"
+      }
+    }
+  ],
+  "settings" : {
+    "_locale" : "pt_BR",
+    "_storefront" : "BRA",
+    "billingGracePeriod" : 0,
+    "defaultSubscriptionRenewalRate" : 100,
+    "failTransactions" : false,
+    "subscriptionRenewalRate" : 100
+  },
+  "version" : 1
+}
