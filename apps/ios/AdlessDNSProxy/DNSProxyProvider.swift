@@ -3,12 +3,19 @@ import os.log
 
 final class DNSProxyProvider: NEDNSProxyProvider {
     private var blocklist: Set<String> = []
+    private var subscriptionState: SharedSubscriptionAccessSnapshot?
+    private var subscriptionStateCheckedAt = Date.distantPast
     private let upstreamPrimary = "1.1.1.1"
     private let upstreamSecondary = "8.8.8.8"
     private let appGroupKey = "appGroup"
     private let appGroupIdentifier = "group.com.usefulish.adless"
+    private let subscriptionStatePath = "Library/Application Support/Subscription/subscription-state.json"
 
     override func startProxy(options: [String : Any]? = nil, completionHandler: @escaping (Error?) -> Void) {
+        guard hasSubscriptionAccess() else {
+            completionHandler(DNSProxyError.subscriptionInactive)
+            return
+        }
         loadBlocklist()
         completionHandler(nil)
     }
@@ -37,6 +44,11 @@ final class DNSProxyProvider: NEDNSProxyProvider {
     }
 
     private func process(packets: [Data], endpoints: [NWEndpoint], flow: NEAppProxyUDPFlow) async {
+        guard hasSubscriptionAccess() else {
+            flow.closeReadWithError(DNSProxyError.subscriptionInactive)
+            return
+        }
+
         var forwardPackets: [Data] = []
 
         for packet in packets {
@@ -88,6 +100,30 @@ final class DNSProxyProvider: NEDNSProxyProvider {
         blocklist = Set(content.components(separatedBy: .newlines).compactMap { normalize($0) })
     }
 
+    private func hasSubscriptionAccess() -> Bool {
+        let now = Date()
+        if now.timeIntervalSince(subscriptionStateCheckedAt) < 30,
+           let subscriptionState {
+            return subscriptionState.isEntitled && (subscriptionState.effectiveUntil ?? .distantPast) > now
+        }
+
+        subscriptionStateCheckedAt = now
+        guard let group = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) else {
+            subscriptionState = nil
+            return false
+        }
+        let url = group.appendingPathComponent(subscriptionStatePath)
+        guard let data = try? Data(contentsOf: url) else {
+            subscriptionState = nil
+            return false
+        }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        subscriptionState = try? decoder.decode(SharedSubscriptionAccessSnapshot.self, from: data)
+        guard let subscriptionState else { return false }
+        return subscriptionState.isEntitled && (subscriptionState.effectiveUntil ?? .distantPast) > now
+    }
+
     private func normalize(_ value: String) -> String? {
         let candidate = value.trimmingCharacters(in: .whitespacesAndNewlines)
             .trimmingCharacters(in: CharacterSet(charactersIn: "."))
@@ -105,6 +141,19 @@ final class DNSProxyProvider: NEDNSProxyProvider {
             return label.allSatisfy { $0.isLetter || $0.isNumber || $0 == "-" }
         }) else { return nil }
         return candidate
+    }
+}
+
+private struct SharedSubscriptionAccessSnapshot: Decodable {
+    let isEntitled: Bool
+    let effectiveUntil: Date?
+}
+
+private enum DNSProxyError: LocalizedError {
+    case subscriptionInactive
+
+    var errorDescription: String? {
+        "Adless subscription is inactive"
     }
 }
 

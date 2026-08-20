@@ -34,6 +34,10 @@ Abra `apps/ios/Adless.xcodeproj` no Xcode, configure o Team e o App Group
 execute o scheme `Adless`. O target `AdlessDNSProxy` precisa da capability
 Network Extension (DNS Proxy) no App ID correspondente.
 
+A cobrança é feita exclusivamente pela App Store com StoreKit 2, sem backend,
+login ou banco próprio. O app oferece assinaturas mensal e anual com trial de
+7 dias configurado no App Store Connect.
+
 ## Blocklist
 
 A blocklist é gerada sem backend pelo workflow diário

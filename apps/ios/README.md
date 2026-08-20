@@ -41,3 +41,30 @@ write. The app group and Network Extension entitlement still require matching
 configuration in the Apple Developer portal before device distribution.
 
 The DNS proxy needs a real device for full interception; simulator limitations apply.
+
+## Subscription
+
+The app uses StoreKit 2 and does not have a subscription backend or user login.
+The product identifiers expected by the app are:
+
+- `com.usefulish.adless.pro.monthly`;
+- `com.usefulish.adless.pro.yearly`.
+
+Create both auto-renewable products in one Subscription Group in App Store
+Connect and configure a 7-day free Introductory Offer for eligible new
+subscribers. The offer is enforced by App Store Connect; the app only displays
+the offer and verifies the signed StoreKit entitlement.
+
+The subscription manager checks `Transaction.currentEntitlements`, listens to
+`Transaction.updates`, and restores purchases with `AppStore.sync()`. Active
+and grace-period entitlements are persisted atomically in the existing App
+Group at `Library/Application Support/Subscription/subscription-state.json`.
+The DNS proxy reads that state and refuses to start or process DNS flows after
+the entitlement expires. No personal identity or payment data is stored by the
+app.
+
+Enable Billing Grace Period in App Store Connect after testing it in Sandbox.
+The first auto-renewable subscription must be submitted together with an app
+version for review. Product metadata, prices, availability, the Subscription
+Group, the 7-day offer, and the App Store agreement are external App Store
+Connect configuration and cannot be completed from this repository alone.

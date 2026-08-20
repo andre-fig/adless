@@ -19,9 +19,11 @@ apps/landing-page/public/blocklists/
                          # artefatos estáticos publicados
 ```
 
-O aplicativo não usa backend, login, banco de dados ou assinatura interna. A
-landing page é estática e a blocklist é distribuída pelos arquivos públicos do
-GitHub Pages.
+O aplicativo não usa backend, login ou banco de dados próprio. A cobrança é
+feita exclusivamente pela App Store com StoreKit 2; o app oferece assinatura
+mensal e anual com trial de 7 dias configurado no App Store Connect. A landing
+page é estática e a blocklist é distribuída pelos arquivos públicos do GitHub
+Pages.
 
 ## Comandos principais
 
@@ -128,6 +130,28 @@ Library/Application Support/Blocklists/blocklist.txt
 Esse caminho usa o App Group existente `group.com.usefulish.adless`. Não use
 `Documents`, não exponha a lista ao usuário e não altere entitlements ou
 capabilities sem verificar os dois targets e documentar o motivo.
+
+## Assinatura
+
+O app usa StoreKit 2, sem backend ou conta própria. Os product IDs são:
+
+```text
+com.usefulish.adless.pro.monthly
+com.usefulish.adless.pro.yearly
+```
+
+Os dois produtos devem pertencer ao mesmo Subscription Group no App Store
+Connect. O trial gratuito de 7 dias precisa ser configurado como Introductory
+Offer no App Store Connect; não basta alterar uma constante no código.
+
+O app considera `subscribed` e `inGracePeriod` como acesso válido, persiste um
+snapshot verificado no App Group e a extensão recusa iniciar ou processar DNS
+quando o snapshot está ausente ou expirado. Compras são restauradas com
+`AppStore.sync()` e atualizações são observadas por `Transaction.updates`.
+
+Não coloque uma flag manual permanente como `isSubscribed = true`. O acesso
+deve derivar da transação verificada pela Apple e da data de validade. Para
+testes reais, configure os produtos e uma conta Sandbox no App Store Connect.
 
 ## GitHub Actions e publicação
 

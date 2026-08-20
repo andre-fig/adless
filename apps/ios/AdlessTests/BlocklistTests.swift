@@ -115,4 +115,45 @@ final class BlocklistTests: XCTestCase {
         }
         XCTAssertEqual(try storage.loadActive(), ["seed.example.com"])
     }
+
+    func testSubscriptionAccessPolicyAllowsActiveAndGracePeriodUntilExpiry() {
+        let now = Date(timeIntervalSince1970: 10_000)
+        let active = SubscriptionAccessSnapshot(
+            isEntitled: true,
+            productID: "com.usefulish.adless.pro.monthly",
+            effectiveUntil: now.addingTimeInterval(60),
+            inGracePeriod: false,
+            lastVerifiedAt: now
+        )
+        let grace = SubscriptionAccessSnapshot(
+            isEntitled: true,
+            productID: "com.usefulish.adless.pro.monthly",
+            effectiveUntil: now.addingTimeInterval(60),
+            inGracePeriod: true,
+            lastVerifiedAt: now
+        )
+
+        XCTAssertTrue(SubscriptionAccessPolicy.allowsAccess(active, at: now))
+        XCTAssertTrue(SubscriptionAccessPolicy.allowsAccess(grace, at: now))
+        XCTAssertFalse(SubscriptionAccessPolicy.allowsAccess(active, at: now.addingTimeInterval(60)))
+        XCTAssertFalse(SubscriptionAccessPolicy.allowsAccess(.inactive(at: now), at: now))
+    }
+
+    func testSubscriptionStorageRoundTripsAppGroupSnapshotAtomically() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let storage = SubscriptionStorage(baseDirectory: directory)
+        let now = Date(timeIntervalSince1970: 20_000)
+        let snapshot = SubscriptionAccessSnapshot(
+            isEntitled: true,
+            productID: "com.usefulish.adless.pro.yearly",
+            effectiveUntil: now.addingTimeInterval(3600),
+            inGracePeriod: false,
+            lastVerifiedAt: now
+        )
+
+        try storage.save(snapshot)
+
+        XCTAssertEqual(storage.load(), snapshot)
+    }
 }
