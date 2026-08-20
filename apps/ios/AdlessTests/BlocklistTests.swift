@@ -36,6 +36,19 @@ final class BlocklistTests: XCTestCase {
         XCTAssertFalse(BlocklistParser.matches(domain: "ads.example.co", entries: entries))
     }
 
+    func testDomainMatchingUsesBoundedSuffixesAndNormalizesDNSNames() {
+        let entries: Set<String> = [
+            "ads.example.com",
+            "xn--bcher-kva.example"
+        ]
+
+        XCTAssertTrue(BlocklistParser.matches(domain: "ADS.EXAMPLE.COM.", entries: entries))
+        XCTAssertTrue(BlocklistParser.matches(domain: "cdn.ads.example.com.", entries: entries))
+        XCTAssertFalse(BlocklistParser.matches(domain: "ads.example.com.evil", entries: entries))
+        XCTAssertTrue(BlocklistParser.matches(domain: "XN--BCHER-KVA.EXAMPLE.", entries: entries))
+        XCTAssertFalse(BlocklistParser.matches(domain: "bücher.example.", entries: entries))
+    }
+
     func testCanonicalParserRejectsUnsortedAndInvalidContent() {
         XCTAssertThrowsError(try BlocklistParser.parseCanonical(Data("z.example.com\na.example.com\n".utf8)))
         XCTAssertThrowsError(try BlocklistParser.parseCanonical(Data("<html>blocked</html>\n".utf8)))

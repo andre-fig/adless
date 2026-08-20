@@ -65,7 +65,15 @@ enum BlocklistParser {
 
     static func matches(domain: String, entries: Set<String>) -> Bool {
         guard let normalized = normalize(domain) else { return false }
-        return entries.contains(normalized) || entries.contains(where: { normalized.hasSuffix("." + $0) })
+
+        let labels = normalized.split(separator: ".")
+        for index in labels.indices {
+            let candidate = labels[index...].joined(separator: ".")
+            if entries.contains(candidate) {
+                return true
+            }
+        }
+        return false
     }
 
     private static func isIPAddress(_ value: String) -> Bool {
