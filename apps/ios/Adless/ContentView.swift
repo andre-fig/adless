@@ -10,8 +10,6 @@ struct ContentView: View {
             VStack(spacing: 24) {
                 Spacer()
 
-                AdlessLogoView(size: 88)
-
                 Button {
                     if viewModel.hasSubscription {
                         Task { await viewModel.toggle() }
