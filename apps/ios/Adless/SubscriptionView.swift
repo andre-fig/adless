@@ -9,9 +9,7 @@ struct SubscriptionView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    Image(systemName: "shield.lefthalf.filled")
-                        .font(.system(size: 44))
-                        .foregroundStyle(.green)
+                    AdlessLogoView(size: 96)
 
                     Text("Proteja sua navegação")
                         .font(.title2.weight(.semibold))
