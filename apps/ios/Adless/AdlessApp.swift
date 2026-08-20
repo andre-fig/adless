@@ -32,6 +32,14 @@ final class AppViewModel: ObservableObject {
                 await self?.disableIfSubscriptionExpired()
             }
         }
+        subscriptionManager.onPurchaseCompleted = { [weak self] in
+            guard let self, self.subscriptionManager.hasActiveEntitlement else { return }
+            self.hasSubscription = true
+            self.isSubscriptionPresented = false
+            Task { @MainActor [weak self] in
+                await self?.activateBlocking()
+            }
+        }
         Task {
             await applicationDidBecomeActive()
         }
@@ -48,13 +56,29 @@ final class AppViewModel: ObservableObject {
             return
         }
 
-        do {
-            if isOn {
+        if isOn {
+            do {
                 try await vpnManager.stop()
-            } else {
-                _ = try blocklistManager.ensureActiveBlocklist()
-                try await vpnManager.start()
+                await refreshStatus()
+            } catch {
+                statusText = "Could not change blocking status"
             }
+            return
+        }
+
+        await activateBlocking()
+    }
+
+    @MainActor
+    func activateBlocking() async {
+        guard hasSubscription else {
+            isSubscriptionPresented = true
+            return
+        }
+
+        do {
+            _ = try blocklistManager.ensureActiveBlocklist()
+            try await vpnManager.start()
             await refreshStatus()
         } catch {
             statusText = "Could not change blocking status"

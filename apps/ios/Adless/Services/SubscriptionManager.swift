@@ -18,6 +18,7 @@ final class SubscriptionManager: ObservableObject {
     @Published private(set) var message: String?
 
     var onEntitlementChanged: ((Bool) -> Void)?
+    var onPurchaseCompleted: (() -> Void)?
 
     private let storage: SubscriptionStorage
     private var transactionUpdatesTask: Task<Void, Never>?
@@ -66,6 +67,9 @@ final class SubscriptionManager: ObservableObject {
             case .success(.verified(let transaction)):
                 await transaction.finish()
                 await refreshEntitlement()
+                if hasActiveEntitlement {
+                    onPurchaseCompleted?()
+                }
             case .success(.unverified):
                 message = "The purchase could not be verified"
             case .userCancelled:
