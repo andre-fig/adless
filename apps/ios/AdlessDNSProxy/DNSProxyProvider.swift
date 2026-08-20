@@ -189,7 +189,7 @@ private struct DNSQueryKey: Hashable {
     let name: String
 }
 
-private final class DNSUDPFlowHandler: DNSProxyFlowHandling {
+private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable {
     private enum PacketAction {
         case writeToClient(Data)
         case forward(Data, DNSQueryKey?)
@@ -202,7 +202,7 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling {
 
     private let flow: NEAppProxyUDPFlow
     private let blocklist: Set<String>
-    private let upstreams: [NetworkExtension.NWHostEndpoint]
+    private let upstreams: [Network.NWEndpoint]
     private let timeout: TimeInterval = 1.5
     private let queue = DispatchQueue(label: "com.orbeworks.adless.dns-udp", qos: .userInitiated)
     private let onClose: () -> Void
@@ -214,7 +214,10 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling {
     init(flow: NEAppProxyUDPFlow, blocklist: Set<String>, upstreams: [String], onClose: @escaping () -> Void) {
         self.flow = flow
         self.blocklist = blocklist
-        self.upstreams = upstreams.map { NetworkExtension.NWHostEndpoint(hostname: $0, port: "53") }
+        self.upstreams = upstreams.compactMap { host in
+            guard let port = Network.NWEndpoint.Port(rawValue: 53) else { return nil }
+            return .hostPort(host: Network.NWEndpoint.Host(host), port: port)
+        }
         self.onClose = onClose
     }
 
@@ -240,7 +243,9 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling {
     private func readNext() {
         guard !closed else { return }
 
-        flow.readDatagrams { [weak self] datagrams, endpoints, error in
+        let flow = flow
+        Task { [weak self] in
+            let (datagrams, error) = await flow.readDatagrams()
             guard let self else { return }
             self.queue.async {
                 guard !self.closed else { return }
@@ -249,18 +254,16 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling {
                     return
                 }
 
-                guard let datagrams, let endpoints, !datagrams.isEmpty else {
+                guard let datagrams, !datagrams.isEmpty else {
                     self.finish(error: nil)
                     return
                 }
 
-                for (packet, endpoint) in zip(datagrams, endpoints) {
+                for (packet, endpoint) in datagrams {
                     switch self.process(packet: packet) {
                     case .writeToClient(let response):
-                        self.flow.writeDatagrams([response], sentBy: [endpoint]) { error in
-                            if let error {
-                                os_log("DNS response write failed: %{public}@", log: .default, type: .error, error.localizedDescription)
-                            }
+                        self.writeDatagram(packet: response, to: endpoint) { error in
+                            os_log("DNS response write failed: %{public}@", log: .default, type: .error, error.localizedDescription)
                         }
                     case .forward(let request, let queryKey):
                         self.send(packet: request, to: self.upstreams[0], queryKey: queryKey)
@@ -294,17 +297,15 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling {
         return .forward(packet, queryKey(for: message))
     }
 
-    private func send(packet: Data, to upstream: NetworkExtension.NWHostEndpoint, queryKey: DNSQueryKey?) {
+    private func send(packet: Data, to upstream: Network.NWEndpoint, queryKey: DNSQueryKey?) {
         if let queryKey {
             pending[queryKey] = PendingQuery(packet: packet)
             scheduleFallback(for: queryKey)
         }
 
-        flow.writeDatagrams([packet], sentBy: [upstream]) { [weak self] error in
-            guard let self, let error, let queryKey else { return }
-            self.queue.async {
-                self.fallback(queryKey: queryKey, reason: error)
-            }
+        writeDatagram(packet: packet, to: upstream) { [weak self] error in
+            guard let self, let queryKey else { return }
+            self.fallback(queryKey: queryKey, reason: error)
         }
     }
 
@@ -337,11 +338,24 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling {
         timeoutWorkItems[queryKey] = expiry
         queue.asyncAfter(deadline: .now() + timeout, execute: expiry)
 
-        flow.writeDatagrams([query.packet], sentBy: [upstreams[1]]) { [weak self] error in
-            guard let self, let error else { return }
-            self.queue.async {
-                self.expire(queryKey)
-                os_log("DNS secondary upstream failed: %{public}@", log: .default, type: .error, error.localizedDescription)
+        writeDatagram(packet: query.packet, to: upstreams[1]) { [weak self] error in
+            guard let self else { return }
+            self.expire(queryKey)
+            os_log("DNS secondary upstream failed: %{public}@", log: .default, type: .error, error.localizedDescription)
+        }
+    }
+
+    private func writeDatagram(packet: Data, to endpoint: Network.NWEndpoint, onError: @escaping (Error) -> Void) {
+        let flow = flow
+        Task { [weak self] in
+            do {
+                try await flow.writeDatagrams([(packet, endpoint)])
+            } catch {
+                guard let self else { return }
+                self.queue.async {
+                    guard !self.closed else { return }
+                    onError(error)
+                }
             }
         }
     }
