@@ -47,7 +47,7 @@ struct ContentView: View {
             VStack(spacing: 30) {
                 Spacer()
 
-                VStack(spacing: 14) {
+                VStack(spacing: 20) {
                     AdlessLogoView(size: 56)
 
                     VStack(spacing: 6) {
@@ -171,7 +171,7 @@ struct ContentView: View {
                 Spacer()
             }
             .padding()
-            .offset(y: -40)
+            .offset(y: -52)
 
             if viewModel.isSubscriptionPresented {
                 Color.black
