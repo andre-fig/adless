@@ -13,6 +13,39 @@ enum SubscriptionConfiguration {
     static let appGroupIdentifier = BlocklistConfiguration.appGroupIdentifier
     static let subscriptionDirectoryName = "Subscription"
     static let subscriptionStateFileName = "subscription-state.json"
+
+#if DEBUG && os(iOS) && targetEnvironment(simulator)
+    // Direct simulator launches do not have Xcode's StoreKit test session. These
+    // display-only options keep the subscription drawer usable for UI work;
+    // purchases still require Product instances supplied by StoreKit.
+    static let simulatorOptions = [
+        SubscriptionOption(
+            id: yearlyProductID,
+            name: "Annual",
+            displayPrice: "R$ 29.90",
+            description: "Adless Pro annual plan.",
+            freeTrialText: "7 days free for new subscribers",
+            product: nil
+        ),
+        SubscriptionOption(
+            id: monthlyProductID,
+            name: "Monthly",
+            displayPrice: "R$ 4.90",
+            description: "Adless Pro monthly plan.",
+            freeTrialText: "7 days free for new subscribers",
+            product: nil
+        )
+    ]
+#endif
+}
+
+struct SubscriptionOption: Identifiable {
+    let id: String
+    let name: String
+    let displayPrice: String
+    let description: String
+    let freeTrialText: String?
+    let product: Product?
 }
 
 enum SubscriptionOfferFormatter {

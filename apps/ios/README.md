@@ -75,6 +75,13 @@ Manage Transactions** to inspect or reset purchases. The local configuration
 is only for development; TestFlight and production continue to use the
 products configured in App Store Connect.
 
+For fast layout work, a direct Debug launch of the iOS Simulator (for example
+with `simctl`) displays the two local subscription options immediately. Those
+options are display-only; purchase testing must use the shared Xcode scheme,
+which passes `-useStoreKitProducts` and loads the real StoreKit test products.
+This simulator-only fallback is excluded from Release builds and physical
+devices.
+
 Enable Billing Grace Period in App Store Connect after testing it in Sandbox.
 The first auto-renewable subscription must be submitted together with an app
 version for review. Product metadata, prices, availability, the Subscription

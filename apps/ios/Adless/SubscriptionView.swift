@@ -1,4 +1,3 @@
-import StoreKit
 import SwiftUI
 
 struct SubscriptionView: View {
@@ -13,15 +12,15 @@ struct SubscriptionView: View {
         "No account required"
     ]
 
-    private var orderedProducts: [Product] {
-        manager.products.sorted {
-            planSortIndex(for: $0) < planSortIndex(for: $1)
+    private var orderedOptions: [SubscriptionOption] {
+        manager.options.sorted {
+            planSortIndex(for: $0.id) < planSortIndex(for: $1.id)
         }
     }
 
-    private var selectedProduct: Product? {
-        let productID = selectedProductID ?? orderedProducts.first?.id
-        return orderedProducts.first { $0.id == productID }
+    private var selectedOption: SubscriptionOption? {
+        let optionID = selectedProductID ?? orderedOptions.first?.id
+        return orderedOptions.first { $0.id == optionID }
     }
 
     var body: some View {
@@ -62,26 +61,25 @@ struct SubscriptionView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                     VStack(spacing: 20) {
-                        ForEach(orderedProducts, id: \.id) { product in
-                            let isSelected = selectedProduct?.id == product.id
+                        ForEach(orderedOptions) { option in
+                            let isSelected = selectedOption?.id == option.id
 
                             Button {
-                                selectedProductID = product.id
+                                selectedProductID = option.id
                             } label: {
                                 HStack(spacing: 12) {
                                     VStack(alignment: .leading, spacing: 8) {
                                         HStack {
-                                            Text(planName(for: product))
+                                            Text(option.name)
                                                 .font(.headline)
                                             Spacer()
-                                            Text(product.displayPrice)
+                                            Text(option.displayPrice)
                                                 .font(.headline)
                                         }
-                                        Text(product.description)
+                                        Text(option.description)
                                             .font(.subheadline)
                                             .foregroundStyle(.secondary)
-                                        if let offer = product.subscription?.introductoryOffer,
-                                           let offerText = SubscriptionOfferFormatter.freeTrialText(for: offer) {
+                                        if let offerText = option.freeTrialText {
                                             Text(offerText)
                                                 .font(.subheadline.weight(.medium))
                                                 .foregroundStyle(.green)
@@ -102,16 +100,16 @@ struct SubscriptionView: View {
                                 }
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel(planName(for: product))
+                            .accessibilityLabel(option.name)
                             .accessibilityValue(isSelected ? "Selected" : "Not selected")
                         }
                     }
 
-                    if let selectedProduct {
+                    if let selectedOption {
                         Button {
-                            Task { await manager.purchase(selectedProduct) }
+                            Task { await manager.purchase(selectedOption) }
                         } label: {
-                            Text(selectedProduct.subscription?.introductoryOffer == nil ? "Continue" : "Start Free Trial")
+                            Text(selectedOption.freeTrialText == nil ? "Continue" : "Start Free Trial")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
@@ -119,7 +117,7 @@ struct SubscriptionView: View {
                         .disabled(manager.isProcessing)
                     }
 
-                    if manager.products.isEmpty {
+                    if manager.options.isEmpty {
                         Text("Subscription options will be available soon.")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
@@ -185,19 +183,8 @@ struct SubscriptionView: View {
         .background(Color(.systemBackground))
     }
 
-    private func planName(for product: Product) -> String {
-        switch product.id {
-        case SubscriptionConfiguration.yearlyProductID:
-            return "Annual"
-        case SubscriptionConfiguration.monthlyProductID:
-            return "Monthly"
-        default:
-            return product.displayName
-        }
-    }
-
-    private func planSortIndex(for product: Product) -> Int {
-        switch product.id {
+    private func planSortIndex(for productID: String) -> Int {
+        switch productID {
         case SubscriptionConfiguration.yearlyProductID:
             return 0
         case SubscriptionConfiguration.monthlyProductID:

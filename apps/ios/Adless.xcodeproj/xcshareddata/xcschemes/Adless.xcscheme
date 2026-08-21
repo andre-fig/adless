@@ -50,6 +50,10 @@
             ReferencedContainer = "container:Adless.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+         <CommandLineArgument argument = "-useStoreKitProducts" isEnabled = "YES">
+         </CommandLineArgument>
+      </CommandLineArguments>
       <StoreKitConfigurationFileReference
          identifier = "../../Adless.storekit">
       </StoreKitConfigurationFileReference>

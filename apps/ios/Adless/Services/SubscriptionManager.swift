@@ -13,6 +13,7 @@ enum SubscriptionManagerState: Equatable {
 @MainActor
 final class SubscriptionManager: ObservableObject {
     @Published private(set) var products: [Product] = []
+    @Published private(set) var options: [SubscriptionOption] = []
     @Published private(set) var state: SubscriptionManagerState = .checking
     @Published private(set) var isProcessing = false
     @Published private(set) var message: String?
@@ -85,6 +86,19 @@ final class SubscriptionManager: ObservableObject {
         }
     }
 
+    func purchase(_ option: SubscriptionOption) async {
+        guard let product = option.product else {
+#if DEBUG && os(iOS) && targetEnvironment(simulator)
+            message = "Run the Adless scheme from Xcode to test purchases in the simulator."
+#else
+            message = "The purchase could not be completed"
+#endif
+            return
+        }
+
+        await purchase(product)
+    }
+
     func restorePurchases() async {
         isProcessing = true
         message = nil
@@ -104,6 +118,15 @@ final class SubscriptionManager: ObservableObject {
     }
 
     private func loadProducts() async {
+#if DEBUG && os(iOS) && targetEnvironment(simulator)
+        if !ProcessInfo.processInfo.arguments.contains("-useStoreKitProducts") {
+            options = SubscriptionConfiguration.simulatorOptions
+            state = .unavailable
+            os_log("Loaded %{public}d simulator subscription options", log: .default, type: .info, options.count)
+            return
+        }
+#endif
+
         for attempt in 0..<3 {
             do {
                 let loaded = try await Product.products(for: SubscriptionConfiguration.productIDs)
@@ -112,14 +135,27 @@ final class SubscriptionManager: ObservableObject {
                     let rhsIndex = SubscriptionConfiguration.productIDs.firstIndex(of: rhs.id) ?? .max
                     return lhsIndex < rhsIndex
                 }
+                options = products.map(Self.makeOption)
                 os_log("Loaded %{public}d subscription products", log: .default, type: .info, products.count)
                 if !products.isEmpty || attempt == 2 {
+#if DEBUG && os(iOS) && targetEnvironment(simulator)
+                    if options.isEmpty {
+                        options = SubscriptionConfiguration.simulatorOptions
+                        os_log("Loaded %{public}d simulator subscription options", log: .default, type: .info, options.count)
+                    }
+#endif
                     if products.isEmpty { state = .unavailable }
                     return
                 }
             } catch {
                 os_log("Subscription products unavailable (attempt %{public}d): %{public}@", log: .default, type: .error, attempt + 1, error.localizedDescription)
                 if attempt == 2 {
+#if DEBUG && os(iOS) && targetEnvironment(simulator)
+                    if options.isEmpty {
+                        options = SubscriptionConfiguration.simulatorOptions
+                        os_log("Loaded %{public}d simulator subscription options after StoreKit failure", log: .default, type: .info, options.count)
+                    }
+#endif
                     if !hasValidCachedEntitlement() {
                         state = .unavailable
                     }
@@ -129,6 +165,17 @@ final class SubscriptionManager: ObservableObject {
 
             try? await Task.sleep(nanoseconds: 750_000_000)
         }
+    }
+
+    private static func makeOption(from product: Product) -> SubscriptionOption {
+        SubscriptionOption(
+            id: product.id,
+            name: product.id == SubscriptionConfiguration.yearlyProductID ? "Annual" : "Monthly",
+            displayPrice: product.displayPrice,
+            description: product.description,
+            freeTrialText: product.subscription?.introductoryOffer.flatMap(SubscriptionOfferFormatter.freeTrialText),
+            product: product
+        )
     }
 
     private func refreshEntitlement() async {

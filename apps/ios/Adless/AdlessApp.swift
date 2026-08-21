@@ -46,6 +46,15 @@ final class AppViewModel: ObservableObject {
         Task {
             await applicationDidBecomeActive()
         }
+
+#if DEBUG && os(iOS) && targetEnvironment(simulator)
+        if !ProcessInfo.processInfo.arguments.contains("-useStoreKitProducts") {
+            Task { @MainActor [weak self] in
+                await Task.yield()
+                self?.isSubscriptionPresented = true
+            }
+        }
+#endif
     }
 
     var blockedCount: Int {
