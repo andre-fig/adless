@@ -11,6 +11,12 @@ struct ContentView: View {
         return .height(subscriptionSheetHeight)
     }
 
+    private var appBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.059, green: 0.078, blue: 0.102)
+            : Color(.systemBackground)
+    }
+
     private var inactiveButtonForeground: Color {
         colorScheme == .dark
             ? Color(red: 0.67, green: 0.69, blue: 0.74)
@@ -43,7 +49,7 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            Color(.systemBackground).ignoresSafeArea()
+            appBackground.ignoresSafeArea()
             VStack(spacing: 30) {
                 Spacer()
 
