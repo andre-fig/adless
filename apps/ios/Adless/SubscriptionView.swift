@@ -12,6 +12,7 @@ enum AdlessTheme {
 
 struct SubscriptionView: View {
     @ObservedObject var manager: SubscriptionManager
+    @Environment(\.colorScheme) private var colorScheme
     var onContentHeightChange: (CGFloat) -> Void = { _ in }
     @State private var selectedProductID: String?
 
@@ -24,6 +25,12 @@ struct SubscriptionView: View {
 
     private let adlessBlue = Color(red: 0.0, green: 0.32, blue: 0.78)
     private let mutedTextColor = Color(red: 0.40, green: 0.41, blue: 0.44)
+
+    private var planBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.125, green: 0.145, blue: 0.18)
+            : .white
+    }
 
     private var orderedOptions: [SubscriptionOption] {
         manager.options.sorted {
@@ -129,7 +136,7 @@ struct SubscriptionView: View {
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 14)
-                                    .background(isSelected ? AdlessTheme.selectedPlanBackground : Color.white)
+                                    .background(planBackground)
                                     .clipShape(RoundedRectangle(cornerRadius: 16))
                                     .overlay {
                                         RoundedRectangle(cornerRadius: 16)
