@@ -5,6 +5,13 @@ struct SubscriptionView: View {
     @ObservedObject var manager: SubscriptionManager
     @State private var selectedProductID: String?
 
+    private let benefits = [
+        "Cleaner, distraction-free browsing",
+        "Fewer tracking requests",
+        "Works quietly in the background",
+        "No account required"
+    ]
+
     private var orderedProducts: [Product] {
         manager.products.sorted {
             planSortIndex(for: $0) < planSortIndex(for: $1)
@@ -39,10 +46,15 @@ struct SubscriptionView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Cleaner, distraction-free browsing")
-                        Text("Fewer tracking requests")
-                        Text("Works quietly in the background")
-                        Text("No account required")
+                        ForEach(benefits, id: \.self) { benefit in
+                            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                Image(systemName: "checkmark")
+                                    .font(.caption.weight(.bold))
+                                    .foregroundStyle(.green)
+
+                                Text(benefit)
+                            }
+                        }
                     }
                     .font(.subheadline)
                     .foregroundStyle(.primary)
