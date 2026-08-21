@@ -112,7 +112,7 @@ struct ContentView: View {
 
             if viewModel.isSubscriptionPresented {
                 Color.black
-                    .opacity(0.18)
+                    .opacity(0.24)
                     .ignoresSafeArea()
                     .allowsHitTesting(false)
                     .transition(.opacity)
