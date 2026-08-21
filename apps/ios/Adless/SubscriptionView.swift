@@ -56,7 +56,8 @@ struct SubscriptionView: View {
 
             ScrollView {
                 VStack(spacing: 28) {
-                    VStack(spacing: 26) {
+                    VStack(spacing: 24) {
+                        VStack(spacing: 26) {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Browse cleaner with Adless")
                                 .font(.title2.weight(.semibold))
@@ -83,7 +84,7 @@ struct SubscriptionView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
-                    VStack(spacing: 18) {
+                        VStack(spacing: 18) {
                         VStack(spacing: 14) {
                             ForEach(orderedOptions) { option in
                                 let isSelected = selectedOption?.id == option.id
@@ -135,8 +136,8 @@ struct SubscriptionView: View {
                                             Text("Best Value · Save \(annualSavingsPercent)%")
                                                 .font(.caption.weight(.bold))
                                                 .foregroundStyle(.white)
-                                                .padding(.horizontal, 14)
-                                                .padding(.vertical, 8)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 6)
                                                 .background(adlessBlue)
                                                 .clipShape(Capsule())
                                                 .offset(x: -16, y: -18)
@@ -168,6 +169,7 @@ struct SubscriptionView: View {
                                     .foregroundStyle(mutedTextColor)
                                     .frame(maxWidth: .infinity, alignment: .center)
                             }
+                        }
                         }
                     }
 
