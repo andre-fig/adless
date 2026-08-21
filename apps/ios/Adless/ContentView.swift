@@ -214,7 +214,7 @@ private struct BlockingStatsView: View {
         VStack(spacing: 0) {
             VStack(spacing: 2) {
                 Text(blockedTodayValue)
-                    .font(.system(.title2, design: .rounded).weight(.semibold))
+                    .font(.system(size: 42, weight: .semibold, design: .rounded))
                     .monospacedDigit()
 
                 Text("ad & tracker requests blocked today")
