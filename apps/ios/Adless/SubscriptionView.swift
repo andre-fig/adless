@@ -20,6 +20,16 @@ struct SubscriptionView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Browse cleaner with Adless")
+                            .font(.title2.weight(.semibold))
+
+                        Text("Block ads and trackers with one tap.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Cleaner, distraction-free browsing")
                         Text("Fewer tracking requests")
@@ -105,15 +115,18 @@ struct SubscriptionView: View {
                             Button("Restore Purchase") {
                                 Task { await manager.restorePurchases() }
                             }
+                            .font(.subheadline.weight(.semibold))
                             .disabled(manager.isProcessing)
                             .foregroundStyle(Color(uiColor: .systemBlue))
 
                             Link("Terms of Use", destination: AdlessLegalLinks.terms)
+                                .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(Color(uiColor: .systemBlue))
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
 
                         Link("Privacy Policy", destination: AdlessLegalLinks.privacy)
+                            .font(.subheadline.weight(.semibold))
                             .foregroundStyle(Color(uiColor: .systemBlue))
                     }
                 }
@@ -121,24 +134,6 @@ struct SubscriptionView: View {
             }
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    VStack(spacing: 1) {
-                        Text("Browse cleaner with Adless")
-                            .font(.headline.weight(.semibold))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
-
-                        Text("Block ads and trackers with one tap.")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.75)
-                    }
-                    .accessibilityElement(children: .combine)
-                }
-
-            }
             .overlay {
                 if manager.isProcessing {
                     ProgressView()
