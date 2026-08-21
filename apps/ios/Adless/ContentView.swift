@@ -43,14 +43,31 @@ struct ContentView: View {
                         viewModel.isSubscriptionPresented = true
                     }
                 } label: {
-                    Image(systemName: viewModel.hasSubscription
-                          ? (viewModel.isOn ? "shield.fill" : "shield")
-                          : "lock.shield")
+                    Image(systemName: viewModel.isOn ? "shield.fill" : "power")
                         .font(.system(size: 56, weight: .medium))
                         .frame(width: 144, height: 144)
-                        .foregroundStyle(viewModel.isOn ? .white : .primary)
-                        .background(viewModel.isOn ? Color.green : Color.secondary.opacity(0.14))
+                        .foregroundStyle(viewModel.isOn
+                                         ? Color.white
+                                         : Color(red: 0.40, green: 0.43, blue: 0.49))
+                        .background(viewModel.isOn
+                                    ? Color.green
+                                    : Color(red: 0.92, green: 0.93, blue: 0.95))
+                        .overlay {
+                            Circle()
+                                .stroke(
+                                    viewModel.isOn
+                                        ? Color.clear
+                                        : Color(red: 0.84, green: 0.86, blue: 0.89),
+                                    lineWidth: 1
+                                )
+                        }
                         .clipShape(Circle())
+                        .shadow(
+                            color: viewModel.isOn ? Color.clear : Color.black.opacity(0.14),
+                            radius: 10,
+                            x: 0,
+                            y: 6
+                        )
                 }
                 .accessibilityLabel(viewModel.hasSubscription
                                     ? (viewModel.isOn ? "Turn off blocking" : "Turn on blocking")
