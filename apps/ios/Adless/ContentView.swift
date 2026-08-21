@@ -35,7 +35,7 @@ struct ContentView: View {
                     }
                 }
 
-                VStack(spacing: viewModel.hasSubscription ? 24 : 8) {
+                VStack(spacing: viewModel.hasSubscription ? 24 : 11) {
                 Button {
                     if viewModel.hasSubscription {
                         Task { await viewModel.toggle() }
