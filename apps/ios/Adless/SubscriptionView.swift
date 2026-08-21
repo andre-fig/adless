@@ -108,7 +108,8 @@ struct SubscriptionView: View {
                                         }
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding()
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 14)
                                     .background(isSelected ? AdlessTheme.selectedPlanBackground : Color.white)
                                     .clipShape(RoundedRectangle(cornerRadius: 16))
                                     .overlay {
