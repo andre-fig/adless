@@ -10,6 +10,10 @@ struct ContentView: View {
             VStack(spacing: 24) {
                 Spacer()
 
+                Text(viewModel.isOn ? "Protection Active" : "Protection Off")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(.primary)
+
                 Button {
                     if viewModel.hasSubscription {
                         Task { await viewModel.toggle() }
