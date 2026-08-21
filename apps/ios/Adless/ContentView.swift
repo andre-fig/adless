@@ -122,20 +122,14 @@ struct ContentView: View {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
             }
         }
-        .onChange(of: viewModel.isSubscriptionPresented) { _, isPresented in
-            guard isPresented else { return }
-            subscriptionDetent = .medium
-        }
         .sheet(isPresented: $viewModel.isSubscriptionPresented) {
             SubscriptionView(manager: viewModel.subscriptionManager)
                 .interactiveDismissDisabled(false)
-                .presentationDetents([.medium, .large], selection: $subscriptionDetent)
-                .presentationDragIndicator(.visible)
-                .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+                .presentationDetents([.fraction(0.75)])
+                .presentationDragIndicator(.hidden)
+                .presentationBackgroundInteraction(.enabled)
         }
     }
-
-    @State private var subscriptionDetent: PresentationDetent = .medium
 }
 
 private struct BlockingStatRow: View {

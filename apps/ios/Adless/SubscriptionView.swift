@@ -17,7 +17,15 @@ struct SubscriptionView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            Capsule()
+                .fill(Color.secondary.opacity(0.45))
+                .frame(width: 36, height: 5)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
+                .accessibilityHidden(true)
+                .allowsHitTesting(false)
+
             ScrollView {
                 VStack(spacing: 20) {
                     VStack(alignment: .leading, spacing: 4) {
@@ -132,8 +140,6 @@ struct SubscriptionView: View {
                 }
                 .padding()
             }
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
             .overlay {
                 if manager.isProcessing {
                     ProgressView()
