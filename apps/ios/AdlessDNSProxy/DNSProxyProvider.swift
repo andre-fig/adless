@@ -192,12 +192,15 @@ private struct DNSQueryKey: Hashable {
 private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable {
     private enum PacketAction {
         case writeToClient(Data)
-        case forward(Data, DNSQueryKey?)
+        case forward(Data, DNSQueryKey)
     }
 
     private struct PendingQuery {
         let packet: Data
+        let clientEndpoint: Network.NWEndpoint
+        var upstreamIndex: Int
         var fallbackSent = false
+        var sent = false
     }
 
     private let flow: NEAppProxyUDPFlow
@@ -209,6 +212,9 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
 
     private var pending: [DNSQueryKey: PendingQuery] = [:]
     private var timeoutWorkItems: [DNSQueryKey: DispatchWorkItem] = [:]
+    private var upstreamConnections: [NWConnection?] = []
+    private var upstreamReady: [Bool] = []
+    private var reconnectWorkItems: [DispatchWorkItem?] = []
     private var closed = false
 
     init(flow: NEAppProxyUDPFlow, blocklist: Set<String>, upstreams: [String], onClose: @escaping () -> Void) {
@@ -228,6 +234,12 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
                 guard error == nil else {
                     self.finish(error: error)
                     return
+                }
+                self.upstreamConnections = Array(repeating: nil, count: self.upstreams.count)
+                self.upstreamReady = Array(repeating: false, count: self.upstreams.count)
+                self.reconnectWorkItems = Array(repeating: nil, count: self.upstreams.count)
+                for index in self.upstreams.indices {
+                    self.connectUpstream(at: index)
                 }
                 self.readNext()
             }
@@ -262,11 +274,9 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
                 for (packet, endpoint) in datagrams {
                     switch self.process(packet: packet) {
                     case .writeToClient(let response):
-                        self.writeDatagram(packet: response, to: endpoint) { error in
-                            os_log("DNS response write failed: %{public}@", log: .default, type: .error, error.localizedDescription)
-                        }
+                        self.writeToClient(packet: response, endpoint: endpoint)
                     case .forward(let request, let queryKey):
-                        self.send(packet: request, to: self.upstreams[0], queryKey: queryKey)
+                        self.send(packet: request, to: endpoint, queryKey: queryKey)
                     }
                 }
                 self.readNext()
@@ -276,37 +286,121 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
 
     private func process(packet: Data) -> PacketAction {
         guard let message = DNSMessage(data: packet) else {
-            return .forward(packet, nil)
+            return .forward(packet, DNSQueryKey(id: packet.dnsIdentifier, name: ""))
         }
 
         if message.isResponse {
-            if let key = queryKey(for: message) {
-                clearPending(key)
-            }
             return .writeToClient(packet)
         }
 
-        guard let question = message.firstQuestionName() else {
-            return .forward(packet, nil)
-        }
-
-        if isBlocked(domain: question) {
+        if let question = message.firstQuestionName(), isBlocked(domain: question) {
             return .writeToClient(message.blockedResponse())
         }
 
         return .forward(packet, queryKey(for: message))
     }
 
-    private func send(packet: Data, to upstream: Network.NWEndpoint, queryKey: DNSQueryKey?) {
-        if let queryKey {
-            pending[queryKey] = PendingQuery(packet: packet)
-            scheduleFallback(for: queryKey)
+    private func connectUpstream(at index: Int) {
+        guard !closed, upstreams.indices.contains(index) else { return }
+
+        reconnectWorkItems[index]?.cancel()
+        reconnectWorkItems[index] = nil
+        upstreamConnections[index]?.cancel()
+
+        let connection = NWConnection(to: upstreams[index], using: .udp)
+        upstreamConnections[index] = connection
+        upstreamReady[index] = false
+
+        connection.stateUpdateHandler = { [weak self, weak connection] state in
+            guard let self, let connection else { return }
+            self.queue.async {
+                guard !self.closed, self.upstreamConnections[index] === connection else { return }
+                switch state {
+                case .ready:
+                    self.upstreamReady[index] = true
+                    self.sendPendingQueries(to: index)
+                case .failed(let error):
+                    self.handleUpstreamFailure(connection, at: index, error: error)
+                case .cancelled:
+                    self.handleUpstreamFailure(connection, at: index, error: DNSProxyError.upstreamUnavailable)
+                default:
+                    break
+                }
+            }
         }
 
-        writeDatagram(packet: packet, to: upstream) { [weak self] error in
-            guard let self, let queryKey else { return }
-            self.fallback(queryKey: queryKey, reason: error)
+        connection.start(queue: queue)
+        receiveFromUpstream(connection, at: index)
+    }
+
+    private func receiveFromUpstream(_ connection: NWConnection, at index: Int) {
+        guard !closed, upstreamConnections.indices.contains(index), upstreamConnections[index] === connection else { return }
+
+        connection.receiveMessage { [weak self, weak connection] data, _, _, error in
+            guard let self, let connection else { return }
+            self.queue.async {
+                guard !self.closed, self.upstreamConnections[index] === connection else { return }
+                if let data, !data.isEmpty {
+                    self.handleUpstreamResponse(data)
+                }
+
+                if let error {
+                    self.handleUpstreamFailure(connection, at: index, error: error)
+                } else {
+                    self.receiveFromUpstream(connection, at: index)
+                }
+            }
         }
+    }
+
+    private func send(packet: Data, to clientEndpoint: Network.NWEndpoint, queryKey: DNSQueryKey) {
+        pending[queryKey] = PendingQuery(
+            packet: packet,
+            clientEndpoint: clientEndpoint,
+            upstreamIndex: 0
+        )
+        scheduleFallback(for: queryKey)
+        sendPendingQuery(queryKey)
+    }
+
+    private func sendPendingQueries(to upstreamIndex: Int) {
+        for queryKey in pending.keys where pending[queryKey]?.upstreamIndex == upstreamIndex {
+            sendPendingQuery(queryKey)
+        }
+    }
+
+    private func sendPendingQuery(_ queryKey: DNSQueryKey) {
+        guard var query = pending[queryKey], !query.sent else { return }
+        let upstreamIndex = query.upstreamIndex
+        guard upstreamReady.indices.contains(upstreamIndex),
+              upstreamReady[upstreamIndex],
+              let connection = upstreamConnections[upstreamIndex] else {
+            return
+        }
+
+        query.sent = true
+        pending[queryKey] = query
+        connection.send(content: query.packet, completion: .contentProcessed { [weak self, weak connection] error in
+            guard let self, let connection else { return }
+            self.queue.async {
+                guard !self.closed,
+                      self.upstreamConnections.indices.contains(upstreamIndex),
+                      self.upstreamConnections[upstreamIndex] === connection,
+                      let current = self.pending[queryKey],
+                      current.upstreamIndex == upstreamIndex else { return }
+                guard let error else { return }
+                self.handleSendFailure(queryKey: queryKey, upstreamIndex: upstreamIndex, error: error)
+            }
+        })
+    }
+
+    private func handleSendFailure(queryKey: DNSQueryKey, upstreamIndex: Int, error: Error) {
+        guard upstreamIndex == 0 else {
+            expire(queryKey)
+            os_log("DNS secondary upstream send failed: %{public}@", log: .default, type: .error, error.localizedDescription)
+            return
+        }
+        fallback(queryKey: queryKey, reason: error)
     }
 
     private func scheduleFallback(for queryKey: DNSQueryKey) {
@@ -328,6 +422,8 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
         }
 
         query.fallbackSent = true
+        query.upstreamIndex = 1
+        query.sent = false
         pending[queryKey] = query
         timeoutWorkItems.removeValue(forKey: queryKey)?.cancel()
         os_log("DNS primary upstream timed out; trying secondary", log: .default, type: .info)
@@ -337,15 +433,60 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
         }
         timeoutWorkItems[queryKey] = expiry
         queue.asyncAfter(deadline: .now() + timeout, execute: expiry)
-
-        writeDatagram(packet: query.packet, to: upstreams[1]) { [weak self] error in
-            guard let self else { return }
-            self.expire(queryKey)
-            os_log("DNS secondary upstream failed: %{public}@", log: .default, type: .error, error.localizedDescription)
-        }
+        sendPendingQuery(queryKey)
     }
 
-    private func writeDatagram(packet: Data, to endpoint: Network.NWEndpoint, onError: @escaping (Error) -> Void) {
+    private func handleUpstreamFailure(_ connection: NWConnection, at index: Int, error: Error) {
+        guard upstreamConnections.indices.contains(index), upstreamConnections[index] === connection else { return }
+        upstreamConnections[index] = nil
+        upstreamReady[index] = false
+        connection.cancel()
+
+        let affectedQueries = pending.compactMap { key, query in
+            query.upstreamIndex == index ? key : nil
+        }
+        for queryKey in affectedQueries {
+            if index == 0 {
+                fallback(queryKey: queryKey, reason: error)
+            } else {
+                expire(queryKey)
+            }
+        }
+
+        scheduleReconnect(for: index)
+    }
+
+    private func scheduleReconnect(for index: Int) {
+        guard !closed, reconnectWorkItems.indices.contains(index) else { return }
+        reconnectWorkItems[index]?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.connectUpstream(at: index)
+        }
+        reconnectWorkItems[index] = workItem
+        queue.asyncAfter(deadline: .now() + timeout, execute: workItem)
+    }
+
+    private func handleUpstreamResponse(_ packet: Data) {
+        guard let queryKey = pendingKey(for: packet),
+              let query = pending.removeValue(forKey: queryKey) else { return }
+        timeoutWorkItems.removeValue(forKey: queryKey)?.cancel()
+        writeToClient(packet: packet, endpoint: query.clientEndpoint)
+    }
+
+    private func pendingKey(for packet: Data) -> DNSQueryKey? {
+        if let message = DNSMessage(data: packet) {
+            let key = queryKey(for: message)
+            if pending[key] != nil { return key }
+        }
+
+        let identifier = packet.dnsIdentifier
+        return pending.keys.first { $0.id == identifier }
+    }
+
+    private func writeToClient(packet: Data, endpoint: Network.NWEndpoint) {
+        // The proxy flow writes responses back to the app. Upstream DNS traffic
+        // is sent through NWConnection, because this endpoint is the response
+        // source endpoint for the proxied UDP conversation.
         let flow = flow
         Task { [weak self] in
             do {
@@ -354,18 +495,13 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
                 guard let self else { return }
                 self.queue.async {
                     guard !self.closed else { return }
-                    onError(error)
+                    os_log("DNS response write failed: %{public}@", log: .default, type: .error, error.localizedDescription)
                 }
             }
         }
     }
 
     private func expire(_ queryKey: DNSQueryKey) {
-        pending.removeValue(forKey: queryKey)
-        timeoutWorkItems.removeValue(forKey: queryKey)?.cancel()
-    }
-
-    private func clearPending(_ queryKey: DNSQueryKey) {
         pending.removeValue(forKey: queryKey)
         timeoutWorkItems.removeValue(forKey: queryKey)?.cancel()
     }
@@ -381,10 +517,10 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
         return false
     }
 
-    private func queryKey(for message: DNSMessage) -> DNSQueryKey? {
+    private func queryKey(for message: DNSMessage) -> DNSQueryKey {
         guard let name = message.firstQuestionName(),
               let normalized = DNSProxyProvider.normalize(name) else {
-            return nil
+            return DNSQueryKey(id: message.header.id, name: "")
         }
         return DNSQueryKey(id: message.header.id, name: normalized)
     }
@@ -394,6 +530,10 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
         closed = true
         timeoutWorkItems.values.forEach { $0.cancel() }
         timeoutWorkItems.removeAll()
+        reconnectWorkItems.forEach { $0?.cancel() }
+        reconnectWorkItems.removeAll()
+        upstreamConnections.forEach { $0?.cancel() }
+        upstreamConnections.removeAll()
         pending.removeAll()
         if let error {
             os_log("DNS UDP flow closed: %{public}@", log: .default, type: .error, error.localizedDescription)
@@ -703,5 +843,12 @@ private extension DNSMessage {
             rdata: Data([0, 0, 0, 0])
         )]
         return response.encode()
+    }
+}
+
+private extension Data {
+    var dnsIdentifier: UInt16 {
+        guard count >= 2 else { return 0 }
+        return (UInt16(self[startIndex]) << 8) | UInt16(self[index(startIndex, offsetBy: 1)])
     }
 }
