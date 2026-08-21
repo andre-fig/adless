@@ -47,7 +47,7 @@ Subscription group: `Adless Pro`
 | Monthly | `com.orbeworks.adless.pro.monthly` | R$4.90 | 7-day free trial for eligible new subscribers |
 | Annual | `com.orbeworks.adless.pro.yearly` | R$29.90 | 7-day free trial for eligible new subscribers |
 
-The plans are English-only, have review notes, availability in Brazil, and the introductory offers configured. Their upfront prices are set for Brazil, and the existing subscription review screenshots are complete. The subscription group version is now included in the review submission as a `subscriptionGroupVersion` item.
+The plans are English-only, have review notes, availability in Brazil, and the introductory offers configured. Their upfront prices are set in Brazil and equalized across all 175 Apple territories so the products satisfy first-submission pricing validation. The existing subscription review screenshots are complete. The subscription group version and both subscription versions are included in the review submission.
 
 ## Build and signing
 
@@ -101,16 +101,16 @@ Suggested review notes:
 - [x] Set the app price schedule to free
 - [x] Set build export-compliance value to non-exempt encryption `false`
 - [x] Add production app review contact details and notes
-- [ ] Complete App Privacy questionnaire in App Store Connect
-- [x] Add the subscription group/products to the review submission
+- [x] Complete and publish the App Privacy questionnaire in App Store Connect
+- [x] Add the app version, subscription group, monthly product, and annual product to the review submission
 - [ ] Confirm Paid Apps Agreement, banking, and tax information
-- [ ] Submit the app version for review
+- [x] Submit the app version for review
 
-The current App Store Connect API specification does not expose the App Privacy questionnaire. It must be completed in the App Store Connect web interface. Based on the checked-in binary, the proposed answer is: Adless does not collect data; it has no account, analytics SDK, advertising SDK, tracking, user-generated content, or browsing-history collection. The app makes HTTPS requests to the static GitHub Pages blocklist only to retrieve a manifest/list, and does not associate those requests with an identity. Reconfirm this answer against Apple’s current questionnaire before saving it.
+The current App Store Connect API specification does not expose the App Privacy questionnaire. It was completed and published in the App Store Connect web interface. Based on the checked-in binary, the answer is: Adless does not collect data; it has no account, analytics SDK, advertising SDK, tracking, user-generated content, or browsing-history collection. The app makes HTTPS requests to the static GitHub Pages blocklist only to retrieve a manifest/list, and does not associate those requests with an identity.
 
 Official instructions: [Manage app privacy](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/).
 
-The review submission remains `READY_FOR_REVIEW`; App Store Connect has accepted the subscription group version item, but has not yet accepted the app version item because the App Privacy state is still incomplete. Individual subscription-version items still report pricing-state errors, so the group version item is the correct item currently attached. No submission was sent to Apple review.
+The App Store Connect review submission was accepted on 2026-08-21 and is now `WAITING_FOR_REVIEW`. The app version, subscription group version, monthly subscription version, and annual subscription version all report `READY_FOR_REVIEW`.
 
 ## App Store Connect API state
 
@@ -118,8 +118,12 @@ The review submission remains `READY_FOR_REVIEW`; App Store Connect has accepted
 - Version ID: `e8e4cb87-8885-4c99-9a8b-e3c3474813b8`
 - Build ID: `10c2d829-2050-4925-83c4-9520beb8a6d8`
 - Review submission ID: `6ef82753-09bf-438b-beb1-63b41df7911f`
-- Review submission state: `READY_FOR_REVIEW`
+- Review submission state: `WAITING_FOR_REVIEW`
+- Submitted date: `2026-08-21T04:10:50.711Z`
 - Subscription group version `7ad49d18-17f3-4056-99bc-47c26ddd8120`: review item `READY_FOR_REVIEW`
+- Monthly subscription version `db4440ac-5372-4290-8f84-aed6644c5336`: review item `READY_FOR_REVIEW`
+- Annual subscription version `09694ee5-73ff-4f6f-9fc6-da1a7de00f6a`: review item `READY_FOR_REVIEW`
+- App Store version `e8e4cb87-8885-4c99-9a8b-e3c3474813b8`: review item `READY_FOR_REVIEW`
 - App encryption declaration: created and linked to build `2`
 - App Store screenshots: iPhone and iPad reservations both `COMPLETE`
 
