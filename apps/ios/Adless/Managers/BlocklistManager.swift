@@ -16,6 +16,10 @@ final class BlocklistManager {
     }
 
     func ensureActiveBlocklist() throws -> Int {
+        // The active list is loaded during initialization and refreshed after a
+        // validated remote update. Re-parsing the full list on every tap blocks
+        // the main actor and makes activation feel frozen.
+        guard blocklist.isEmpty else { return blocklist.count }
         blocklist = try storage.ensureEmbeddedSeed()
         return blocklist.count
     }

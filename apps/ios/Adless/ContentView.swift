@@ -209,6 +209,7 @@ struct ContentView: View {
                     .transition(.opacity)
             }
         }
+        .animation(.easeInOut(duration: 0.25), value: viewModel.isOn)
         .animation(.easeInOut(duration: 0.2), value: viewModel.isSubscriptionPresented)
         .contentShape(Rectangle())
         .onTapGesture {

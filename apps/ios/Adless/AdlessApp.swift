@@ -88,11 +88,19 @@ final class AppViewModel: ObservableObject {
             return
         }
 
+        // Reflect the user's action immediately. The Network Extension can
+        // take a moment to save and start its configuration, so waiting for it
+        // before changing the published state makes the button appear stuck.
+        isOn = true
+        statusText = "Connecting"
+        await Task.yield()
+
         do {
             _ = try blocklistManager.ensureActiveBlocklist()
             try await vpnManager.start()
             await refreshStatus()
         } catch {
+            isOn = false
             statusText = "Could not change blocking status"
         }
     }
