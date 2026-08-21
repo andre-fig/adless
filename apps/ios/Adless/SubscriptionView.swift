@@ -134,7 +134,7 @@ struct SubscriptionView: View {
                                         if option.id == SubscriptionConfiguration.yearlyProductID,
                                            let annualSavingsPercent {
                                             Text("Best Value · Save \(annualSavingsPercent)%")
-                                                .font(.caption.weight(.bold))
+                                                .font(.caption2.weight(.bold))
                                                 .foregroundStyle(.white)
                                                 .padding(.horizontal, 12)
                                                 .padding(.vertical, 6)
