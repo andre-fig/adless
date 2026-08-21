@@ -24,7 +24,11 @@ struct SubscriptionView: View {
     ]
 
     private let adlessBlue = Color(red: 0.0, green: 0.32, blue: 0.78)
-    private let mutedTextColor = Color(red: 0.40, green: 0.41, blue: 0.44)
+    private var mutedTextColor: Color {
+        colorScheme == .dark
+            ? Color(red: 0.58, green: 0.60, blue: 0.66)
+            : Color(red: 0.40, green: 0.41, blue: 0.44)
+    }
 
     private var planBackground: Color {
         colorScheme == .dark
