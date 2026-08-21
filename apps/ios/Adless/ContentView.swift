@@ -103,7 +103,16 @@ struct ContentView: View {
                 Spacer()
             }
             .padding()
+
+            if viewModel.isSubscriptionPresented {
+                Color.black
+                    .opacity(0.18)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+            }
         }
+        .animation(.easeInOut(duration: 0.2), value: viewModel.isSubscriptionPresented)
         .contentShape(Rectangle())
         .onTapGesture {
             guard viewModel.isSubscriptionPresented else { return }
