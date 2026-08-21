@@ -77,34 +77,34 @@ struct SubscriptionView: View {
                                 Button {
                                     selectedProductID = option.id
                                 } label: {
-                                    HStack(alignment: .top, spacing: 12) {
-                                        VStack(alignment: .leading, spacing: 0) {
-                                            HStack {
-                                                Text(option.name)
-                                                    .font(.subheadline.weight(.semibold))
-                                                Spacer()
+                                    VStack(alignment: .leading, spacing: 0) {
+                                        HStack(alignment: .center, spacing: 12) {
+                                            Text(option.name)
+                                                .font(.subheadline.weight(.semibold))
+                                            Spacer()
+
+                                            HStack(alignment: .center, spacing: 12) {
                                                 Text(option.displayPrice)
                                                     .font(.subheadline.weight(.semibold))
                                                     .lineLimit(1)
                                                     .minimumScaleFactor(0.85)
-                                                    .padding(.top, 7)
+                                                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                                    .font(.body)
+                                                    .foregroundStyle(isSelected ? adlessBlue : Color.secondary)
                                             }
-                                            Text(option.description)
-                                                .font(.footnote)
-                                                .foregroundStyle(mutedTextColor)
-                                                .padding(.top, 4)
-                                            if !option.renewalText.isEmpty {
-                                                Text(option.renewalText)
-                                                    .font(.caption)
-                                                    .foregroundStyle(mutedTextColor)
-                                                    .padding(.top, 9)
-                                            }
+                                            .padding(.top, 7)
                                         }
 
-                                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                            .font(.body)
-                                            .foregroundStyle(isSelected ? adlessBlue : Color.secondary)
-                                            .padding(.top, 2)
+                                        Text(option.description)
+                                            .font(.footnote)
+                                            .foregroundStyle(mutedTextColor)
+                                            .padding(.top, 4)
+                                        if !option.renewalText.isEmpty {
+                                            Text(option.renewalText)
+                                                .font(.caption)
+                                                .foregroundStyle(mutedTextColor)
+                                                .padding(.top, 9)
+                                        }
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding()
