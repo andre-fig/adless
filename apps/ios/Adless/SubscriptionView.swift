@@ -34,8 +34,8 @@ struct SubscriptionView: View {
                 .allowsHitTesting(false)
 
             ScrollView {
-                VStack(spacing: 20) {
-                    VStack(alignment: .leading, spacing: 4) {
+                VStack(spacing: 28) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("Browse cleaner with Adless")
                             .font(.title2.weight(.semibold))
 
@@ -45,7 +45,7 @@ struct SubscriptionView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 10) {
                         ForEach(benefits, id: \.self) { benefit in
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
                                 Image(systemName: "checkmark")
@@ -60,7 +60,7 @@ struct SubscriptionView: View {
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    VStack(spacing: 12) {
+                    VStack(spacing: 16) {
                         ForEach(orderedProducts, id: \.id) { product in
                             let isSelected = selectedProduct?.id == product.id
 
@@ -68,7 +68,7 @@ struct SubscriptionView: View {
                                 selectedProductID = product.id
                             } label: {
                                 HStack(spacing: 12) {
-                                    VStack(alignment: .leading, spacing: 6) {
+                                    VStack(alignment: .leading, spacing: 8) {
                                         HStack {
                                             Text(planName(for: product))
                                                 .font(.headline)
@@ -130,8 +130,8 @@ struct SubscriptionView: View {
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
 
-                    VStack(spacing: 10) {
-                        HStack(spacing: 18) {
+                    VStack(spacing: 14) {
+                        HStack(spacing: 20) {
                             Button("Restore Purchase") {
                                 Task { await manager.restorePurchases() }
                             }
