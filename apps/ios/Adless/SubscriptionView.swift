@@ -50,7 +50,7 @@ struct SubscriptionView: View {
                             .multilineTextAlignment(.center)
                     }
 
-                    Text("Your subscription renews automatically until canceled. Payment is processed by the App Store.")
+                    Text("Payment will be charged after the 7-day free trial. The subscription renews automatically unless canceled at least 24 hours before the end of the current period.")
                         .font(.footnote)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
