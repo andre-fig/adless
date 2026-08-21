@@ -13,6 +13,7 @@ struct SubscriptionView: View {
     ]
 
     private let adlessBlue = Color(red: 0.0, green: 0.32, blue: 0.78)
+    private let mutedTextColor = Color(red: 0.40, green: 0.41, blue: 0.44)
 
     private var orderedOptions: [SubscriptionOption] {
         manager.options.sorted {
@@ -43,7 +44,7 @@ struct SubscriptionView: View {
 
                         Text("Block ads and trackers with one tap.")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(mutedTextColor)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -62,70 +63,74 @@ struct SubscriptionView: View {
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    VStack(spacing: 20) {
-                        ForEach(orderedOptions) { option in
-                            let isSelected = selectedOption?.id == option.id
+                    VStack(spacing: 14) {
+                        VStack(spacing: 14) {
+                            ForEach(orderedOptions) { option in
+                                let isSelected = selectedOption?.id == option.id
 
-                            Button {
-                                selectedProductID = option.id
-                            } label: {
-                                HStack(spacing: 12) {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        HStack {
-                                            Text(option.name)
-                                                .font(.subheadline.weight(.semibold))
-                                            Spacer()
-                                            Text(option.displayPrice)
-                                                .font(.subheadline.weight(.semibold))
-                                                .lineLimit(1)
-                                                .minimumScaleFactor(0.85)
+                                Button {
+                                    selectedProductID = option.id
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            HStack {
+                                                Text(option.name)
+                                                    .font(.subheadline.weight(.semibold))
+                                                Spacer()
+                                                Text(option.displayPrice)
+                                                    .font(.subheadline.weight(.semibold))
+                                                    .lineLimit(1)
+                                                    .minimumScaleFactor(0.85)
+                                            }
+                                            Text(option.description)
+                                                .font(.caption)
+                                                .foregroundStyle(mutedTextColor)
+                                            if !option.renewalText.isEmpty {
+                                                Text(option.renewalText)
+                                                    .font(.caption.weight(.medium))
+                                                    .foregroundStyle(.green)
+                                            }
                                         }
-                                        Text(option.description)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                        if !option.renewalText.isEmpty {
-                                            Text(option.renewalText)
-                                                .font(.caption.weight(.medium))
-                                                .foregroundStyle(.green)
-                                        }
+
+                                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                            .font(.body)
+                                            .foregroundStyle(isSelected ? adlessBlue : Color.secondary)
                                     }
-
-                                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                        .font(.body)
-                                        .foregroundStyle(isSelected ? adlessBlue : Color.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding()
+                                    .background(isSelected ? adlessBlue.opacity(0.12) : Color.secondary.opacity(0.12))
+                                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(isSelected ? adlessBlue : .clear, lineWidth: 2)
+                                    }
                                 }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
-                                .background(isSelected ? adlessBlue.opacity(0.12) : Color.secondary.opacity(0.12))
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(isSelected ? adlessBlue : .clear, lineWidth: 2)
-                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(option.name)
+                                .accessibilityValue(isSelected ? "Selected" : "Not selected")
                             }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(option.name)
-                            .accessibilityValue(isSelected ? "Selected" : "Not selected")
                         }
-                    }
 
-                    if let selectedOption {
-                        Button {
-                            Task { await manager.purchase(selectedOption) }
-                        } label: {
-                            Text("Start 7-Day Free Trial")
-                                .fontWeight(.bold)
-                                .frame(maxWidth: .infinity)
+                        if let selectedOption {
+                            VStack(spacing: 4) {
+                                Button {
+                                    Task { await manager.purchase(selectedOption) }
+                                } label: {
+                                    Text("Start 7-Day Free Trial")
+                                        .fontWeight(.bold)
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .controlSize(.large)
+                                .tint(adlessBlue)
+                                .disabled(manager.isProcessing)
+
+                                Text("Cancel anytime.")
+                                    .font(.caption)
+                                    .foregroundStyle(mutedTextColor)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                            }
                         }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
-                        .tint(adlessBlue)
-                        .disabled(manager.isProcessing)
-
-                        Text("Cancel anytime.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .center)
                     }
 
                     if manager.options.isEmpty {
@@ -139,7 +144,7 @@ struct SubscriptionView: View {
                     Text("Payment will be charged after the 7-day free trial. The subscription renews automatically unless canceled at least 24 hours before the end of the current period.")
                         .font(.caption)
                         .multilineTextAlignment(.center)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(mutedTextColor)
 
                     VStack(spacing: 22) {
                         HStack(spacing: 22) {
