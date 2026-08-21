@@ -152,7 +152,7 @@ struct ContentView: View {
                 .interactiveDismissDisabled(false)
                 .presentationDetents([subscriptionDetent])
                 .presentationDragIndicator(.hidden)
-                .presentationBackground(Color(.systemBackground))
+                .presentationBackground(AdlessTheme.subscriptionDrawerBackground)
                 .presentationBackgroundInteraction(.enabled)
         }
     }

@@ -1,5 +1,9 @@
 import SwiftUI
 
+enum AdlessTheme {
+    static let subscriptionDrawerBackground = Color(red: 0.92, green: 0.93, blue: 0.95)
+}
+
 struct SubscriptionView: View {
     @ObservedObject var manager: SubscriptionManager
     var onContentHeightChange: (CGFloat) -> Void = { _ in }
@@ -104,7 +108,7 @@ struct SubscriptionView: View {
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding()
-                                    .background(isSelected ? adlessBlue.opacity(0.12) : Color.secondary.opacity(0.12))
+                                    .background(isSelected ? adlessBlue.opacity(0.12) : Color.white)
                                     .clipShape(RoundedRectangle(cornerRadius: 16))
                                     .overlay {
                                         RoundedRectangle(cornerRadius: 16)
@@ -203,7 +207,7 @@ struct SubscriptionView: View {
                 Text(manager.message ?? "")
             }
         }
-        .background(Color(.systemBackground))
+        .background(AdlessTheme.subscriptionDrawerBackground)
     }
 
     private func planSortIndex(for productID: String) -> Int {
