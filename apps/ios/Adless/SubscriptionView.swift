@@ -31,6 +31,19 @@ struct SubscriptionView: View {
         return orderedOptions.first { $0.id == optionID }
     }
 
+    private var annualSavingsPercent: Int? {
+        guard let annual = orderedOptions.first(where: { $0.id == SubscriptionConfiguration.yearlyProductID }),
+              let monthly = orderedOptions.first(where: { $0.id == SubscriptionConfiguration.monthlyProductID }) else {
+            return nil
+        }
+
+        let monthlyAnnualPrice = monthly.price * Decimal(12)
+        guard monthlyAnnualPrice > 0, annual.price < monthlyAnnualPrice else { return nil }
+
+        let savings = (monthlyAnnualPrice - annual.price) / monthlyAnnualPrice * Decimal(100)
+        return max(0, Int(NSDecimalNumber(decimal: savings).doubleValue.rounded()))
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             Capsule()
@@ -115,6 +128,19 @@ struct SubscriptionView: View {
                                     .overlay {
                                         RoundedRectangle(cornerRadius: 16)
                                             .stroke(isSelected ? adlessBlue : .clear, lineWidth: 2)
+                                    }
+                                    .overlay(alignment: .topTrailing) {
+                                        if option.id == SubscriptionConfiguration.yearlyProductID,
+                                           let annualSavingsPercent {
+                                            Text("Best Value · Save \(annualSavingsPercent)%")
+                                                .font(.caption.weight(.bold))
+                                                .foregroundStyle(.white)
+                                                .padding(.horizontal, 14)
+                                                .padding(.vertical, 8)
+                                                .background(adlessBlue)
+                                                .clipShape(Capsule())
+                                                .offset(x: -16, y: -18)
+                                        }
                                     }
                                 }
                                 .buttonStyle(.plain)

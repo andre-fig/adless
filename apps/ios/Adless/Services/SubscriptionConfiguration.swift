@@ -22,6 +22,7 @@ enum SubscriptionConfiguration {
         SubscriptionOption(
             id: yearlyProductID,
             name: "Annual",
+            price: Decimal(string: "29.90")!,
             displayPrice: "R$ 29.90 / year",
             description: "7 days free · R$ 2.49/mo",
             renewalText: "Then R$ 29.90 per year.",
@@ -30,6 +31,7 @@ enum SubscriptionConfiguration {
         SubscriptionOption(
             id: monthlyProductID,
             name: "Monthly",
+            price: Decimal(string: "4.90")!,
             displayPrice: "R$ 4.90 / month",
             description: "7 days free",
             renewalText: "Then R$ 4.90 per month.",
@@ -42,6 +44,7 @@ enum SubscriptionConfiguration {
 struct SubscriptionOption: Identifiable {
     let id: String
     let name: String
+    let price: Decimal
     let displayPrice: String
     let description: String
     let renewalText: String

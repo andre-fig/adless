@@ -183,6 +183,7 @@ final class SubscriptionManager: ObservableObject {
         return SubscriptionOption(
             id: product.id,
             name: isAnnual ? "Annual" : "Monthly",
+            price: product.price,
             displayPrice: "\(product.displayPrice) / \(isAnnual ? "year" : "month")",
             description: description,
             renewalText: renewalText,
