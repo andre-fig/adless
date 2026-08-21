@@ -80,7 +80,7 @@ struct ContentView: View {
                         viewModel.isSubscriptionPresented = true
                     }
                 } label: {
-                    Image(systemName: viewModel.isOn ? "shield.fill" : "power")
+                    Image(systemName: "power")
                         .font(.system(size: 56, weight: .medium))
                         .frame(width: 144, height: 144)
                         .foregroundStyle(viewModel.isOn
