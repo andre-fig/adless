@@ -54,9 +54,24 @@ struct ContentView: View {
                                    ? "Turns DNS blocking on or off"
                                    : "Opens subscription options")
 
-                Text(viewModel.statusText)
-                    .font(.headline)
-                    .foregroundStyle(viewModel.isOn ? .green : Color.primary.opacity(0.58))
+                if viewModel.hasSubscription {
+                    Text(viewModel.statusText)
+                        .font(.headline)
+                        .foregroundStyle(viewModel.isOn ? .green : Color.primary.opacity(0.58))
+                } else {
+                    HStack(spacing: 8) {
+                        Image(systemName: "sparkles")
+                            .font(.body.weight(.medium))
+
+                        Text("Premium access required")
+                    }
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Color(red: 0.0, green: 0.32, blue: 0.78))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(AdlessTheme.selectedPlanBackground)
+                    .clipShape(Capsule())
+                }
 
                 if viewModel.hasSubscription {
                     VStack(spacing: 0) {
