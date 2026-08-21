@@ -186,8 +186,11 @@ struct ContentView: View {
             .offset(y: -52)
 
             if viewModel.isSubscriptionPresented {
-                Color.black
-                    .opacity(0.24)
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                    .overlay {
+                        Color.black.opacity(0.24)
+                    }
                     .ignoresSafeArea()
                     .allowsHitTesting(false)
                     .transition(.opacity)
