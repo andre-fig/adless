@@ -29,6 +29,18 @@ struct ContentView: View {
             : Color(red: 0.84, green: 0.86, blue: 0.89)
     }
 
+    private var activeButtonBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.35, green: 0.60, blue: 0.91)
+            : .green
+    }
+
+    private var activeButtonBorder: Color {
+        colorScheme == .dark
+            ? Color(red: 0.58, green: 0.76, blue: 0.98)
+            : .clear
+    }
+
     var body: some View {
         ZStack {
             Color(.systemBackground).ignoresSafeArea()
@@ -69,13 +81,13 @@ struct ContentView: View {
                                          ? Color.white
                                          : inactiveButtonForeground)
                         .background(viewModel.isOn
-                                    ? Color.green
+                                    ? activeButtonBackground
                                     : inactiveButtonBackground)
                         .overlay {
                             Circle()
                                 .stroke(
                                     viewModel.isOn
-                                        ? Color.clear
+                                        ? activeButtonBorder
                                         : inactiveButtonBorder,
                                     lineWidth: 1
                                 )
@@ -83,11 +95,11 @@ struct ContentView: View {
                         .clipShape(Circle())
                         .shadow(
                             color: viewModel.isOn
-                                ? Color.clear
+                                ? Color.black.opacity(colorScheme == .dark ? 0.24 : 0)
                                 : Color.black.opacity(colorScheme == .dark ? 0.30 : 0.14),
-                            radius: 10,
+                            radius: viewModel.isOn && colorScheme == .dark ? 12 : 10,
                             x: 0,
-                            y: 6
+                            y: viewModel.isOn && colorScheme == .dark ? 7 : 6
                         )
                 }
                 .accessibilityLabel(viewModel.hasSubscription
