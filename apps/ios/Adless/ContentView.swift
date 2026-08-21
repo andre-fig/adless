@@ -60,16 +60,16 @@ struct ContentView: View {
                         .font(.headline)
                         .foregroundStyle(viewModel.isOn ? .green : Color.primary.opacity(0.58))
                 } else {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         Image(systemName: "sparkles")
-                            .font(.body.weight(.medium))
+                            .font(.caption.weight(.medium))
 
                         Text("Premium access required")
                     }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color(red: 0.06, green: 0.38, blue: 0.82))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color(red: 0.12, green: 0.43, blue: 0.88))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
                     .background(AdlessTheme.selectedPlanBackground)
                     .clipShape(Capsule())
                 }
