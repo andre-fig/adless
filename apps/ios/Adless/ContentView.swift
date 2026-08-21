@@ -202,11 +202,13 @@ struct ContentView: View {
             .offset(y: -52)
 
             if viewModel.isSubscriptionPresented {
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                    .overlay {
-                        Color.black.opacity(0.24)
-                    }
+                ZStack {
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .opacity(0.55)
+
+                    Color.black.opacity(0.24)
+                }
                     .ignoresSafeArea()
                     .allowsHitTesting(false)
                     .transition(.opacity)
