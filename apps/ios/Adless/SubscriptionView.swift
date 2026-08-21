@@ -11,13 +11,6 @@ struct SubscriptionView: View {
                 VStack(spacing: 20) {
                     AdlessLogoView(size: 96)
 
-                    Text("Protect your browsing")
-                        .font(.title2.weight(.semibold))
-
-                    Text("Adless blocks ads and trackers directly on your device.")
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.secondary)
-
                     VStack(spacing: 12) {
                         ForEach(manager.products, id: \.id) { product in
                             Button {
@@ -57,10 +50,20 @@ struct SubscriptionView: View {
                             .multilineTextAlignment(.center)
                     }
 
-                    Button("Restore Purchases") {
-                        Task { await manager.restorePurchases() }
+                    VStack(spacing: 10) {
+                        HStack {
+                            Button("Restore Purchase") {
+                                Task { await manager.restorePurchases() }
+                            }
+                            .disabled(manager.isProcessing)
+
+                            Spacer()
+
+                            Link("Terms of Use", destination: AdlessLegalLinks.terms)
+                        }
+
+                        Link("Privacy Policy", destination: AdlessLegalLinks.privacy)
                     }
-                    .disabled(manager.isProcessing)
 
                     Text("Your subscription renews automatically until canceled. Payment is processed by the App Store.")
                         .font(.footnote)
@@ -69,8 +72,25 @@ struct SubscriptionView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Subscription")
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    VStack(spacing: 1) {
+                        Text("Browse cleaner with Adless")
+                            .font(.headline.weight(.semibold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+
+                        Text("Block ads and trackers with one tap.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
                 }
@@ -93,4 +113,9 @@ struct SubscriptionView: View {
             }
         }
     }
+}
+
+private enum AdlessLegalLinks {
+    static let terms = URL(string: "https://andre-fig.github.io/adless/terms")!
+    static let privacy = URL(string: "https://andre-fig.github.io/adless/privacy")!
 }
