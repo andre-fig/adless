@@ -101,18 +101,20 @@ struct SubscriptionView: View {
                         .foregroundStyle(.secondary)
 
                     VStack(spacing: 10) {
-                        HStack {
+                        HStack(spacing: 18) {
                             Button("Restore Purchase") {
                                 Task { await manager.restorePurchases() }
                             }
                             .disabled(manager.isProcessing)
-
-                            Spacer()
+                            .foregroundStyle(Color(uiColor: .systemBlue))
 
                             Link("Terms of Use", destination: AdlessLegalLinks.terms)
+                                .foregroundStyle(Color(uiColor: .systemBlue))
                         }
+                        .frame(maxWidth: .infinity, alignment: .center)
 
                         Link("Privacy Policy", destination: AdlessLegalLinks.privacy)
+                            .foregroundStyle(Color(uiColor: .systemBlue))
                     }
                 }
                 .padding()
