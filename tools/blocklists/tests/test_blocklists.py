@@ -8,6 +8,36 @@ from tools.blocklists import generate_blocklist as pipeline
 
 
 class BlocklistParsingTests(unittest.TestCase):
+    def test_production_seed_smoke_matrix_keeps_core_sites_reachable_and_ad_domains_blocked(self):
+        entries = pipeline.parse_domains(
+            pipeline.DEFAULT_SEED.read_text(encoding="utf-8"),
+            source_id="embedded-seed",
+        )
+
+        expected_allowed = (
+            "www.google.com",
+            "web.whatsapp.com",
+            "www.instagram.com",
+            "www.facebook.com",
+            "www.youtube.com",
+        )
+        expected_blocked = (
+            "googlesyndication.com",
+            "adsrvr.org",
+            "criteo.com",
+            "pubmatic.com",
+            "adnxs1.com",
+        )
+
+        def matches(domain: str) -> bool:
+            labels = domain.rstrip(".").lower().split(".")
+            return any(".".join(labels[index:]) in entries for index in range(len(labels)))
+
+        for domain in expected_allowed:
+            self.assertFalse(matches(domain), f"Core site unexpectedly blocked: {domain}")
+        for domain in expected_blocked:
+            self.assertTrue(matches(domain), f"Known advertising domain unexpectedly allowed: {domain}")
+
     def test_parses_hosts_adblock_and_plain_domains(self):
         content = """
         ! header

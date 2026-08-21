@@ -1,0 +1,44 @@
+name: Adless iOS tests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/ios/**"
+      - "tools/blocklists/**"
+      - ".github/workflows/ios-tests.yml"
+  pull_request:
+    paths:
+      - "apps/ios/**"
+      - "tools/blocklists/**"
+      - ".github/workflows/ios-tests.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: adless-ios-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Run iOS unit and smoke tests
+        run: |
+          set -euo pipefail
+          simulator_id="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ {gsub(/[[:space:]]/, "", $2); print $2; exit}')"
+          test -n "$simulator_id"
+          xcodebuild \
+            -project apps/ios/Adless.xcodeproj \
+            -scheme AdlessTests \
+            -destination "platform=iOS Simulator,id=$simulator_id" \
+            -derivedDataPath "$RUNNER_TEMP/adless-ios-derived-data" \
+            CODE_SIGNING_ALLOWED=NO \
+            test

@@ -49,6 +49,42 @@ final class BlocklistTests: XCTestCase {
         XCTAssertFalse(BlocklistParser.matches(domain: "bücher.example.", entries: entries))
     }
 
+    func testProductionSeedSmokeMatrixKeepsCoreSitesReachableAndAdDomainsBlocked() throws {
+        let iosDirectory = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let seedURL = iosDirectory.appendingPathComponent("Adless/Resources/SeedBlocklist.txt")
+        let entries = try BlocklistParser.parseCanonical(Data(contentsOf: seedURL))
+
+        let expectedAllowed = [
+            "www.google.com",
+            "web.whatsapp.com",
+            "www.instagram.com",
+            "www.facebook.com",
+            "www.youtube.com"
+        ]
+        let expectedBlocked = [
+            "googlesyndication.com",
+            "adsrvr.org",
+            "criteo.com",
+            "pubmatic.com",
+            "adnxs1.com"
+        ]
+
+        for domain in expectedAllowed {
+            XCTAssertFalse(
+                BlocklistParser.matches(domain: domain, entries: entries),
+                "Core site unexpectedly blocked: \(domain)"
+            )
+        }
+        for domain in expectedBlocked {
+            XCTAssertTrue(
+                BlocklistParser.matches(domain: domain, entries: entries),
+                "Known advertising domain unexpectedly allowed: \(domain)"
+            )
+        }
+    }
+
     func testCanonicalParserRejectsUnsortedAndInvalidContent() {
         XCTAssertThrowsError(try BlocklistParser.parseCanonical(Data("z.example.com\na.example.com\n".utf8)))
         XCTAssertThrowsError(try BlocklistParser.parseCanonical(Data("<html>blocked</html>\n".utf8)))

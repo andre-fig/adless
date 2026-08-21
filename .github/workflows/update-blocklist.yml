@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   update:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     timeout-minutes: 15
     steps:
       - name: Check out repository
@@ -45,6 +45,19 @@ jobs:
           python tools/blocklists/generate_blocklist.py "${args[@]}"
           python tools/blocklists/validate_blocklist.py
           python tools/blocklists/validate_blocklist.py --seed apps/ios/Adless/Resources/SeedBlocklist.txt
+
+      - name: Run app blocklist smoke tests
+        run: |
+          set -euo pipefail
+          simulator_id="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ {gsub(/[[:space:]]/, "", $2); print $2; exit}')"
+          test -n "$simulator_id"
+          xcodebuild \
+            -project apps/ios/Adless.xcodeproj \
+            -scheme AdlessTests \
+            -destination "platform=iOS Simulator,id=$simulator_id" \
+            -derivedDataPath "$RUNNER_TEMP/adless-blocklist-ios-derived-data" \
+            CODE_SIGNING_ALLOWED=NO \
+            test
 
       - name: Reject unexpected changes
         shell: bash
