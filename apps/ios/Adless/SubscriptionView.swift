@@ -81,6 +81,7 @@ struct SubscriptionView: View {
                                                     .font(.subheadline.weight(.semibold))
                                                     .lineLimit(1)
                                                     .minimumScaleFactor(0.85)
+                                                    .padding(.top, 3)
                                             }
                                             Text(option.description)
                                                 .font(.caption)
