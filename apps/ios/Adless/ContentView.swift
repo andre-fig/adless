@@ -32,13 +32,13 @@ struct ContentView: View {
     private var activeButtonBackground: Color {
         colorScheme == .dark
             ? Color(red: 0.35, green: 0.60, blue: 0.91)
-            : .green
+            : Color(red: 0.20, green: 0.45, blue: 0.82)
     }
 
     private var activeButtonBorder: Color {
         colorScheme == .dark
             ? Color(red: 0.58, green: 0.76, blue: 0.98)
-            : .clear
+            : Color(red: 0.52, green: 0.70, blue: 0.94)
     }
 
     var body: some View {
@@ -95,7 +95,7 @@ struct ContentView: View {
                         .clipShape(Circle())
                         .shadow(
                             color: viewModel.isOn
-                                ? Color.black.opacity(colorScheme == .dark ? 0.24 : 0)
+                                ? Color.black.opacity(colorScheme == .dark ? 0.24 : 0.12)
                                 : Color.black.opacity(colorScheme == .dark ? 0.30 : 0.14),
                             radius: viewModel.isOn && colorScheme == .dark ? 12 : 10,
                             x: 0,
