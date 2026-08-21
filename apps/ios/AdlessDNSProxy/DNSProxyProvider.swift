@@ -1,7 +1,9 @@
 import Foundation
 import Network
 import NetworkExtension
-import os.log
+import os
+
+private let dnsLogger = Logger(subsystem: "com.orbeworks.adless", category: "dns-proxy")
 
 final class DNSProxyProvider: NEDNSProxyProvider {
     private let upstreams = ["1.1.1.1", "8.8.8.8"]
@@ -15,16 +17,20 @@ final class DNSProxyProvider: NEDNSProxyProvider {
     private var activeFlows: [ObjectIdentifier: DNSProxyFlowHandling] = [:]
 
     override func startProxy(options: [String: Any]? = nil, completionHandler: @escaping (Error?) -> Void) {
+        dnsLogger.info("DNS proxy start requested")
         guard hasSubscriptionAccess() else {
+            dnsLogger.error("DNS proxy start rejected: subscription inactive")
             completionHandler(DNSProxyError.subscriptionInactive)
             return
         }
 
         loadBlocklist()
+        dnsLogger.info("DNS proxy started with \(self.blocklist.count, privacy: .public) domains")
         completionHandler(nil)
     }
 
     override func stopProxy(with reason: NEProviderStopReason, completionHandler: @escaping () -> Void) {
+        dnsLogger.info("DNS proxy stopping")
         flowLock.lock()
         let flows = Array(activeFlows.values)
         activeFlows.removeAll()
@@ -39,6 +45,7 @@ final class DNSProxyProvider: NEDNSProxyProvider {
 
         let identifier = ObjectIdentifier(flow)
         if let udpFlow = flow as? NEAppProxyUDPFlow {
+            dnsLogger.debug("New UDP DNS flow received")
             let handler = DNSUDPFlowHandler(
                 flow: udpFlow,
                 blocklist: blocklist,
@@ -51,6 +58,7 @@ final class DNSProxyProvider: NEDNSProxyProvider {
         }
 
         if let tcpFlow = flow as? NEAppProxyTCPFlow {
+            dnsLogger.debug("New TCP DNS flow received")
             let handler = DNSTCPFlowHandler(
                 flow: tcpFlow,
                 blocklist: blocklist,
@@ -62,6 +70,7 @@ final class DNSProxyProvider: NEDNSProxyProvider {
             return true
         }
 
+        dnsLogger.debug("Unsupported DNS flow rejected")
         return false
     }
 
@@ -232,9 +241,11 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
             guard let self else { return }
             self.queue.async {
                 guard error == nil else {
+                    dnsLogger.error("UDP flow failed to open: \(error?.localizedDescription ?? "unknown error", privacy: .public)")
                     self.finish(error: error)
                     return
                 }
+                dnsLogger.debug("UDP flow opened; starting upstream connections")
                 self.upstreamConnections = Array(repeating: nil, count: self.upstreams.count)
                 self.upstreamReady = Array(repeating: false, count: self.upstreams.count)
                 self.reconnectWorkItems = Array(repeating: nil, count: self.upstreams.count)
@@ -262,6 +273,7 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
             self.queue.async {
                 guard !self.closed else { return }
                 if let error {
+                    dnsLogger.error("UDP flow read failed: \(error.localizedDescription, privacy: .public)")
                     self.finish(error: error)
                     return
                 }
@@ -318,11 +330,16 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
                 switch state {
                 case .ready:
                     self.upstreamReady[index] = true
+                    dnsLogger.info("UDP upstream \(index, privacy: .public) ready")
                     self.sendPendingQueries(to: index)
                 case .failed(let error):
+                    dnsLogger.error("UDP upstream \(index, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
                     self.handleUpstreamFailure(connection, at: index, error: error)
                 case .cancelled:
+                    dnsLogger.error("UDP upstream \(index, privacy: .public) cancelled")
                     self.handleUpstreamFailure(connection, at: index, error: DNSProxyError.upstreamUnavailable)
+                case .waiting(let error):
+                    dnsLogger.warning("UDP upstream \(index, privacy: .public) waiting: \(error.localizedDescription, privacy: .public)")
                 default:
                     break
                 }
@@ -364,7 +381,8 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
     }
 
     private func sendPendingQueries(to upstreamIndex: Int) {
-        for queryKey in pending.keys where pending[queryKey]?.upstreamIndex == upstreamIndex {
+        let queryKeys = pending.keys.filter { pending[$0]?.upstreamIndex == upstreamIndex }
+        for queryKey in queryKeys {
             sendPendingQuery(queryKey)
         }
     }
@@ -380,6 +398,7 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
 
         query.sent = true
         pending[queryKey] = query
+        dnsLogger.debug("DNS query sent to UDP upstream \(upstreamIndex, privacy: .public)")
         connection.send(content: query.packet, completion: .contentProcessed { [weak self, weak connection] error in
             guard let self, let connection else { return }
             self.queue.async {
@@ -397,7 +416,7 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
     private func handleSendFailure(queryKey: DNSQueryKey, upstreamIndex: Int, error: Error) {
         guard upstreamIndex == 0 else {
             expire(queryKey)
-            os_log("DNS secondary upstream send failed: %{public}@", log: .default, type: .error, error.localizedDescription)
+            dnsLogger.error("DNS secondary upstream send failed: \(error.localizedDescription, privacy: .public)")
             return
         }
         fallback(queryKey: queryKey, reason: error)
@@ -416,7 +435,7 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
               var query = pending[queryKey],
               !query.fallbackSent else {
             if let reason {
-                os_log("DNS primary upstream failed: %{public}@", log: .default, type: .error, reason.localizedDescription)
+                dnsLogger.error("DNS primary upstream failed: \(reason.localizedDescription, privacy: .public)")
             }
             return
         }
@@ -426,7 +445,7 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
         query.sent = false
         pending[queryKey] = query
         timeoutWorkItems.removeValue(forKey: queryKey)?.cancel()
-        os_log("DNS primary upstream timed out; trying secondary", log: .default, type: .info)
+        dnsLogger.info("DNS primary upstream timed out; trying secondary")
 
         let expiry = DispatchWorkItem { [weak self] in
             self?.expire(queryKey)
@@ -495,7 +514,7 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
                 guard let self else { return }
                 self.queue.async {
                     guard !self.closed else { return }
-                    os_log("DNS response write failed: %{public}@", log: .default, type: .error, error.localizedDescription)
+                    dnsLogger.error("DNS response write failed: \(error.localizedDescription, privacy: .public)")
                 }
             }
         }
@@ -536,7 +555,7 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
         upstreamConnections.removeAll()
         pending.removeAll()
         if let error {
-            os_log("DNS UDP flow closed: %{public}@", log: .default, type: .error, error.localizedDescription)
+            dnsLogger.error("DNS UDP flow closed: \(error.localizedDescription, privacy: .public)")
         }
         flow.closeReadWithError(error as NSError?)
         flow.closeWriteWithError(error as NSError?)
@@ -706,7 +725,7 @@ private final class DNSTCPFlowHandler: DNSProxyFlowHandling {
             return
         }
 
-        os_log("DNS TCP upstream failed; trying secondary", log: .default, type: .info)
+        dnsLogger.info("DNS TCP upstream failed; trying secondary")
         connectToUpstream(attempt: attempt + 1)
     }
 
@@ -786,7 +805,7 @@ private final class DNSTCPFlowHandler: DNSProxyFlowHandling {
         connection?.cancel()
         connection = nil
         if let error {
-            os_log("DNS TCP flow closed: %{public}@", log: .default, type: .error, error.localizedDescription)
+            dnsLogger.error("DNS TCP flow closed: \(error.localizedDescription, privacy: .public)")
         }
         flow.closeReadWithError(error as NSError?)
         flow.closeWriteWithError(error as NSError?)

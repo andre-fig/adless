@@ -98,9 +98,10 @@ private struct DataReader {
 
     private mutating func readUInt16() -> UInt16? {
         guard offset + 2 <= data.count else { return nil }
-        let slice = data[offset..<offset+2]
+        let high = UInt16(data[offset])
+        let low = UInt16(data[offset + 1])
         offset += 2
-        return slice.withUnsafeBytes { $0.load(as: UInt16.self).bigEndian }
+        return (high << 8) | low
     }
 
     private mutating func readName() -> String? {
