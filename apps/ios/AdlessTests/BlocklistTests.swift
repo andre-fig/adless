@@ -205,4 +205,57 @@ final class BlocklistTests: XCTestCase {
 
         XCTAssertEqual(storage.load(), snapshot)
     }
+
+    func testBlockingStatsStorePersistsCounts() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let store = BlockingStatsStore(baseDirectory: directory, now: now)
+        let snapshot = BlockingStatsSnapshot(
+            dayKey: BlockingStatsStore.dayKey(for: now),
+            todayCount: 4,
+            allTimeCount: 12
+        )
+
+        try store.save(snapshot)
+
+        XCTAssertEqual(store.read(), snapshot)
+    }
+
+    func testBlockingStatsStoreRollsOverTodayAndPreservesAllTime() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let firstDay = Date(timeIntervalSince1970: 1_700_000_000)
+        let firstStore = BlockingStatsStore(baseDirectory: directory, now: firstDay)
+        try firstStore.save(BlockingStatsSnapshot(
+            dayKey: BlockingStatsStore.dayKey(for: firstDay),
+            todayCount: 4,
+            allTimeCount: 12
+        ))
+
+        let nextDay = firstDay.addingTimeInterval(24 * 60 * 60)
+        let nextStore = BlockingStatsStore(baseDirectory: directory, now: nextDay)
+        let rolledOver = nextStore.read()
+
+        XCTAssertEqual(rolledOver.dayKey, BlockingStatsStore.dayKey(for: nextDay))
+        XCTAssertEqual(rolledOver.todayCount, 0)
+        XCTAssertEqual(rolledOver.allTimeCount, 12)
+    }
+
+    func testBlockingStatsRecorderPersistsBlockedRequests() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let store = BlockingStatsStore(baseDirectory: directory)
+        let recorder = BlockingStatsRecorder(store: store)
+        recorder.recordBlockedRequest()
+        recorder.recordBlockedRequest()
+        recorder.flush()
+
+        let snapshot = store.read()
+        XCTAssertEqual(snapshot.todayCount, 2)
+        XCTAssertEqual(snapshot.allTimeCount, 2)
+    }
 }

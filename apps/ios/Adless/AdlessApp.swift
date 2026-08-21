@@ -18,8 +18,11 @@ final class AppViewModel: ObservableObject {
     @Published var statusText: String = "Off"
     @Published private(set) var hasSubscription = false
     @Published var isSubscriptionPresented = false
+    @Published private(set) var blockedTodayCount = 0
+    @Published private(set) var allTimeBlockCount = 0
 
     private let blocklistManager = BlocklistManager()
+    private let blockingStatsStore = BlockingStatsStore()
     private let vpnManager = VPNManager()
     let subscriptionManager = SubscriptionManager()
 
@@ -105,7 +108,15 @@ final class AppViewModel: ObservableObject {
     }
 
     @MainActor
+    func refreshBlockingStats() {
+        let snapshot = blockingStatsStore.read()
+        blockedTodayCount = snapshot.todayCount
+        allTimeBlockCount = snapshot.allTimeCount
+    }
+
+    @MainActor
     func applicationDidBecomeActive() async {
+        refreshBlockingStats()
         await subscriptionManager.loadAndRefresh()
         hasSubscription = subscriptionManager.hasActiveEntitlement
         await disableIfSubscriptionExpired()

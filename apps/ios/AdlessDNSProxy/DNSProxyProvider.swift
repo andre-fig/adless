@@ -15,6 +15,7 @@ final class DNSProxyProvider: NEDNSProxyProvider {
     private var subscriptionState: SharedSubscriptionAccessSnapshot?
     private var subscriptionStateCheckedAt = Date.distantPast
     private var activeFlows: [ObjectIdentifier: DNSProxyFlowHandling] = [:]
+    private let statsRecorder = BlockingStatsRecorder()
 
     override func startProxy(options: [String: Any]? = nil, completionHandler: @escaping (Error?) -> Void) {
         dnsLogger.info("DNS proxy start requested")
@@ -36,6 +37,7 @@ final class DNSProxyProvider: NEDNSProxyProvider {
         flowLock.unlock()
 
         guard !flows.isEmpty else {
+            statsRecorder.flush()
             completionHandler()
             return
         }
@@ -47,7 +49,10 @@ final class DNSProxyProvider: NEDNSProxyProvider {
                 group.leave()
             }
         }
-        group.notify(queue: .global(qos: .userInitiated), execute: completionHandler)
+        group.notify(queue: .global(qos: .userInitiated)) { [weak self] in
+            self?.statsRecorder.flush()
+            completionHandler()
+        }
     }
 
     override func handleNewFlow(_ flow: NEAppProxyFlow) -> Bool {
@@ -60,7 +65,8 @@ final class DNSProxyProvider: NEDNSProxyProvider {
                 flow: udpFlow,
                 blocklist: blocklist,
                 upstreams: upstreams,
-                onClose: { [weak self] in self?.removeFlow(identifier) }
+                onClose: { [weak self] in self?.removeFlow(identifier) },
+                onBlocked: { [weak self] in self?.statsRecorder.recordBlockedRequest() }
             )
             retainFlow(handler, identifier: identifier)
             handler.start()
@@ -73,7 +79,8 @@ final class DNSProxyProvider: NEDNSProxyProvider {
                 flow: tcpFlow,
                 blocklist: blocklist,
                 upstreams: upstreams,
-                onClose: { [weak self] in self?.removeFlow(identifier) }
+                onClose: { [weak self] in self?.removeFlow(identifier) },
+                onBlocked: { [weak self] in self?.statsRecorder.recordBlockedRequest() }
             )
             retainFlow(handler, identifier: identifier)
             handler.start()
@@ -228,6 +235,7 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
     private let timeout: TimeInterval = 1.5
     private let queue = DispatchQueue(label: "com.orbeworks.adless.dns-udp", qos: .userInitiated)
     private let onClose: () -> Void
+    private let onBlocked: () -> Void
 
     private var pending: [DNSQueryKey: PendingQuery] = [:]
     private var timeoutWorkItems: [DNSQueryKey: DispatchWorkItem] = [:]
@@ -236,7 +244,13 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
     private var reconnectWorkItems: [DispatchWorkItem?] = []
     private var closed = false
 
-    init(flow: NEAppProxyUDPFlow, blocklist: Set<String>, upstreams: [String], onClose: @escaping () -> Void) {
+    init(
+        flow: NEAppProxyUDPFlow,
+        blocklist: Set<String>,
+        upstreams: [String],
+        onClose: @escaping () -> Void,
+        onBlocked: @escaping () -> Void
+    ) {
         self.flow = flow
         self.blocklist = blocklist
         self.upstreams = upstreams.compactMap { host in
@@ -244,6 +258,7 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
             return .hostPort(host: Network.NWEndpoint.Host(host), port: port)
         }
         self.onClose = onClose
+        self.onBlocked = onBlocked
     }
 
     func start() {
@@ -316,6 +331,7 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
         }
 
         if let question = message.firstQuestionName(), isBlocked(domain: question) {
+            onBlocked()
             return .writeToClient(message.blockedResponse())
         }
 
@@ -591,6 +607,7 @@ private final class DNSTCPFlowHandler: DNSProxyFlowHandling {
     private let upstreams: [String]
     private let queue = DispatchQueue(label: "com.orbeworks.adless.dns-tcp", qos: .userInitiated)
     private let onClose: () -> Void
+    private let onBlocked: () -> Void
     private let connectionTimeout: TimeInterval = 1.5
     private let maximumPendingBytes = 256 * 1024
 
@@ -603,11 +620,18 @@ private final class DNSTCPFlowHandler: DNSProxyFlowHandling {
     private var isConnectionReady = false
     private var closed = false
 
-    init(flow: NEAppProxyTCPFlow, blocklist: Set<String>, upstreams: [String], onClose: @escaping () -> Void) {
+    init(
+        flow: NEAppProxyTCPFlow,
+        blocklist: Set<String>,
+        upstreams: [String],
+        onClose: @escaping () -> Void,
+        onBlocked: @escaping () -> Void
+    ) {
         self.flow = flow
         self.blocklist = blocklist
         self.upstreams = upstreams
         self.onClose = onClose
+        self.onBlocked = onBlocked
     }
 
     func start() {
@@ -672,6 +696,7 @@ private final class DNSTCPFlowHandler: DNSProxyFlowHandling {
             if let message = DNSMessage(data: packet),
                let question = message.firstQuestionName(),
                isBlocked(domain: question) {
+                onBlocked()
                 writeToClient(framedPacket: frame(message.blockedResponse()))
             } else {
                 guard pendingUpstreamBytes + framedPacket.count <= maximumPendingBytes else {

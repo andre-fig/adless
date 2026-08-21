@@ -37,6 +37,30 @@ struct ContentView: View {
                     .font(.headline)
                     .foregroundStyle(viewModel.isOn ? .green : .secondary)
 
+                VStack(spacing: 0) {
+                    BlockingStatRow(
+                        value: viewModel.blockedTodayCount.formatted(.number),
+                        label: "ad & tracker requests blocked today"
+                    )
+
+                    Divider()
+                        .padding(.horizontal, 20)
+
+                    BlockingStatRow(
+                        value: viewModel.allTimeBlockCount.formatted(.number),
+                        label: "all-time blocks"
+                    )
+                }
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+
+                Text(viewModel.isOn
+                     ? "Browse cleaner. Stay private."
+                     : "Turn Adless back on to keep blocking.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 2)
+
                 Spacer()
             }
             .padding()
@@ -45,9 +69,39 @@ struct ContentView: View {
             guard phase == .active else { return }
             Task { await viewModel.applicationDidBecomeActive() }
         }
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { return }
+            while !Task.isCancelled {
+                await MainActor.run {
+                    viewModel.refreshBlockingStats()
+                }
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+            }
+        }
         .sheet(isPresented: $viewModel.isSubscriptionPresented) {
             SubscriptionView(manager: viewModel.subscriptionManager)
         }
+    }
+}
+
+private struct BlockingStatRow: View {
+    let value: String
+    let label: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(value)
+                .font(.system(.title3, design: .rounded).weight(.semibold))
+                .monospacedDigit()
+
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
     }
 }
 
