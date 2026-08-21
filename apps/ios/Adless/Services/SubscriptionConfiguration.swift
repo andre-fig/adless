@@ -2,9 +2,12 @@ import Foundation
 import StoreKit
 
 enum SubscriptionConfiguration {
+    static let monthlyProductID = "com.orbeworks.adless.pro.monthly"
+    static let yearlyProductID = "com.orbeworks.adless.pro.yearly"
+
     static let productIDs = [
-        "com.orbeworks.adless.pro.monthly",
-        "com.orbeworks.adless.pro.yearly"
+        monthlyProductID,
+        yearlyProductID
     ]
 
     static let appGroupIdentifier = BlocklistConfiguration.appGroupIdentifier
