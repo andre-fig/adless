@@ -1,7 +1,12 @@
 import SwiftUI
+import UIKit
 
 enum AdlessTheme {
-    static let subscriptionDrawerBackground = Color(red: 0.92, green: 0.93, blue: 0.95)
+    static let subscriptionDrawerBackground = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.102, green: 0.122, blue: 0.149, alpha: 1)
+            : UIColor(red: 0.92, green: 0.93, blue: 0.95, alpha: 1)
+    })
     static let selectedPlanBackground = Color(red: 0.93, green: 0.95, blue: 1.0)
 }
 
