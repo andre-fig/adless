@@ -123,7 +123,7 @@ struct ContentView: View {
                 Spacer()
             }
             .padding()
-            .offset(y: -24)
+            .offset(y: -40)
 
             if viewModel.isSubscriptionPresented {
                 Color.black
