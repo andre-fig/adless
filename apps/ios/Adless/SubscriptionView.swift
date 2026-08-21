@@ -34,8 +34,9 @@ struct SubscriptionView: View {
                                     Text(product.description)
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
-                                    if product.subscription?.introductoryOffer != nil {
-                                        Text("7 days free for new subscribers")
+                                    if let offer = product.subscription?.introductoryOffer,
+                                       let offerText = SubscriptionOfferFormatter.freeTrialText(for: offer) {
+                                        Text(offerText)
                                             .font(.subheadline.weight(.medium))
                                             .foregroundStyle(.green)
                                     }

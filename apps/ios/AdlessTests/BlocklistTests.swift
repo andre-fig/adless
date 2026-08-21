@@ -188,6 +188,21 @@ final class BlocklistTests: XCTestCase {
         XCTAssertFalse(SubscriptionAccessPolicy.allowsAccess(.inactive(at: now), at: now))
     }
 
+    func testSubscriptionOfferFormatterUsesStoreKitPeriod() {
+        XCTAssertEqual(
+            SubscriptionOfferFormatter.freeTrialText(value: 7, unit: .day),
+            "7 days free for new subscribers"
+        )
+        XCTAssertEqual(
+            SubscriptionOfferFormatter.freeTrialText(value: 1, unit: .week),
+            "1 week free for new subscribers"
+        )
+        XCTAssertEqual(
+            SubscriptionOfferFormatter.freeTrialText(value: 1, unit: .month),
+            "1 month free for new subscribers"
+        )
+    }
+
     func testSubscriptionStorageRoundTripsAppGroupSnapshotAtomically() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
