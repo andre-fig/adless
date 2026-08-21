@@ -3,7 +3,6 @@ import SwiftUI
 
 struct SubscriptionView: View {
     @ObservedObject var manager: SubscriptionManager
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
@@ -91,9 +90,6 @@ struct SubscriptionView: View {
                     .accessibilityElement(children: .combine)
                 }
 
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
             }
             .overlay {
                 if manager.isProcessing {

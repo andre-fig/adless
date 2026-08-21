@@ -104,6 +104,11 @@ struct ContentView: View {
             }
             .padding()
         }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard viewModel.isSubscriptionPresented else { return }
+            viewModel.isSubscriptionPresented = false
+        }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
             Task { await viewModel.applicationDidBecomeActive() }
@@ -117,10 +122,20 @@ struct ContentView: View {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
             }
         }
+        .onChange(of: viewModel.isSubscriptionPresented) { _, isPresented in
+            guard isPresented else { return }
+            subscriptionDetent = .medium
+        }
         .sheet(isPresented: $viewModel.isSubscriptionPresented) {
             SubscriptionView(manager: viewModel.subscriptionManager)
+                .interactiveDismissDisabled(false)
+                .presentationDetents([.medium, .large], selection: $subscriptionDetent)
+                .presentationDragIndicator(.visible)
+                .presentationBackgroundInteraction(.enabled(upThrough: .medium))
         }
     }
+
+    @State private var subscriptionDetent: PresentationDetent = .medium
 }
 
 private struct BlockingStatRow: View {
