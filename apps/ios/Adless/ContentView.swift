@@ -29,6 +29,12 @@ struct ContentView: View {
             : Color(red: 0.92, green: 0.93, blue: 0.95)
     }
 
+    private var statsBackgroundStyle: AnyShapeStyle {
+        colorScheme == .dark
+            ? AnyShapeStyle(inactiveButtonBackground)
+            : AnyShapeStyle(.thinMaterial)
+    }
+
     private var inactiveButtonBorder: Color {
         colorScheme == .dark
             ? Color(red: 0.25, green: 0.27, blue: 0.31)
@@ -136,7 +142,7 @@ struct ContentView: View {
                         blockedTodayValue: viewModel.blockedTodayCount.formatted(.number),
                         allTimeValue: viewModel.allTimeBlockCount.formatted(.number)
                     )
-                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .background(statsBackgroundStyle, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
                 }
 
                 if viewModel.hasSubscription {
@@ -169,7 +175,7 @@ struct ContentView: View {
                         blockedTodayValue: viewModel.blockedTodayCount.formatted(.number),
                         allTimeValue: viewModel.allTimeBlockCount.formatted(.number)
                     )
-                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .background(statsBackgroundStyle, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
                     .opacity(0)
                     .accessibilityHidden(true)
                 }
