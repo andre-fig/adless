@@ -37,27 +37,29 @@ struct ContentView: View {
                     .font(.headline)
                     .foregroundStyle(viewModel.isOn ? .green : .secondary)
 
-                if viewModel.hasSubscription {
-                    VStack(spacing: 0) {
-                        BlockingStatRow(
-                            value: viewModel.blockedTodayCount.formatted(.number),
-                            label: "ad & tracker requests blocked today"
-                        )
+                VStack(spacing: 0) {
+                    BlockingStatRow(
+                        value: viewModel.blockedTodayCount.formatted(.number),
+                        label: "ad & tracker requests blocked today"
+                    )
 
-                        Divider()
-                            .padding(.horizontal, 20)
+                    Divider()
+                        .padding(.horizontal, 20)
 
-                        BlockingStatRow(
-                            value: viewModel.allTimeBlockCount.formatted(.number),
-                            label: "all-time blocks"
-                        )
-                    }
-                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    BlockingStatRow(
+                        value: viewModel.allTimeBlockCount.formatted(.number),
+                        label: "all-time blocks"
+                    )
                 }
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .opacity(viewModel.hasSubscription ? 1 : 0)
+                .accessibilityHidden(!viewModel.hasSubscription)
 
-                Text(viewModel.isOn
-                     ? "Browse cleaner. Stay private."
-                     : "Turn Adless back on to keep blocking.")
+                Text(!viewModel.hasSubscription
+                     ? "Start your free trial to turn on protection."
+                     : (viewModel.isOn
+                        ? "Browse cleaner. Stay private."
+                        : "Turn Adless back on to keep blocking."))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
