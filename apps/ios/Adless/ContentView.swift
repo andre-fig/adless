@@ -141,7 +141,7 @@ struct ContentView: View {
             SubscriptionView(
                 manager: viewModel.subscriptionManager,
                 onContentHeightChange: { contentHeight in
-                    let proposedHeight = contentHeight + 8
+                    let proposedHeight = contentHeight + 2
                     guard proposedHeight.isFinite, proposedHeight > 0 else { return }
 
                     if subscriptionSheetHeight == nil || abs(subscriptionSheetHeight! - proposedHeight) > 1 {
