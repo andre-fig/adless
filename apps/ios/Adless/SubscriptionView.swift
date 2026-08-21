@@ -2,6 +2,7 @@ import SwiftUI
 
 enum AdlessTheme {
     static let subscriptionDrawerBackground = Color(red: 0.92, green: 0.93, blue: 0.95)
+    static let selectedPlanBackground = Color(red: 0.93, green: 0.95, blue: 1.0)
 }
 
 struct SubscriptionView: View {
@@ -108,7 +109,7 @@ struct SubscriptionView: View {
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding()
-                                    .background(isSelected ? adlessBlue.opacity(0.12) : Color.white)
+                                    .background(isSelected ? AdlessTheme.selectedPlanBackground : Color.white)
                                     .clipShape(RoundedRectangle(cornerRadius: 16))
                                     .overlay {
                                         RoundedRectangle(cornerRadius: 16)
