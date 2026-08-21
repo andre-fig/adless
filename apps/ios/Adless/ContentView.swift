@@ -53,6 +53,18 @@ struct ContentView: View {
             : Color(red: 0.52, green: 0.70, blue: 0.94)
     }
 
+    private var premiumBadgeForeground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.33, green: 0.62, blue: 0.98)
+            : Color(red: 0.12, green: 0.43, blue: 0.88)
+    }
+
+    private var premiumBadgeBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.098, green: 0.145, blue: 0.208)
+            : AdlessTheme.selectedPlanBackground
+    }
+
     var body: some View {
         ZStack {
             appBackground.ignoresSafeArea()
@@ -129,10 +141,10 @@ struct ContentView: View {
                         Text("Premium access required")
                     }
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color(red: 0.12, green: 0.43, blue: 0.88))
+                    .foregroundStyle(premiumBadgeForeground)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 7)
-                    .background(AdlessTheme.selectedPlanBackground)
+                    .background(premiumBadgeBackground)
                     .clipShape(Capsule())
                 }
                 }
