@@ -37,7 +37,7 @@ struct SubscriptionView: View {
                 .allowsHitTesting(false)
 
             ScrollView {
-                VStack(spacing: 32) {
+                VStack(spacing: 28) {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Browse cleaner with Adless")
                             .font(.title2.weight(.semibold))
@@ -63,7 +63,7 @@ struct SubscriptionView: View {
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    VStack(spacing: 14) {
+                    VStack(spacing: 18) {
                         VStack(spacing: 14) {
                             ForEach(orderedOptions) { option in
                                 let isSelected = selectedOption?.id == option.id
