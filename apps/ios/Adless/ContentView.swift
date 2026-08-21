@@ -133,15 +133,30 @@ struct ContentView: View {
                     .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
                 }
 
-                Text(!viewModel.hasSubscription
-                     ? "Start your free trial to turn on protection."
-                     : (viewModel.isOn
-                        ? "Browse cleaner. Stay private."
-                        : "Turn Adless back on to keep blocking."))
-                    .font(.subheadline)
-                    .foregroundStyle(Color.primary.opacity(0.58))
-                    .multilineTextAlignment(.center)
+                if viewModel.hasSubscription {
+                    VStack(spacing: 4) {
+                        Text(viewModel.isOn
+                             ? "Browse cleaner. Stay private."
+                             : "Turn Adless back on to keep blocking.")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.center)
+
+                        Text(viewModel.isOn
+                             ? "Adless keeps working even after you close the app."
+                             : "Your blocking history is saved while protection is paused.")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.primary.opacity(0.58))
+                            .multilineTextAlignment(.center)
+                    }
                     .padding(.top, 2)
+                } else {
+                    Text("Start your free trial to turn on protection.")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.primary.opacity(0.58))
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 2)
+                }
 
                 if !viewModel.hasSubscription {
                     BlockingStatsView(
