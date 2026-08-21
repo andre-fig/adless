@@ -33,11 +33,21 @@ final class DNSProxyProvider: NEDNSProxyProvider {
         dnsLogger.info("DNS proxy stopping")
         flowLock.lock()
         let flows = Array(activeFlows.values)
-        activeFlows.removeAll()
         flowLock.unlock()
 
-        flows.forEach { $0.close() }
-        completionHandler()
+        guard !flows.isEmpty else {
+            completionHandler()
+            return
+        }
+
+        let group = DispatchGroup()
+        flows.forEach { flow in
+            group.enter()
+            flow.close {
+                group.leave()
+            }
+        }
+        group.notify(queue: .global(qos: .userInitiated), execute: completionHandler)
     }
 
     override func handleNewFlow(_ flow: NEAppProxyFlow) -> Bool {
@@ -190,7 +200,7 @@ final class DNSProxyProvider: NEDNSProxyProvider {
 
 private protocol DNSProxyFlowHandling: AnyObject {
     func start()
-    func close()
+    func close(completion: @escaping () -> Void)
 }
 
 private struct DNSQueryKey: Hashable {
@@ -257,9 +267,9 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
         }
     }
 
-    func close() {
-        queue.async { [weak self] in
-            self?.finish(error: nil)
+    func close(completion: @escaping () -> Void) {
+        queue.async { [self] in
+            finish(error: nil, completion: completion)
         }
     }
 
@@ -415,7 +425,7 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
 
     private func handleSendFailure(queryKey: DNSQueryKey, upstreamIndex: Int, error: Error) {
         guard upstreamIndex == 0 else {
-            expire(queryKey)
+            respondWithServerFailure(queryKey)
             dnsLogger.error("DNS secondary upstream send failed: \(error.localizedDescription, privacy: .public)")
             return
         }
@@ -431,12 +441,15 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
     }
 
     private func fallback(queryKey: DNSQueryKey, reason: Error?) {
-        guard upstreams.count > 1,
-              var query = pending[queryKey],
-              !query.fallbackSent else {
+        guard var query = pending[queryKey], !query.fallbackSent else {
+            return
+        }
+
+        guard upstreams.count > 1 else {
             if let reason {
-                dnsLogger.error("DNS primary upstream failed: \(reason.localizedDescription, privacy: .public)")
+                dnsLogger.error("DNS primary upstream failed with no secondary: \(reason.localizedDescription, privacy: .public)")
             }
+            respondWithServerFailure(queryKey)
             return
         }
 
@@ -448,7 +461,7 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
         dnsLogger.info("DNS primary upstream timed out; trying secondary")
 
         let expiry = DispatchWorkItem { [weak self] in
-            self?.expire(queryKey)
+            self?.respondWithServerFailure(queryKey)
         }
         timeoutWorkItems[queryKey] = expiry
         queue.asyncAfter(deadline: .now() + timeout, execute: expiry)
@@ -468,7 +481,7 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
             if index == 0 {
                 fallback(queryKey: queryKey, reason: error)
             } else {
-                expire(queryKey)
+                respondWithServerFailure(queryKey)
             }
         }
 
@@ -520,9 +533,14 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
         }
     }
 
-    private func expire(_ queryKey: DNSQueryKey) {
-        pending.removeValue(forKey: queryKey)
+    private func respondWithServerFailure(_ queryKey: DNSQueryKey) {
+        guard let query = pending.removeValue(forKey: queryKey) else { return }
         timeoutWorkItems.removeValue(forKey: queryKey)?.cancel()
+
+        let response = DNSMessage(data: query.packet)?.serverFailureResponse()
+            ?? DNSMessage.serverFailureResponse(id: query.packet.dnsIdentifier)
+        dnsLogger.error("DNS query failed on all upstreams; returning SERVFAIL")
+        writeToClient(packet: response, endpoint: query.clientEndpoint)
     }
 
     private func isBlocked(domain: String) -> Bool {
@@ -544,8 +562,11 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
         return DNSQueryKey(id: message.header.id, name: normalized)
     }
 
-    private func finish(error: Error?) {
-        guard !closed else { return }
+    private func finish(error: Error?, completion: (() -> Void)? = nil) {
+        guard !closed else {
+            completion?()
+            return
+        }
         closed = true
         timeoutWorkItems.values.forEach { $0.cancel() }
         timeoutWorkItems.removeAll()
@@ -560,6 +581,7 @@ private final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable
         flow.closeReadWithError(error as NSError?)
         flow.closeWriteWithError(error as NSError?)
         onClose()
+        completion?()
     }
 }
 
@@ -602,9 +624,9 @@ private final class DNSTCPFlowHandler: DNSProxyFlowHandling {
         }
     }
 
-    func close() {
-        queue.async { [weak self] in
-            self?.finish(error: nil)
+    func close(completion: @escaping () -> Void) {
+        queue.async { [self] in
+            finish(error: nil, completion: completion)
         }
     }
 
@@ -796,8 +818,11 @@ private final class DNSTCPFlowHandler: DNSProxyFlowHandling {
         return result
     }
 
-    private func finish(error: Error?) {
-        guard !closed else { return }
+    private func finish(error: Error?, completion: (() -> Void)? = nil) {
+        guard !closed else {
+            completion?()
+            return
+        }
         closed = true
         connectionTimeoutWorkItem?.cancel()
         connectionTimeoutWorkItem = nil
@@ -810,6 +835,7 @@ private final class DNSTCPFlowHandler: DNSProxyFlowHandling {
         flow.closeReadWithError(error as NSError?)
         flow.closeWriteWithError(error as NSError?)
         onClose()
+        completion?()
     }
 }
 

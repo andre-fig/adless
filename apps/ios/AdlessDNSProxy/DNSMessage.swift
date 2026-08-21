@@ -67,6 +67,27 @@ struct DNSMessage {
 
         return data
     }
+
+    func serverFailureResponse() -> Data {
+        var response = self
+        response.header.flags = (header.flags & 0x0100) | 0x8082
+        response.header.anCount = 0
+        response.header.nsCount = 0
+        response.header.arCount = 0
+        response.answers = []
+        return response.encode()
+    }
+
+    static func serverFailureResponse(id: UInt16) -> Data {
+        var data = Data()
+        data.appendUInt16(id)
+        data.appendUInt16(0x8082)
+        data.appendUInt16(0)
+        data.appendUInt16(0)
+        data.appendUInt16(0)
+        data.appendUInt16(0)
+        return data
+    }
 }
 
 private struct DataReader {
