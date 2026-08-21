@@ -10,9 +10,20 @@ struct ContentView: View {
             VStack(spacing: 24) {
                 Spacer()
 
-                Text(viewModel.isOn ? "Protection Active" : "Protection Off")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.primary)
+                VStack(spacing: 6) {
+                    Text(viewModel.isOn ? "Protection Active" : "Protection Off")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.primary)
+
+                    Text(!viewModel.hasSubscription
+                         ? "Block ads and trackers across your iPhone."
+                         : (viewModel.isOn
+                            ? "Adless is working quietly in the background."
+                            : "Your protection is paused."))
+                        .font(.subheadline)
+                        .foregroundStyle(Color.primary.opacity(0.58))
+                        .multilineTextAlignment(.center)
+                }
 
                 Button {
                     if viewModel.hasSubscription {
