@@ -13,7 +13,7 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             Color(.systemBackground).ignoresSafeArea()
-            VStack(spacing: 24) {
+            VStack(spacing: 30) {
                 Spacer()
 
                 VStack(spacing: 14) {
@@ -35,7 +35,7 @@ struct ContentView: View {
                     }
                 }
 
-                VStack(spacing: viewModel.hasSubscription ? 24 : 12) {
+                VStack(spacing: viewModel.hasSubscription ? 24 : 8) {
                 Button {
                     if viewModel.hasSubscription {
                         Task { await viewModel.toggle() }
@@ -89,8 +89,8 @@ struct ContentView: View {
                     }
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Color(red: 0.12, green: 0.43, blue: 0.88))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 7)
                     .background(AdlessTheme.selectedPlanBackground)
                     .clipShape(Capsule())
                 }
