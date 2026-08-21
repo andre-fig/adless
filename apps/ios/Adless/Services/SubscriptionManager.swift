@@ -168,12 +168,24 @@ final class SubscriptionManager: ObservableObject {
     }
 
     private static func makeOption(from product: Product) -> SubscriptionOption {
-        SubscriptionOption(
+        let isAnnual = product.id == SubscriptionConfiguration.yearlyProductID
+        let trialText = product.subscription?.introductoryOffer.flatMap(SubscriptionOfferFormatter.trialDurationText)
+        let renewalText = "Then \(product.displayPrice) per \(isAnnual ? "year" : "month")."
+
+        let description: String
+        if isAnnual {
+            let monthlyPrice = (product.price / Decimal(12)).formatted(product.priceFormatStyle)
+            description = [trialText, "\(monthlyPrice)/mo"].compactMap { $0 }.joined(separator: " · ")
+        } else {
+            description = trialText ?? ""
+        }
+
+        return SubscriptionOption(
             id: product.id,
-            name: product.id == SubscriptionConfiguration.yearlyProductID ? "Annual" : "Monthly",
-            displayPrice: product.displayPrice,
-            description: product.description,
-            freeTrialText: product.subscription?.introductoryOffer.flatMap(SubscriptionOfferFormatter.freeTrialText),
+            name: isAnnual ? "Annual" : "Monthly",
+            displayPrice: "\(product.displayPrice) / \(isAnnual ? "year" : "month")",
+            description: description,
+            renewalText: renewalText,
             product: product
         )
     }

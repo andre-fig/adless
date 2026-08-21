@@ -12,6 +12,8 @@ struct SubscriptionView: View {
         "No account required"
     ]
 
+    private let adlessBlue = Color(red: 0.0, green: 0.32, blue: 0.78)
+
     private var orderedOptions: [SubscriptionOption] {
         manager.options.sorted {
             planSortIndex(for: $0.id) < planSortIndex(for: $1.id)
@@ -71,32 +73,34 @@ struct SubscriptionView: View {
                                     VStack(alignment: .leading, spacing: 8) {
                                         HStack {
                                             Text(option.name)
-                                                .font(.headline)
+                                                .font(.subheadline.weight(.semibold))
                                             Spacer()
                                             Text(option.displayPrice)
-                                                .font(.headline)
+                                                .font(.subheadline.weight(.semibold))
+                                                .lineLimit(1)
+                                                .minimumScaleFactor(0.85)
                                         }
                                         Text(option.description)
-                                            .font(.subheadline)
+                                            .font(.caption)
                                             .foregroundStyle(.secondary)
-                                        if let offerText = option.freeTrialText {
-                                            Text(offerText)
-                                                .font(.subheadline.weight(.medium))
+                                        if !option.renewalText.isEmpty {
+                                            Text(option.renewalText)
+                                                .font(.caption.weight(.medium))
                                                 .foregroundStyle(.green)
                                         }
                                     }
 
                                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                        .font(.title3)
-                                        .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                                        .font(.body)
+                                        .foregroundStyle(isSelected ? adlessBlue : Color.secondary)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding()
-                                .background(isSelected ? Color.accentColor.opacity(0.12) : Color.secondary.opacity(0.12))
+                                .background(isSelected ? adlessBlue.opacity(0.12) : Color.secondary.opacity(0.12))
                                 .clipShape(RoundedRectangle(cornerRadius: 16))
                                 .overlay {
                                     RoundedRectangle(cornerRadius: 16)
-                                        .stroke(isSelected ? Color.accentColor : .clear, lineWidth: 2)
+                                        .stroke(isSelected ? adlessBlue : .clear, lineWidth: 2)
                                 }
                             }
                             .buttonStyle(.plain)
@@ -109,12 +113,19 @@ struct SubscriptionView: View {
                         Button {
                             Task { await manager.purchase(selectedOption) }
                         } label: {
-                            Text(selectedOption.freeTrialText == nil ? "Continue" : "Start Free Trial")
+                            Text("Start 7-Day Free Trial")
+                                .fontWeight(.bold)
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
+                        .tint(adlessBlue)
                         .disabled(manager.isProcessing)
+
+                        Text("Cancel anytime.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .center)
                     }
 
                     if manager.options.isEmpty {
@@ -126,7 +137,7 @@ struct SubscriptionView: View {
                     }
 
                     Text("Payment will be charged after the 7-day free trial. The subscription renews automatically unless canceled at least 24 hours before the end of the current period.")
-                        .font(.footnote)
+                        .font(.caption)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
 
@@ -135,19 +146,19 @@ struct SubscriptionView: View {
                             Button("Restore Purchase") {
                                 Task { await manager.restorePurchases() }
                             }
-                            .font(.subheadline.weight(.semibold))
+                            .font(.caption.weight(.semibold))
                             .disabled(manager.isProcessing)
-                            .foregroundStyle(Color(uiColor: .systemBlue))
+                            .foregroundStyle(adlessBlue)
 
                             Link("Terms of Use", destination: AdlessLegalLinks.terms)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(Color(uiColor: .systemBlue))
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(adlessBlue)
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
 
                         Link("Privacy Policy", destination: AdlessLegalLinks.privacy)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color(uiColor: .systemBlue))
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(adlessBlue)
                     }
                 }
                 .padding(.horizontal, 20)

@@ -22,17 +22,17 @@ enum SubscriptionConfiguration {
         SubscriptionOption(
             id: yearlyProductID,
             name: "Annual",
-            displayPrice: "R$ 29.90",
-            description: "Adless Pro annual plan.",
-            freeTrialText: "7 days free for new subscribers",
+            displayPrice: "R$ 29.90 / year",
+            description: "7 days free · R$ 2.49/mo",
+            renewalText: "Then R$ 29.90 per year.",
             product: nil
         ),
         SubscriptionOption(
             id: monthlyProductID,
             name: "Monthly",
-            displayPrice: "R$ 4.90",
-            description: "Adless Pro monthly plan.",
-            freeTrialText: "7 days free for new subscribers",
+            displayPrice: "R$ 4.90 / month",
+            description: "7 days free",
+            renewalText: "Then R$ 4.90 per month.",
             product: nil
         )
     ]
@@ -44,11 +44,37 @@ struct SubscriptionOption: Identifiable {
     let name: String
     let displayPrice: String
     let description: String
-    let freeTrialText: String?
+    let renewalText: String
     let product: Product?
 }
 
 enum SubscriptionOfferFormatter {
+    static func trialDurationText(for offer: Product.SubscriptionOffer) -> String? {
+        guard offer.paymentMode == .freeTrial else { return nil }
+        return trialDurationText(value: offer.period.value, unit: offer.period.unit)
+    }
+
+    static func trialDurationText(
+        value: Int,
+        unit: Product.SubscriptionPeriod.Unit
+    ) -> String {
+        let unitName: String
+        switch unit {
+        case .day:
+            unitName = value == 1 ? "day" : "days"
+        case .week:
+            unitName = value == 1 ? "week" : "weeks"
+        case .month:
+            unitName = value == 1 ? "month" : "months"
+        case .year:
+            unitName = value == 1 ? "year" : "years"
+        @unknown default:
+            unitName = value == 1 ? "period" : "periods"
+        }
+
+        return "\(value) \(unitName) free"
+    }
+
     static func freeTrialText(for offer: Product.SubscriptionOffer) -> String? {
         guard offer.paymentMode == .freeTrial else { return nil }
         return freeTrialText(value: offer.period.value, unit: offer.period.unit)
