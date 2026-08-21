@@ -16,12 +16,13 @@ struct AdlessApp: App {
 final class AppViewModel: ObservableObject {
     @Published var isOn: Bool = false
     @Published var statusText: String = "Off"
+    @Published private(set) var isPreparing = true
     @Published private(set) var hasSubscription = false
     @Published var isSubscriptionPresented = false
     @Published private(set) var blockedTodayCount = 0
     @Published private(set) var allTimeBlockCount = 0
 
-    private let blocklistManager = BlocklistManager()
+    private var blocklistManager: BlocklistManager?
     private let blockingStatsStore = BlockingStatsStore()
     private let vpnManager = VPNManager()
     let subscriptionManager = SubscriptionManager()
@@ -43,9 +44,7 @@ final class AppViewModel: ObservableObject {
                 await self?.activateBlocking()
             }
         }
-        Task {
-            await applicationDidBecomeActive()
-        }
+        beginPreparation()
 
 #if DEBUG && os(iOS) && targetEnvironment(simulator)
         if !ProcessInfo.processInfo.arguments.contains("-useStoreKitProducts") {
@@ -58,11 +57,12 @@ final class AppViewModel: ObservableObject {
     }
 
     var blockedCount: Int {
-        blocklistManager.cachedCount
+        blocklistManager?.cachedCount ?? 0
     }
 
     @MainActor
     func toggle() async {
+        guard !isPreparing else { return }
         guard hasSubscription else {
             isSubscriptionPresented = true
             return
@@ -83,6 +83,7 @@ final class AppViewModel: ObservableObject {
 
     @MainActor
     func activateBlocking() async {
+        guard !isPreparing, let blocklistManager else { return }
         guard hasSubscription else {
             isSubscriptionPresented = true
             return
@@ -133,6 +134,7 @@ final class AppViewModel: ObservableObject {
 
     @MainActor
     func applicationDidBecomeActive() async {
+        guard let blocklistManager else { return }
         refreshBlockingStats()
         await subscriptionManager.loadAndRefresh()
         hasSubscription = subscriptionManager.hasActiveEntitlement
@@ -143,6 +145,26 @@ final class AppViewModel: ObservableObject {
         let result = await blocklistManager.refreshIfNeeded()
         if case .updated = result, isOn {
             await vpnManager.reloadProviderBlocklist()
+        }
+    }
+
+    private func beginPreparation() {
+        let preparationStartedAt = Date()
+        let minimumPreparationDuration: TimeInterval = 0.35
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            let manager = BlocklistManager()
+            let elapsed = Date().timeIntervalSince(preparationStartedAt)
+            let remaining = max(0, minimumPreparationDuration - elapsed)
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + remaining) { [weak self] in
+                guard let self else { return }
+                self.blocklistManager = manager
+                self.isPreparing = false
+                Task { @MainActor [weak self] in
+                    await self?.applicationDidBecomeActive()
+                }
+            }
         }
     }
 

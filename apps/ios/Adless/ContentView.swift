@@ -213,9 +213,16 @@ struct ContentView: View {
                     .allowsHitTesting(false)
                     .transition(.opacity)
             }
+
+            if viewModel.isPreparing {
+                PreparationView(colorScheme: colorScheme)
+                    .transition(.opacity)
+                    .zIndex(1)
+            }
         }
         .animation(.easeInOut(duration: 0.25), value: viewModel.isOn)
         .animation(.easeInOut(duration: 0.2), value: viewModel.isSubscriptionPresented)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.isPreparing)
         .contentShape(Rectangle())
         .onTapGesture {
             guard viewModel.isSubscriptionPresented else { return }
@@ -234,7 +241,12 @@ struct ContentView: View {
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
             }
         }
-        .sheet(isPresented: $viewModel.isSubscriptionPresented) {
+        .sheet(
+            isPresented: Binding(
+                get: { viewModel.isSubscriptionPresented && !viewModel.isPreparing },
+                set: { viewModel.isSubscriptionPresented = $0 }
+            )
+        ) {
             SubscriptionView(
                 manager: viewModel.subscriptionManager,
                 onContentHeightChange: { contentHeight in
@@ -252,6 +264,51 @@ struct ContentView: View {
                 .presentationBackground(AdlessTheme.subscriptionDrawerBackground)
                 .presentationBackgroundInteraction(.enabled)
         }
+    }
+}
+
+private struct PreparationView: View {
+    let colorScheme: ColorScheme
+
+    private var background: Color {
+        colorScheme == .dark
+            ? Color(red: 0.059, green: 0.078, blue: 0.102)
+            : Color(.systemBackground)
+    }
+
+    private var titleColor: Color {
+        colorScheme == .dark ? .white : .black
+    }
+
+    private var detailColor: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.54)
+            : Color.black.opacity(0.48)
+    }
+
+    var body: some View {
+        ZStack {
+            background.ignoresSafeArea()
+
+            VStack(spacing: 12) {
+                AdlessLogoView(size: 72)
+
+                Text("Adless")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(titleColor)
+            }
+
+            VStack {
+                Spacer()
+
+                Text("Preparing your protection...")
+                    .font(.subheadline)
+                    .foregroundStyle(detailColor)
+                    .padding(.bottom, 30)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Adless. Preparing your protection.")
     }
 }
 
