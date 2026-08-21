@@ -98,7 +98,7 @@ struct SubscriptionView: View {
                                         Text(option.description)
                                             .font(.footnote)
                                             .foregroundStyle(mutedTextColor)
-                                            .padding(.top, 4)
+                                            .padding(.top, 2)
                                         if !option.renewalText.isEmpty {
                                             Text(option.renewalText)
                                                 .font(.caption)
