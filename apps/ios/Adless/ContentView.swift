@@ -37,23 +37,23 @@ struct ContentView: View {
                     .font(.headline)
                     .foregroundStyle(viewModel.isOn ? .green : .secondary)
 
-                VStack(spacing: 0) {
-                    BlockingStatRow(
-                        value: viewModel.blockedTodayCount.formatted(.number),
-                        label: "ad & tracker requests blocked today"
-                    )
+                if viewModel.hasSubscription {
+                    VStack(spacing: 0) {
+                        BlockingStatRow(
+                            value: viewModel.blockedTodayCount.formatted(.number),
+                            label: "ad & tracker requests blocked today"
+                        )
 
-                    Divider()
-                        .padding(.horizontal, 20)
+                        Divider()
+                            .padding(.horizontal, 20)
 
-                    BlockingStatRow(
-                        value: viewModel.allTimeBlockCount.formatted(.number),
-                        label: "all-time blocks"
-                    )
+                        BlockingStatRow(
+                            value: viewModel.allTimeBlockCount.formatted(.number),
+                            label: "all-time blocks"
+                        )
+                    }
+                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
                 }
-                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-                .opacity(viewModel.hasSubscription ? 1 : 0)
-                .accessibilityHidden(!viewModel.hasSubscription)
 
                 Text(!viewModel.hasSubscription
                      ? "Start your free trial to turn on protection."
@@ -64,6 +64,26 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.top, 2)
+
+                if !viewModel.hasSubscription {
+                    VStack(spacing: 0) {
+                        BlockingStatRow(
+                            value: viewModel.blockedTodayCount.formatted(.number),
+                            label: "ad & tracker requests blocked today"
+                        )
+
+                        Divider()
+                            .padding(.horizontal, 20)
+
+                        BlockingStatRow(
+                            value: viewModel.allTimeBlockCount.formatted(.number),
+                            label: "all-time blocks"
+                        )
+                    }
+                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .opacity(0)
+                    .accessibilityHidden(true)
+                }
 
                 Spacer()
             }
