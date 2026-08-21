@@ -125,7 +125,7 @@ struct ContentView: View {
         .sheet(isPresented: $viewModel.isSubscriptionPresented) {
             SubscriptionView(manager: viewModel.subscriptionManager)
                 .interactiveDismissDisabled(false)
-                .presentationDetents([.fraction(0.75)])
+                .presentationDetents([.fraction(0.85)])
                 .presentationDragIndicator(.hidden)
                 .presentationBackgroundInteraction(.enabled)
         }

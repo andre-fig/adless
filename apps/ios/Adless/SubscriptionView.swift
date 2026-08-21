@@ -44,7 +44,7 @@ struct SubscriptionView: View {
                         Text("Works quietly in the background")
                         Text("No account required")
                     }
-                    .font(.caption2)
+                    .font(.subheadline)
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
