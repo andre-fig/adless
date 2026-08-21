@@ -151,7 +151,8 @@ struct SubscriptionView: View {
                             .foregroundStyle(Color(uiColor: .systemBlue))
                     }
                 }
-                .padding()
+                .padding(.horizontal, 20)
+                .padding(.vertical)
             }
             .overlay {
                 if manager.isProcessing {
