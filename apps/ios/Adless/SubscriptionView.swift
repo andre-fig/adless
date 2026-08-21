@@ -71,8 +71,8 @@ struct SubscriptionView: View {
                                 Button {
                                     selectedProductID = option.id
                                 } label: {
-                                    HStack(spacing: 12) {
-                                        VStack(alignment: .leading, spacing: 8) {
+                                    HStack(alignment: .top, spacing: 12) {
+                                        VStack(alignment: .leading, spacing: 0) {
                                             HStack {
                                                 Text(option.name)
                                                     .font(.subheadline.weight(.semibold))
@@ -85,16 +85,19 @@ struct SubscriptionView: View {
                                             Text(option.description)
                                                 .font(.caption)
                                                 .foregroundStyle(mutedTextColor)
+                                                .padding(.top, 4)
                                             if !option.renewalText.isEmpty {
                                                 Text(option.renewalText)
                                                     .font(.caption.weight(.medium))
-                                                    .foregroundStyle(.green)
+                                                    .foregroundStyle(mutedTextColor)
+                                                    .padding(.top, 6)
                                             }
                                         }
 
                                         Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                                             .font(.body)
                                             .foregroundStyle(isSelected ? adlessBlue : Color.secondary)
+                                            .padding(.top, 2)
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding()
@@ -151,18 +154,18 @@ struct SubscriptionView: View {
                             Button("Restore Purchase") {
                                 Task { await manager.restorePurchases() }
                             }
-                            .font(.caption.weight(.semibold))
+                            .font(.footnote.weight(.semibold))
                             .disabled(manager.isProcessing)
                             .foregroundStyle(adlessBlue)
 
                             Link("Terms of Use", destination: AdlessLegalLinks.terms)
-                                .font(.caption.weight(.semibold))
+                                .font(.footnote.weight(.semibold))
                                 .foregroundStyle(adlessBlue)
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
 
                         Link("Privacy Policy", destination: AdlessLegalLinks.privacy)
-                            .font(.caption.weight(.semibold))
+                            .font(.footnote.weight(.semibold))
                             .foregroundStyle(adlessBlue)
                     }
                 }
