@@ -32,6 +32,12 @@ struct SubscriptionView: View {
             : .white
     }
 
+    private var selectedPlanCardBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.153, green: 0.192, blue: 0.251)
+            : AdlessTheme.selectedPlanBackground
+    }
+
     private var orderedOptions: [SubscriptionOption] {
         manager.options.sorted {
             planSortIndex(for: $0.id) < planSortIndex(for: $1.id)
@@ -136,7 +142,7 @@ struct SubscriptionView: View {
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(.horizontal, 16)
                                     .padding(.vertical, 14)
-                                    .background(planBackground)
+                                    .background(isSelected ? selectedPlanCardBackground : planBackground)
                                     .clipShape(RoundedRectangle(cornerRadius: 16))
                                     .overlay {
                                         RoundedRectangle(cornerRadius: 16)
