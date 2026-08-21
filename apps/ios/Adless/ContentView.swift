@@ -35,7 +35,7 @@ struct ContentView: View {
 
                 Text(viewModel.statusText)
                     .font(.headline)
-                    .foregroundStyle(viewModel.isOn ? .green : .secondary)
+                    .foregroundStyle(viewModel.isOn ? .green : Color.primary.opacity(0.58))
 
                 if viewModel.hasSubscription {
                     VStack(spacing: 0) {
@@ -61,7 +61,7 @@ struct ContentView: View {
                         ? "Browse cleaner. Stay private."
                         : "Turn Adless back on to keep blocking."))
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.primary.opacity(0.58))
                     .multilineTextAlignment(.center)
                     .padding(.top, 2)
 
@@ -120,7 +120,7 @@ private struct BlockingStatRow: View {
 
             Text(label)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.primary.opacity(0.58))
 
             Spacer(minLength: 0)
         }
