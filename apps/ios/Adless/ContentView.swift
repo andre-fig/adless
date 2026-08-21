@@ -66,8 +66,8 @@ struct ContentView: View {
 
                         Text("Premium access required")
                     }
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(Color(red: 0.0, green: 0.32, blue: 0.78))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color(red: 0.06, green: 0.38, blue: 0.82))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .background(AdlessTheme.selectedPlanBackground)
