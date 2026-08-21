@@ -62,7 +62,7 @@ struct ContentView: View {
                 VStack(spacing: 34) {
                     AdlessLogoView(size: 56)
 
-                    VStack(spacing: 6) {
+                    VStack(spacing: 10) {
                         Text(viewModel.isOn ? "Protection Active" : "Protection Off")
                             .font(.title.weight(.semibold))
                             .foregroundStyle(.primary)
