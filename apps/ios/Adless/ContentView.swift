@@ -173,6 +173,9 @@ struct ContentView: View {
                             .foregroundStyle(Color.primary.opacity(0.58))
                             .multilineTextAlignment(.center)
                     }
+                    // Keep the main layout stable when the paused-state
+                    // description wraps to a second line.
+                    .frame(height: 64, alignment: .top)
                     .padding(.top, 2)
                 } else {
                     Text("Start your free trial to turn on protection.")
