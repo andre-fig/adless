@@ -93,7 +93,7 @@ final class AppViewModel: ObservableObject {
         let state = await vpnManager.currentStatus()
         isOn = hasSubscription && (state == .connected || state == .connecting)
         if !hasSubscription {
-            statusText = "Subscription required"
+            statusText = "Premium access required"
             return
         }
         switch state {
@@ -136,6 +136,6 @@ final class AppViewModel: ObservableObject {
         guard state == .connected || state == .connecting else { return }
         try? await vpnManager.stop()
         isOn = false
-        statusText = "Subscription required"
+        statusText = "Premium access required"
     }
 }
