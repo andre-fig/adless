@@ -2,6 +2,8 @@
 
 This is the review packet for the App Store Connect App Privacy section. It is intentionally a guide, not a claim that the questionnaire has already been saved: the current App Store Connect API does not expose this form.
 
+Official Apple instructions: [Manage app privacy](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/).
+
 ## Recommended answers for the current binary
 
 - Data collection: **No, we do not collect data from this app.**

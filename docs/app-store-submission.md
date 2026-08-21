@@ -108,6 +108,8 @@ Suggested review notes:
 
 The current App Store Connect API specification does not expose the App Privacy questionnaire. It must be completed in the App Store Connect web interface. Based on the checked-in binary, the proposed answer is: Adless does not collect data; it has no account, analytics SDK, advertising SDK, tracking, user-generated content, or browsing-history collection. The app makes HTTPS requests to the static GitHub Pages blocklist only to retrieve a manifest/list, and does not associate those requests with an identity. Reconfirm this answer against Apple’s current questionnaire before saving it.
 
+Official instructions: [Manage app privacy](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/).
+
 The review submission remains `READY_FOR_REVIEW`; App Store Connect has accepted the subscription group version item, but has not yet accepted the app version item because the App Privacy state is still incomplete. Individual subscription-version items still report pricing-state errors, so the group version item is the correct item currently attached. No submission was sent to Apple review.
 
 ## App Store Connect API state
