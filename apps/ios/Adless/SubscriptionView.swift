@@ -115,7 +115,7 @@ struct SubscriptionView: View {
                         }
 
                         if let selectedOption {
-                            VStack(spacing: 4) {
+                            VStack(spacing: 8) {
                                 Button {
                                     Task { await manager.purchase(selectedOption) }
                                 } label: {
@@ -148,6 +148,7 @@ struct SubscriptionView: View {
                         .font(.caption)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(mutedTextColor)
+                        .padding(.top, -12)
 
                     VStack(spacing: 22) {
                         HStack(spacing: 22) {
