@@ -81,17 +81,17 @@ struct SubscriptionView: View {
                                                     .font(.subheadline.weight(.semibold))
                                                     .lineLimit(1)
                                                     .minimumScaleFactor(0.85)
-                                                    .padding(.top, 3)
+                                                    .padding(.top, 7)
                                             }
                                             Text(option.description)
-                                                .font(.caption)
+                                                .font(.footnote)
                                                 .foregroundStyle(mutedTextColor)
                                                 .padding(.top, 4)
                                             if !option.renewalText.isEmpty {
                                                 Text(option.renewalText)
-                                                    .font(.caption.weight(.medium))
+                                                    .font(.caption)
                                                     .foregroundStyle(mutedTextColor)
-                                                    .padding(.top, 6)
+                                                    .padding(.top, 9)
                                             }
                                         }
 
