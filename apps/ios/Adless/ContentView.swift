@@ -53,7 +53,7 @@ struct ContentView: View {
             VStack(spacing: 30) {
                 Spacer()
 
-                VStack(spacing: 20) {
+                VStack(spacing: 34) {
                     AdlessLogoView(size: 56)
 
                     VStack(spacing: 6) {
