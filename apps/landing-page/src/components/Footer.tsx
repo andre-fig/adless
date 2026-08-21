@@ -13,13 +13,13 @@ const Footer = () => {
           </div>
 
           <nav className="flex items-center gap-8">
-            <a href="#" className="text-body-sm text-muted-foreground hover:text-foreground transition-colors">
+            <a href={`${import.meta.env.BASE_URL}privacy`} className="text-body-sm text-muted-foreground hover:text-foreground transition-colors">
               {t('privacyPolicy')}
             </a>
-            <a href="#" className="text-body-sm text-muted-foreground hover:text-foreground transition-colors">
+            <a href={`${import.meta.env.BASE_URL}terms`} className="text-body-sm text-muted-foreground hover:text-foreground transition-colors">
               {t('terms')}
             </a>
-            <a href="#" className="text-body-sm text-muted-foreground hover:text-foreground transition-colors">
+            <a href={`${import.meta.env.BASE_URL}support`} className="text-body-sm text-muted-foreground hover:text-foreground transition-colors">
               {t('support')}
             </a>
           </nav>

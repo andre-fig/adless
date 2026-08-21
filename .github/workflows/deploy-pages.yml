@@ -46,6 +46,14 @@ jobs:
       - name: Add GitHub Pages SPA fallback
         run: cp apps/landing-page/dist/index.html apps/landing-page/dist/404.html
 
+      - name: Materialize legal page routes
+        run: |
+          set -euo pipefail
+          for route in privacy terms support; do
+            mkdir -p "apps/landing-page/dist/$route"
+            cp apps/landing-page/dist/index.html "apps/landing-page/dist/$route/index.html"
+          done
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6
 

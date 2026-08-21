@@ -30,7 +30,7 @@ const Hero = () => {
         {/* App Store Button */}
         <div className="animate-fade-in-up" style={{ animationDelay: '0.3s', animationFillMode: 'both' }}>
           <a
-            href="#"
+            href="https://apps.apple.com/app/id6803552143"
             className="inline-flex items-center gap-3 bg-foreground hover:bg-foreground/90 text-background px-7 py-4 rounded-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-apple-md"
             aria-label="Download on the App Store"
           >

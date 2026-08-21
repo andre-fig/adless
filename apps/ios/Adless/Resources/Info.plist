@@ -43,6 +43,8 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSNetworkExtensionUsageDescription</key>
-	<string>Adless cria uma VPN local para filtrar DNS e bloquear anúncios sem enviar tráfego para terceiros.</string>
+	<string>Adless uses an on-device DNS proxy to block ads and trackers without sending your browsing traffic to a remote VPN server.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
