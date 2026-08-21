@@ -26,7 +26,7 @@ struct SubscriptionView: View {
     var body: some View {
         VStack(spacing: 0) {
             Capsule()
-                .fill(Color.secondary.opacity(0.45))
+                .fill(Color.secondary.opacity(0.25))
                 .frame(width: 36, height: 5)
                 .padding(.top, 8)
                 .padding(.bottom, 4)
@@ -34,8 +34,8 @@ struct SubscriptionView: View {
                 .allowsHitTesting(false)
 
             ScrollView {
-                VStack(spacing: 28) {
-                    VStack(alignment: .leading, spacing: 6) {
+                VStack(spacing: 32) {
+                    VStack(alignment: .leading, spacing: 10) {
                         Text("Browse cleaner with Adless")
                             .font(.title2.weight(.semibold))
 
@@ -45,7 +45,7 @@ struct SubscriptionView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: 16) {
                         ForEach(benefits, id: \.self) { benefit in
                             HStack(alignment: .firstTextBaseline, spacing: 8) {
                                 Image(systemName: "checkmark")
@@ -60,7 +60,7 @@ struct SubscriptionView: View {
                     .foregroundStyle(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    VStack(spacing: 16) {
+                    VStack(spacing: 20) {
                         ForEach(orderedProducts, id: \.id) { product in
                             let isSelected = selectedProduct?.id == product.id
 
@@ -130,8 +130,8 @@ struct SubscriptionView: View {
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
 
-                    VStack(spacing: 14) {
-                        HStack(spacing: 20) {
+                    VStack(spacing: 22) {
+                        HStack(spacing: 22) {
                             Button("Restore Purchase") {
                                 Task { await manager.restorePurchases() }
                             }
@@ -169,6 +169,7 @@ struct SubscriptionView: View {
                 Text(manager.message ?? "")
             }
         }
+        .background(Color(.systemBackground))
     }
 
     private func planName(for product: Product) -> String {

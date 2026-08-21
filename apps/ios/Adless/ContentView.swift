@@ -127,6 +127,7 @@ struct ContentView: View {
                 .interactiveDismissDisabled(false)
                 .presentationDetents([.fraction(0.85)])
                 .presentationDragIndicator(.hidden)
+                .presentationBackground(Color(.systemBackground))
                 .presentationBackgroundInteraction(.enabled)
         }
     }
