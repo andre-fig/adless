@@ -31,6 +31,7 @@ struct ContentView: View {
                         .multilineTextAlignment(.center)
                 }
 
+                VStack(spacing: viewModel.hasSubscription ? 24 : 12) {
                 Button {
                     if viewModel.hasSubscription {
                         Task { await viewModel.toggle() }
@@ -71,6 +72,7 @@ struct ContentView: View {
                     .padding(.vertical, 8)
                     .background(AdlessTheme.selectedPlanBackground)
                     .clipShape(Capsule())
+                }
                 }
 
                 if viewModel.hasSubscription {
