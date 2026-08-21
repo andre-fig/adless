@@ -3,11 +3,30 @@ import SwiftUI
 struct ContentView: View {
     @ObservedObject var viewModel: AppViewModel
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.colorScheme) private var colorScheme
     @State private var subscriptionSheetHeight: CGFloat?
 
     private var subscriptionDetent: PresentationDetent {
         guard let subscriptionSheetHeight else { return .medium }
         return .height(subscriptionSheetHeight)
+    }
+
+    private var inactiveButtonForeground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.67, green: 0.69, blue: 0.74)
+            : Color(red: 0.40, green: 0.43, blue: 0.49)
+    }
+
+    private var inactiveButtonBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.145, green: 0.165, blue: 0.20)
+            : Color(red: 0.92, green: 0.93, blue: 0.95)
+    }
+
+    private var inactiveButtonBorder: Color {
+        colorScheme == .dark
+            ? Color(red: 0.25, green: 0.27, blue: 0.31)
+            : Color(red: 0.84, green: 0.86, blue: 0.89)
     }
 
     var body: some View {
@@ -48,22 +67,24 @@ struct ContentView: View {
                         .frame(width: 144, height: 144)
                         .foregroundStyle(viewModel.isOn
                                          ? Color.white
-                                         : Color(red: 0.40, green: 0.43, blue: 0.49))
+                                         : inactiveButtonForeground)
                         .background(viewModel.isOn
                                     ? Color.green
-                                    : Color(red: 0.92, green: 0.93, blue: 0.95))
+                                    : inactiveButtonBackground)
                         .overlay {
                             Circle()
                                 .stroke(
                                     viewModel.isOn
                                         ? Color.clear
-                                        : Color(red: 0.84, green: 0.86, blue: 0.89),
+                                        : inactiveButtonBorder,
                                     lineWidth: 1
                                 )
                         }
                         .clipShape(Circle())
                         .shadow(
-                            color: viewModel.isOn ? Color.clear : Color.black.opacity(0.14),
+                            color: viewModel.isOn
+                                ? Color.clear
+                                : Color.black.opacity(colorScheme == .dark ? 0.30 : 0.14),
                             radius: 10,
                             x: 0,
                             y: 6
