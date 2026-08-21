@@ -50,6 +50,11 @@ struct SubscriptionView: View {
                             .multilineTextAlignment(.center)
                     }
 
+                    Text("Your subscription renews automatically until canceled. Payment is processed by the App Store.")
+                        .font(.footnote)
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(.secondary)
+
                     VStack(spacing: 10) {
                         HStack {
                             Button("Restore Purchase") {
@@ -64,11 +69,6 @@ struct SubscriptionView: View {
 
                         Link("Privacy Policy", destination: AdlessLegalLinks.privacy)
                     }
-
-                    Text("Your subscription renews automatically until canceled. Payment is processed by the App Store.")
-                        .font(.footnote)
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.secondary)
                 }
                 .padding()
             }
