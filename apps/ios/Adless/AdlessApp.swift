@@ -134,7 +134,7 @@ final class AppViewModel: ObservableObject {
 
     @MainActor
     func applicationDidBecomeActive() async {
-        guard let blocklistManager else { return }
+        guard !isPreparing, let blocklistManager else { return }
         refreshBlockingStats()
         await subscriptionManager.loadAndRefresh()
         hasSubscription = subscriptionManager.hasActiveEntitlement
@@ -158,14 +158,25 @@ final class AppViewModel: ObservableObject {
             let remaining = max(0, minimumPreparationDuration - elapsed)
 
             DispatchQueue.main.asyncAfter(deadline: .now() + remaining) { [weak self] in
-                guard let self else { return }
-                self.blocklistManager = manager
-                self.isPreparing = false
                 Task { @MainActor [weak self] in
-                    await self?.applicationDidBecomeActive()
+                    await self?.finishPreparation(with: manager)
                 }
             }
         }
+    }
+
+    @MainActor
+    private func finishPreparation(with manager: BlocklistManager) async {
+        blocklistManager = manager
+        hasSubscription = subscriptionManager.hasActiveEntitlement
+
+        let state = await vpnManager.currentStatus()
+        let wasAlreadyActive = state == .connected || state == .connecting
+        isOn = hasSubscription && wasAlreadyActive
+        statusText = isOn ? "On" : "Off"
+
+        isPreparing = false
+        await applicationDidBecomeActive()
     }
 
     @MainActor
