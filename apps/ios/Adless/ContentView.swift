@@ -3,6 +3,12 @@ import SwiftUI
 struct ContentView: View {
     @ObservedObject var viewModel: AppViewModel
     @Environment(\.scenePhase) private var scenePhase
+    @State private var subscriptionSheetHeight: CGFloat?
+
+    private var subscriptionDetent: PresentationDetent {
+        guard let subscriptionSheetHeight else { return .medium }
+        return .height(subscriptionSheetHeight)
+    }
 
     var body: some View {
         ZStack {
@@ -132,9 +138,19 @@ struct ContentView: View {
             }
         }
         .sheet(isPresented: $viewModel.isSubscriptionPresented) {
-            SubscriptionView(manager: viewModel.subscriptionManager)
+            SubscriptionView(
+                manager: viewModel.subscriptionManager,
+                onContentHeightChange: { contentHeight in
+                    let proposedHeight = contentHeight + 24
+                    guard proposedHeight.isFinite, proposedHeight > 0 else { return }
+
+                    if subscriptionSheetHeight == nil || abs(subscriptionSheetHeight! - proposedHeight) > 1 {
+                        subscriptionSheetHeight = proposedHeight
+                    }
+                }
+            )
                 .interactiveDismissDisabled(false)
-                .presentationDetents([.fraction(0.85)])
+                .presentationDetents([subscriptionDetent])
                 .presentationDragIndicator(.hidden)
                 .presentationBackground(Color(.systemBackground))
                 .presentationBackgroundInteraction(.enabled)

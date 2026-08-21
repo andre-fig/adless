@@ -3,6 +3,7 @@ import SwiftUI
 
 struct SubscriptionView: View {
     @ObservedObject var manager: SubscriptionManager
+    var onContentHeightChange: (CGFloat) -> Void = { _ in }
     @State private var selectedProductID: String?
 
     private let benefits = [
@@ -153,7 +154,17 @@ struct SubscriptionView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical)
+                .background {
+                    GeometryReader { proxy in
+                        Color.clear
+                            .preference(
+                                key: SubscriptionContentHeightKey.self,
+                                value: proxy.size.height
+                            )
+                    }
+                }
             }
+            .onPreferenceChange(SubscriptionContentHeightKey.self, perform: onContentHeightChange)
             .overlay {
                 if manager.isProcessing {
                     ProgressView()
@@ -194,6 +205,14 @@ struct SubscriptionView: View {
         default:
             return 2
         }
+    }
+}
+
+private struct SubscriptionContentHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 
