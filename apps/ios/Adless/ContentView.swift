@@ -93,20 +93,10 @@ struct ContentView: View {
                 }
 
                 if viewModel.hasSubscription {
-                    VStack(spacing: 0) {
-                        BlockingStatRow(
-                            value: viewModel.blockedTodayCount.formatted(.number),
-                            label: "ad & tracker requests blocked today"
-                        )
-
-                        Divider()
-                            .padding(.horizontal, 20)
-
-                        BlockingStatRow(
-                            value: viewModel.allTimeBlockCount.formatted(.number),
-                            label: "all-time blocks"
-                        )
-                    }
+                    BlockingStatsView(
+                        blockedTodayValue: viewModel.blockedTodayCount.formatted(.number),
+                        allTimeValue: viewModel.allTimeBlockCount.formatted(.number)
+                    )
                     .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
                 }
 
@@ -121,20 +111,10 @@ struct ContentView: View {
                     .padding(.top, 2)
 
                 if !viewModel.hasSubscription {
-                    VStack(spacing: 0) {
-                        BlockingStatRow(
-                            value: viewModel.blockedTodayCount.formatted(.number),
-                            label: "ad & tracker requests blocked today"
-                        )
-
-                        Divider()
-                            .padding(.horizontal, 20)
-
-                        BlockingStatRow(
-                            value: viewModel.allTimeBlockCount.formatted(.number),
-                            label: "all-time blocks"
-                        )
-                    }
+                    BlockingStatsView(
+                        blockedTodayValue: viewModel.blockedTodayCount.formatted(.number),
+                        allTimeValue: viewModel.allTimeBlockCount.formatted(.number)
+                    )
                     .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
                     .opacity(0)
                     .accessibilityHidden(true)
@@ -193,24 +173,40 @@ struct ContentView: View {
     }
 }
 
-private struct BlockingStatRow: View {
-    let value: String
-    let label: String
+private struct BlockingStatsView: View {
+    let blockedTodayValue: String
+    let allTimeValue: String
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(value)
-                .font(.system(.title3, design: .rounded).weight(.semibold))
-                .monospacedDigit()
+        VStack(spacing: 0) {
+            VStack(spacing: 2) {
+                Text(blockedTodayValue)
+                    .font(.system(.title2, design: .rounded).weight(.semibold))
+                    .monospacedDigit()
 
-            Text(label)
-                .font(.subheadline)
-                .foregroundStyle(Color.primary.opacity(0.58))
+                Text("ad & tracker requests blocked today")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.primary.opacity(0.58))
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
 
-            Spacer(minLength: 0)
+            Divider()
+                .padding(.horizontal, 20)
+
+            HStack(spacing: 4) {
+                Text(allTimeValue)
+                    .monospacedDigit()
+
+                Text("all-time blocks")
+            }
+            .font(.subheadline)
+            .foregroundStyle(Color.primary.opacity(0.58))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
     }
 }
 
