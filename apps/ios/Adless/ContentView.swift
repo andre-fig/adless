@@ -76,11 +76,7 @@ struct ContentView: View {
                                    ? "Turns DNS blocking on or off"
                                    : "Opens subscription options")
 
-                if viewModel.hasSubscription {
-                    Text(viewModel.statusText)
-                        .font(.headline)
-                        .foregroundStyle(viewModel.isOn ? .green : Color.primary.opacity(0.58))
-                } else {
+                if !viewModel.hasSubscription {
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles")
                             .font(.caption.weight(.medium))
