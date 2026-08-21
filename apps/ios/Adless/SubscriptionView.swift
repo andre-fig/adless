@@ -38,30 +38,32 @@ struct SubscriptionView: View {
 
             ScrollView {
                 VStack(spacing: 28) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Browse cleaner with Adless")
-                            .font(.title2.weight(.semibold))
+                    VStack(spacing: 26) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Browse cleaner with Adless")
+                                .font(.title2.weight(.semibold))
 
-                        Text("Block ads and trackers with one tap.")
-                            .font(.subheadline)
-                            .foregroundStyle(mutedTextColor)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                            Text("Block ads and trackers with one tap.")
+                                .font(.subheadline)
+                                .foregroundStyle(mutedTextColor)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                    VStack(alignment: .leading, spacing: 16) {
-                        ForEach(benefits, id: \.self) { benefit in
-                            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                                Image(systemName: "checkmark")
-                                    .font(.caption.weight(.bold))
-                                    .foregroundStyle(.green)
+                        VStack(alignment: .leading, spacing: 16) {
+                            ForEach(benefits, id: \.self) { benefit in
+                                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                                    Image(systemName: "checkmark")
+                                        .font(.caption.weight(.bold))
+                                        .foregroundStyle(.green)
 
-                                Text(benefit)
+                                    Text(benefit)
+                                }
                             }
                         }
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .font(.subheadline)
-                    .foregroundStyle(.primary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
 
                     VStack(spacing: 18) {
                         VStack(spacing: 14) {
