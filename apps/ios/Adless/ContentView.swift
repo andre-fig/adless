@@ -64,7 +64,7 @@ struct ContentView: View {
 
                     VStack(spacing: 6) {
                         Text(viewModel.isOn ? "Protection Active" : "Protection Off")
-                            .font(.title2.weight(.semibold))
+                            .font(.title.weight(.semibold))
                             .foregroundStyle(.primary)
 
                         Text(!viewModel.hasSubscription
