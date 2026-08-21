@@ -155,7 +155,6 @@ struct ContentView: View {
                         allTimeValue: viewModel.allTimeBlockCount.formatted(.number)
                     )
                     .background(statsBackgroundStyle, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-                    .padding(.horizontal)
                 }
 
                 if viewModel.hasSubscription {
@@ -189,14 +188,14 @@ struct ContentView: View {
                         allTimeValue: viewModel.allTimeBlockCount.formatted(.number)
                     )
                     .background(statsBackgroundStyle, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-                    .padding(.horizontal)
                     .opacity(0)
                     .accessibilityHidden(true)
                 }
 
                 Spacer()
             }
-            .padding()
+            .padding(.horizontal, 32)
+            .padding(.vertical)
             .offset(y: -52)
 
             if viewModel.isSubscriptionPresented {
