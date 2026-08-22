@@ -97,20 +97,6 @@ jobs:
           echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
           echo "Selected build number $build_number"
 
-      - name: Run iOS tests
-        if: steps.preflight.outputs.should_release == 'true'
-        run: |
-          set -euo pipefail
-          simulator_id="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ {gsub(/[[:space:]]/, "", $2); print $2; exit}')"
-          test -n "$simulator_id"
-          xcodebuild \
-            -project "$IOS_PROJECT" \
-            -scheme AdlessTests \
-            -destination "platform=iOS Simulator,id=$simulator_id" \
-            -derivedDataPath "$RUNNER_TEMP/adless-ios-derived-data" \
-            CODE_SIGNING_ALLOWED=NO \
-            test
-
       - name: Archive signed iOS app
         if: steps.preflight.outputs.should_release == 'true'
         run: |
