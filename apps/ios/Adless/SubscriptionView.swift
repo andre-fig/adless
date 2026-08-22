@@ -15,6 +15,7 @@ struct SubscriptionView: View {
     @Environment(\.colorScheme) private var colorScheme
     var onContentHeightChange: (CGFloat) -> Void = { _ in }
     @State private var selectedProductID: String?
+    @State private var presentedLegalDocument: AdlessLegalDocument?
 
     private let benefits = [
         "Cleaner, distraction-free browsing",
@@ -67,8 +68,7 @@ struct SubscriptionView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
+        VStack(spacing: 0) {
             Capsule()
                 .fill(Color.secondary.opacity(0.25))
                 .frame(width: 36, height: 5)
@@ -219,13 +219,17 @@ struct SubscriptionView: View {
                             .disabled(manager.isProcessing)
                             .foregroundStyle(adlessBlue)
 
-                            NavigationLink("Terms of Use", value: AdlessLegalDocument.terms)
+                            Button("Terms of Use") {
+                                presentedLegalDocument = .terms
+                            }
                                 .font(.footnote.weight(.semibold))
                                 .foregroundStyle(adlessBlue)
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
 
-                        NavigationLink("Privacy Policy", value: AdlessLegalDocument.privacy)
+                        Button("Privacy Policy") {
+                            presentedLegalDocument = .privacy
+                        }
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(adlessBlue)
                     }
@@ -261,11 +265,16 @@ struct SubscriptionView: View {
             }
             }
             .background(AdlessTheme.subscriptionDrawerBackground)
-            .navigationDestination(for: AdlessLegalDocument.self) { document in
-                AdlessLegalDocumentView(document: document)
+        .overlay {
+            if let presentedLegalDocument {
+                NavigationStack {
+                    AdlessLegalDocumentView(document: presentedLegalDocument) {
+                        self.presentedLegalDocument = nil
+                    }
+                }
+                .background(AdlessTheme.subscriptionDrawerBackground)
             }
         }
-        .background(AdlessTheme.subscriptionDrawerBackground)
     }
 
     private func planSortIndex(for productID: String) -> Int {
@@ -371,8 +380,8 @@ private struct AdlessLegalSection: Identifiable {
 
 private struct AdlessLegalDocumentView: View {
     let document: AdlessLegalDocument
+    let onBack: () -> Void
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.dismiss) private var dismiss
 
     private var mutedTextColor: Color {
         colorScheme == .dark
@@ -421,7 +430,7 @@ private struct AdlessLegalDocumentView: View {
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
-                    dismiss()
+                    onBack()
                 } label: {
                     Label("Back", systemImage: "chevron.left")
                 }
