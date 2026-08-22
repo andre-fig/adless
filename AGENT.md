@@ -173,7 +173,8 @@ desnecessários.
 `.github/workflows/release-ios.yml` executa no `main` quando há alteração no
 projeto de produção do iOS e roda testes, archive, validação, upload e
 submissão no App Store Connect. O workflow de testes separado roda em PRs e na
-`develop`; assim o mesmo teste não é executado duas vezes no `main`. Ele usa
+o `pre-push` local executa os testes antes do envio; assim o mesmo teste não é
+executado em cada push da `develop` nem duas vezes no `main`. O workflow usa
 somente os secrets `ASC_KEY_ID`, `ASC_ISSUER_ID` e
 `ASC_PRIVATE_KEY`; a chave é materializada apenas no diretório temporário do
 runner. Versões já em revisão são ignoradas sem erro para evitar submissões

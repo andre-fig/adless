@@ -1,17 +1,9 @@
 name: Adless iOS tests
 
 on:
-  push:
-    branches:
-      - develop
-    paths:
-      - "apps/ios/**"
-      - "tools/blocklists/**"
-      - ".github/workflows/ios-tests.yml"
   pull_request:
     paths:
       - "apps/ios/**"
-      - "tools/blocklists/**"
       - ".github/workflows/ios-tests.yml"
   workflow_dispatch:
 
