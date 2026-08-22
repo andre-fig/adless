@@ -15,6 +15,7 @@ struct SubscriptionView: View {
     @Environment(\.colorScheme) private var colorScheme
     var onContentHeightChange: (CGFloat) -> Void = { _ in }
     @State private var selectedProductID: String?
+    @State private var presentedLegalDocument: AdlessLegalDocument?
 
     private let benefits = [
         "Cleaner, distraction-free browsing",
@@ -67,8 +68,7 @@ struct SubscriptionView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
+        VStack(spacing: 0) {
             Capsule()
                 .fill(Color.secondary.opacity(0.25))
                 .frame(width: 36, height: 5)
@@ -77,7 +77,12 @@ struct SubscriptionView: View {
                 .accessibilityHidden(true)
                 .allowsHitTesting(false)
 
-            ScrollView {
+            if let presentedLegalDocument {
+                AdlessLegalDocumentView(document: presentedLegalDocument) {
+                    self.presentedLegalDocument = nil
+                }
+            } else {
+                ScrollView {
                 VStack(spacing: 28) {
                     VStack(spacing: 24) {
                         VStack(spacing: 26) {
@@ -219,13 +224,17 @@ struct SubscriptionView: View {
                             .disabled(manager.isProcessing)
                             .foregroundStyle(adlessBlue)
 
-                            NavigationLink("Terms of Use", value: AdlessLegalDocument.terms)
+                            Button("Terms of Use") {
+                                presentedLegalDocument = .terms
+                            }
                                 .font(.footnote.weight(.semibold))
                                 .foregroundStyle(adlessBlue)
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
 
-                        NavigationLink("Privacy Policy", value: AdlessLegalDocument.privacy)
+                        Button("Privacy Policy") {
+                            presentedLegalDocument = .privacy
+                        }
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(adlessBlue)
                     }
@@ -241,28 +250,24 @@ struct SubscriptionView: View {
                             )
                     }
                 }
-            }
-            .onPreferenceChange(SubscriptionContentHeightKey.self, perform: onContentHeightChange)
-            .overlay {
-                if manager.isProcessing {
-                    ProgressView()
-                        .padding()
-                        .background(.regularMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                .onPreferenceChange(SubscriptionContentHeightKey.self, perform: onContentHeightChange)
+                .overlay {
+                    if manager.isProcessing {
+                        ProgressView()
+                            .padding()
+                            .background(.regularMaterial)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                }
+                .alert("Subscription", isPresented: Binding(
+                    get: { manager.message != nil },
+                    set: { if !$0 { manager.clearMessage() } }
+                )) {
+                    Button("OK") { manager.clearMessage() }
+                } message: {
+                    Text(manager.message ?? "")
                 }
             }
-            .alert("Subscription", isPresented: Binding(
-                get: { manager.message != nil },
-                set: { if !$0 { manager.clearMessage() } }
-            )) {
-                Button("OK") { manager.clearMessage() }
-            } message: {
-                Text(manager.message ?? "")
-            }
-            }
-            .background(AdlessTheme.subscriptionDrawerBackground)
-            .navigationDestination(for: AdlessLegalDocument.self) { document in
-                AdlessLegalDocumentView(document: document)
             }
         }
         .background(AdlessTheme.subscriptionDrawerBackground)
@@ -371,8 +376,8 @@ private struct AdlessLegalSection: Identifiable {
 
 private struct AdlessLegalDocumentView: View {
     let document: AdlessLegalDocument
+    let onBack: () -> Void
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.dismiss) private var dismiss
 
     private var mutedTextColor: Color {
         colorScheme == .dark
@@ -381,52 +386,59 @@ private struct AdlessLegalDocumentView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                Text(document.lastUpdated)
-                    .font(.caption)
-                    .foregroundStyle(mutedTextColor)
-
-                Text(document.introduction)
-                    .font(.body)
-
-                ForEach(document.sections) { section in
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(section.title)
-                            .font(.headline)
-
-                        Text(section.body)
-                            .font(.body)
-                            .foregroundStyle(mutedTextColor)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Contact")
-                        .font(.headline)
-
-                    Text(document.contactText)
-                        .font(.body)
-                        .foregroundStyle(mutedTextColor)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 24)
-        }
-        .background(AdlessTheme.subscriptionDrawerBackground)
-        .navigationTitle(document.title)
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
                 Button {
-                    dismiss()
+                    onBack()
                 } label: {
                     Label("Back", systemImage: "chevron.left")
                 }
                 .foregroundStyle(Color(red: 0.0, green: 0.32, blue: 0.78))
+
+                Text(document.title)
+                    .font(.headline)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+
+            Divider()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    Text(document.lastUpdated)
+                        .font(.caption)
+                        .foregroundStyle(mutedTextColor)
+
+                    Text(document.introduction)
+                        .font(.body)
+
+                    ForEach(document.sections) { section in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(section.title)
+                                .font(.headline)
+
+                            Text(section.body)
+                                .font(.body)
+                                .foregroundStyle(mutedTextColor)
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Contact")
+                            .font(.headline)
+
+                        Text(document.contactText)
+                            .font(.body)
+                            .foregroundStyle(mutedTextColor)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 24)
             }
         }
+        .background(AdlessTheme.subscriptionDrawerBackground)
     }
 }
