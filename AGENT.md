@@ -157,13 +157,14 @@ testes reais, configure os produtos e uma conta Sandbox no App Store Connect.
 
 `.github/workflows/update-blocklist.yml` executa diariamente e também pode ser
 executado manualmente em Ubuntu. Ele baixa, normaliza, valida e publica somente
-os artefatos permitidos. Se houver mudança real, ele despacha o deploy da
-landing; quando não houver mudança, não cria commit nem deploy. Mudanças
-inesperadas devem fazer o workflow falhar.
+os artefatos permitidos. Se houver mudança real, o push dos artefatos dispara o
+deploy da landing; quando não houver mudança, não cria commit nem deploy.
+Uma nova execução cancela a anterior do mesmo workflow. Mudanças inesperadas
+devem fazer o workflow falhar.
 
 `.github/workflows/deploy-pages.yml` constrói a landing e publica o diretório
-`apps/landing-page/dist` após alterações relevantes da landing na `main`, após o
-dispatch do workflow de blocklist ou execução manual. Ele não usa mais
+`apps/landing-page/dist` após alterações relevantes da landing ou dos artefatos
+públicos da blocklist na `main`, ou execução manual. Ele não usa mais
 `workflow_run`, evitando deploy duplicado e checkout de um commit antigo. O
 workflow usa as versões atuais das actions e não deve receber segredos
 desnecessários.
@@ -177,6 +178,9 @@ somente os secrets `ASC_KEY_ID`, `ASC_ISSUER_ID` e
 runner. Versões já em revisão são ignoradas sem erro para evitar submissões
 duplicadas. O fluxo de desenvolvimento é `develop` → pull request → `main`.
 Consulte `docs/ios-release.md` antes de alterar esse processo.
+
+Todos os workflows usam `concurrency`; quando uma nova execução do mesmo grupo
+é disparada, a execução anterior é cancelada para evitar trabalho duplicado.
 
 Ao alterar workflows:
 

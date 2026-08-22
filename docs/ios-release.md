@@ -9,8 +9,10 @@ develop  ->  pull request  ->  main  ->  test, archive, upload, submit
 Every push to `main` that changes production iOS code/resources, the App Store
 Connect release helper, or the export options starts
 `.github/workflows/release-ios.yml`. A blocklist-only commit does not start an
-iOS binary release. The workflow keeps only one release in flight and never
-cancels an active upload.
+iOS binary release. The workflow keeps only one release in flight: a newer run
+cancels the previous run in the same concurrency group. If Apple has already
+accepted an upload before cancellation, the next preflight still checks the
+App Store state and avoids submitting a duplicate version.
 
 ## GitHub secrets
 

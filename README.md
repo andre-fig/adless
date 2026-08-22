@@ -72,9 +72,11 @@ python3 tools/blocklists/validate_blocklist.py
 Detalhes operacionais estão em
 [`tools/blocklists/README.md`](tools/blocklists/README.md).
 
-O workflow `deploy-pages.yml` publica a build da landing no GitHub Pages. É
+O workflow `deploy-pages.yml` publica a build da landing no GitHub Pages após
+alterações relevantes da landing ou dos artefatos públicos da blocklist. É
 necessário selecionar `GitHub Actions` como fonte de publicação em Settings →
-Pages no repositório.
+Pages no repositório. Cada workflow usa `concurrency` e cancela a execução
+anterior do mesmo grupo quando uma nova é disparada.
 
 O desenvolvimento acontece na branch `develop`; PRs e commits nela executam os
 testes do iOS. Um merge para `main` inicia o workflow de release quando há
