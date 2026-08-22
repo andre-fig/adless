@@ -67,7 +67,8 @@ struct SubscriptionView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        NavigationStack {
+            VStack(spacing: 0) {
             Capsule()
                 .fill(Color.secondary.opacity(0.25))
                 .frame(width: 36, height: 5)
@@ -218,13 +219,13 @@ struct SubscriptionView: View {
                             .disabled(manager.isProcessing)
                             .foregroundStyle(adlessBlue)
 
-                            Link("Terms of Use", destination: AdlessLegalLinks.terms)
+                            NavigationLink("Terms of Use", value: AdlessLegalDocument.terms)
                                 .font(.footnote.weight(.semibold))
                                 .foregroundStyle(adlessBlue)
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
 
-                        Link("Privacy Policy", destination: AdlessLegalLinks.privacy)
+                        NavigationLink("Privacy Policy", value: AdlessLegalDocument.privacy)
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(adlessBlue)
                     }
@@ -258,6 +259,11 @@ struct SubscriptionView: View {
             } message: {
                 Text(manager.message ?? "")
             }
+            }
+            .background(AdlessTheme.subscriptionDrawerBackground)
+            .navigationDestination(for: AdlessLegalDocument.self) { document in
+                AdlessLegalDocumentView(document: document)
+            }
         }
         .background(AdlessTheme.subscriptionDrawerBackground)
     }
@@ -282,7 +288,145 @@ private struct SubscriptionContentHeightKey: PreferenceKey {
     }
 }
 
-private enum AdlessLegalLinks {
-    static let terms = URL(string: "https://andre-fig.github.io/adless/terms")!
-    static let privacy = URL(string: "https://andre-fig.github.io/adless/privacy")!
+private enum AdlessLegalDocument: Hashable {
+    case terms
+    case privacy
+
+    var title: String {
+        switch self {
+        case .terms:
+            return "Terms of Use"
+        case .privacy:
+            return "Privacy Policy"
+        }
+    }
+
+    var lastUpdated: String {
+        "Last updated: August 20, 2026"
+    }
+
+    var introduction: String {
+        switch self {
+        case .terms:
+            return "These Terms of Use govern your use of Adless, an on-device DNS filtering application developed by Orbe Works."
+        case .privacy:
+            return "Adless is developed by Orbe Works. This Privacy Policy explains what happens when you use the Adless iOS app and website."
+        }
+    }
+
+    var sections: [AdlessLegalSection] {
+        switch self {
+        case .terms:
+            return [
+                AdlessLegalSection(
+                    title: "Subscriptions",
+                    body: "Adless may be offered through monthly and annual auto-renewable subscriptions. A subscription includes the features shown in the app at the time of purchase. Any free trial, price, renewal date, and applicable taxes are displayed by Apple before purchase.\n\nPayment is charged to your Apple Account. Unless canceled through your Apple Account settings at least 24 hours before the end of the current period, a subscription renews automatically. Apple manages billing, refunds, and cancellation."
+                ),
+                AdlessLegalSection(
+                    title: "Use of the service",
+                    body: "Adless provides local DNS-based blocking of domains identified by its blocklist. No filtering system can identify every ad, tracker, or domain, and blocking a domain can occasionally affect a website or app. You are responsible for deciding whether to keep the protection enabled."
+                ),
+                AdlessLegalSection(
+                    title: "Availability",
+                    body: "We may update the blocklist, app, or service to improve reliability and security. The app keeps a valid local list and can continue using it when the network is unavailable, but uninterrupted operation cannot be guaranteed."
+                )
+            ]
+        case .privacy:
+            return [
+                AdlessLegalSection(
+                    title: "What Adless does",
+                    body: "Adless uses Apple’s Network Extension DNS Proxy to process DNS queries on your device and block domains included in the active blocklist. DNS queries are handled locally by the app and are not sent to an Orbe Works server or a remote VPN service."
+                ),
+                AdlessLegalSection(
+                    title: "Information we collect",
+                    body: "Orbe Works does not collect account information, browsing history, DNS query history, device identifiers, advertising identifiers, analytics, or payment information through Adless. The app has no account, login, or custom backend. Blocking statistics are stored locally in the app’s protected storage."
+                ),
+                AdlessLegalSection(
+                    title: "Third parties",
+                    body: "Apple processes App Store purchases and subscriptions under Apple’s own terms and privacy policy. Adless downloads public, static blocklist files from GitHub Pages. Those requests can include standard technical connection information handled by the hosting provider, such as an IP address."
+                ),
+                AdlessLegalSection(
+                    title: "Data retention",
+                    body: "Adless does not maintain a user account or server-side user record. Local blocklists, subscription state, and blocking statistics can be removed by deleting the app. Apple manages purchase records and subscription history."
+                ),
+                AdlessLegalSection(
+                    title: "Children",
+                    body: "Adless is not directed at children and does not knowingly collect personal information from children."
+                )
+            ]
+        }
+    }
+
+    var contactText: String {
+        "For support, contact a_figueiredo@icloud.com."
+    }
+}
+
+private struct AdlessLegalSection: Identifiable {
+    let title: String
+    let body: String
+
+    var id: String { title }
+}
+
+private struct AdlessLegalDocumentView: View {
+    let document: AdlessLegalDocument
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dismiss) private var dismiss
+
+    private var mutedTextColor: Color {
+        colorScheme == .dark
+            ? Color(red: 0.66, green: 0.68, blue: 0.73)
+            : Color(red: 0.40, green: 0.41, blue: 0.44)
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                Text(document.lastUpdated)
+                    .font(.caption)
+                    .foregroundStyle(mutedTextColor)
+
+                Text(document.introduction)
+                    .font(.body)
+
+                ForEach(document.sections) { section in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(section.title)
+                            .font(.headline)
+
+                        Text(section.body)
+                            .font(.body)
+                            .foregroundStyle(mutedTextColor)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Contact")
+                        .font(.headline)
+
+                    Text(document.contactText)
+                        .font(.body)
+                        .foregroundStyle(mutedTextColor)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 24)
+        }
+        .background(AdlessTheme.subscriptionDrawerBackground)
+        .navigationTitle(document.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    Label("Back", systemImage: "chevron.left")
+                }
+                .foregroundStyle(Color(red: 0.0, green: 0.32, blue: 0.78))
+            }
+        }
+    }
 }
