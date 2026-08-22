@@ -12,6 +12,7 @@
     "build:landing": "npm --workspace @adless/landing-page run build",
     "lint": "npm --workspace @adless/landing-page run lint",
     "preview:landing": "npm --workspace @adless/landing-page run preview",
+    "prepare": "bash tools/dev/install-git-hooks.sh",
     "setup:hooks": "bash tools/dev/install-git-hooks.sh"
   },
   "engines": {
