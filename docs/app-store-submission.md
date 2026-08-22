@@ -117,9 +117,9 @@ The App Store Connect review submission was accepted on 2026-08-21 and is now `W
 - App ID: `6803552143`
 - Version ID: `e8e4cb87-8885-4c99-9a8b-e3c3474813b8`
 - Build ID: `10c2d829-2050-4925-83c4-9520beb8a6d8`
-- Review submission ID: `6ef82753-09bf-438b-beb1-63b41df7911f`
+- Review submission ID: `33b0457c-19be-46cb-a80c-5542539e2ca6`
 - Review submission state: `WAITING_FOR_REVIEW`
-- Submitted date: `2026-08-21T04:10:50.711Z`
+- Submitted date: `2026-08-22T00:44:08.448Z`
 - Subscription group version `7ad49d18-17f3-4056-99bc-47c26ddd8120`: review item `READY_FOR_REVIEW`
 - Monthly subscription version `db4440ac-5372-4290-8f84-aed6644c5336`: review item `READY_FOR_REVIEW`
 - Annual subscription version `09694ee5-73ff-4f6f-9fc6-da1a7de00f6a`: review item `READY_FOR_REVIEW`

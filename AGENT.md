@@ -164,6 +164,14 @@ artefatos permitidos. Mudanças inesperadas devem fazer o workflow falhar.
 manual. O workflow usa as versões atuais das actions e não deve receber
 segredos desnecessários.
 
+`.github/workflows/release-ios.yml` executa no `main` quando há alteração no
+projeto iOS e roda testes, archive, validação, upload e submissão no App Store
+Connect. Ele usa somente os secrets `ASC_KEY_ID`, `ASC_ISSUER_ID` e
+`ASC_PRIVATE_KEY`; a chave é materializada apenas no diretório temporário do
+runner. Versões já em revisão são ignoradas sem erro para evitar submissões
+duplicadas. O fluxo de desenvolvimento é `develop` → pull request → `main`.
+Consulte `docs/ios-release.md` antes de alterar esse processo.
+
 Ao alterar workflows:
 
 - use permissões mínimas;

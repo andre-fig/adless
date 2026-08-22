@@ -1,0 +1,179 @@
+name: Release Adless iOS to App Store Connect
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/ios/**"
+      - "docs/app-store/ExportOptions.plist"
+      - "tools/appstore/**"
+      - ".github/workflows/release-ios.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: adless-ios-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  ASC_APP_ID: "6803552143"
+  ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+  ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+  IOS_PROJECT: apps/ios/Adless.xcodeproj
+  IOS_SCHEME: Adless
+
+jobs:
+  release:
+    runs-on: macos-latest
+    timeout-minutes: 75
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Prepare App Store Connect API key
+        id: credentials
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$ASC_KEY_ID" || { echo "ASC_KEY_ID secret is missing" >&2; exit 1; }
+          test -n "$ASC_ISSUER_ID" || { echo "ASC_ISSUER_ID secret is missing" >&2; exit 1; }
+          test -n "$ASC_PRIVATE_KEY" || { echo "ASC_PRIVATE_KEY secret is missing" >&2; exit 1; }
+          key_path="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
+          printf '%s' "$ASC_PRIVATE_KEY" > "$key_path"
+          chmod 600 "$key_path"
+          echo "key_path=$key_path" >> "$GITHUB_OUTPUT"
+
+      - name: Read marketing version
+        id: version
+        run: |
+          set -euo pipefail
+          marketing_version="$(xcodebuild -project "$IOS_PROJECT" -scheme "$IOS_SCHEME" -configuration Release -showBuildSettings 2>/dev/null | awk -F ' = ' '$1 ~ /^[[:space:]]*MARKETING_VERSION$/ { print $2; exit }')"
+          test -n "$marketing_version"
+          echo "marketing_version=$marketing_version" >> "$GITHUB_OUTPUT"
+          echo "Releasing marketing version $marketing_version"
+
+      - name: Check App Store version state
+        id: preflight
+        run: |
+          set -euo pipefail
+          python3 tools/appstore/appstore_connect.py \
+            --key-id "$ASC_KEY_ID" \
+            --issuer-id "$ASC_ISSUER_ID" \
+            --key-path "${{ steps.credentials.outputs.key_path }}" \
+            preflight \
+            --app-id "$ASC_APP_ID" \
+            --version "${{ steps.version.outputs.marketing_version }}"
+
+      - name: Explain skipped release
+        if: steps.preflight.outputs.should_release != 'true'
+        run: |
+          echo "${{ steps.preflight.outputs.message }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Select next build number
+        id: build
+        if: steps.preflight.outputs.should_release == 'true'
+        run: |
+          set -euo pipefail
+          minimum_build="$((GITHUB_RUN_NUMBER + 1))"
+          build_number="$(python3 tools/appstore/appstore_connect.py \
+            --key-id "$ASC_KEY_ID" \
+            --issuer-id "$ASC_ISSUER_ID" \
+            --key-path "${{ steps.credentials.outputs.key_path }}" \
+            next-build \
+            --app-id "$ASC_APP_ID" \
+            --minimum "$minimum_build")"
+          echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
+          echo "Selected build number $build_number"
+
+      - name: Run iOS tests
+        if: steps.preflight.outputs.should_release == 'true'
+        run: |
+          set -euo pipefail
+          simulator_id="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ {gsub(/[[:space:]]/, "", $2); print $2; exit}')"
+          test -n "$simulator_id"
+          xcodebuild \
+            -project "$IOS_PROJECT" \
+            -scheme AdlessTests \
+            -destination "platform=iOS Simulator,id=$simulator_id" \
+            -derivedDataPath "$RUNNER_TEMP/adless-ios-derived-data" \
+            CODE_SIGNING_ALLOWED=NO \
+            test
+
+      - name: Archive signed iOS app
+        if: steps.preflight.outputs.should_release == 'true'
+        run: |
+          set -euo pipefail
+          xcodebuild archive \
+            -project "$IOS_PROJECT" \
+            -scheme "$IOS_SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Adless.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "${{ steps.credentials.outputs.key_path }}" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            CURRENT_PROJECT_VERSION="${{ steps.build.outputs.build_number }}"
+
+      - name: Export App Store package
+        if: steps.preflight.outputs.should_release == 'true'
+        run: |
+          set -euo pipefail
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Adless.xcarchive" \
+            -exportOptionsPlist docs/app-store/ExportOptions.plist \
+            -exportPath "$RUNNER_TEMP/Adless-export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "${{ steps.credentials.outputs.key_path }}" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      - name: Validate package with Apple
+        if: steps.preflight.outputs.should_release == 'true'
+        run: |
+          set -euo pipefail
+          xcrun altool --validate-app \
+            "$RUNNER_TEMP/Adless-export/Adless.ipa" \
+            --type ios \
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "$ASC_ISSUER_ID"
+
+      - name: Upload package to App Store Connect
+        if: steps.preflight.outputs.should_release == 'true'
+        run: |
+          set -euo pipefail
+          xcrun altool --upload-app \
+            -f "$RUNNER_TEMP/Adless-export/Adless.ipa" \
+            --type ios \
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "$ASC_ISSUER_ID"
+
+      - name: Wait for Apple processing
+        id: processed_build
+        if: steps.preflight.outputs.should_release == 'true'
+        run: |
+          set -euo pipefail
+          python3 tools/appstore/appstore_connect.py \
+            --key-id "$ASC_KEY_ID" \
+            --issuer-id "$ASC_ISSUER_ID" \
+            --key-path "${{ steps.credentials.outputs.key_path }}" \
+            wait-build \
+            --app-id "$ASC_APP_ID" \
+            --build-number "${{ steps.build.outputs.build_number }}"
+
+      - name: Submit processed build for review
+        if: steps.preflight.outputs.should_release == 'true'
+        run: |
+          set -euo pipefail
+          python3 tools/appstore/appstore_connect.py \
+            --key-id "$ASC_KEY_ID" \
+            --issuer-id "$ASC_ISSUER_ID" \
+            --key-path "${{ steps.credentials.outputs.key_path }}" \
+            attach-submit \
+            --app-id "$ASC_APP_ID" \
+            --version "${{ steps.version.outputs.marketing_version }}" \
+            --build-id "${{ steps.processed_build.outputs.build_id }}"

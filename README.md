@@ -67,4 +67,11 @@ O workflow `deploy-pages.yml` publica a build da landing no GitHub Pages. É
 necessário selecionar `GitHub Actions` como fonte de publicação em Settings →
 Pages no repositório.
 
+O desenvolvimento acontece na branch `develop`. Um merge para `main` executa os
+testes e, quando a versão correspondente estiver preparada no App Store
+Connect, o workflow `release-ios.yml` cria o build, envia o IPA e submete a
+versão para revisão automaticamente. O workflow não cria metadata ou preços e
+ignora com sucesso versões que já estão em revisão. Os secrets necessários e o
+procedimento estão em [`docs/ios-release.md`](docs/ios-release.md).
+
 Consulte os READMEs de [apps/ios](apps/ios/README.md) e [apps/landing-page](apps/landing-page/README.md) para detalhes específicos de cada projeto.
