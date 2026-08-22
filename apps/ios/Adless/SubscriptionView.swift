@@ -421,7 +421,8 @@ private struct AdlessLegalDocumentView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 20)
-            .padding(.vertical, 24)
+            .padding(.top, 14)
+            .padding(.bottom, 24)
         }
         .background(AdlessTheme.subscriptionDrawerBackground)
         .navigationTitle(document.title)
