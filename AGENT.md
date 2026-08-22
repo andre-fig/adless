@@ -156,17 +156,23 @@ testes reais, configure os produtos e uma conta Sandbox no App Store Connect.
 ## GitHub Actions e publicação
 
 `.github/workflows/update-blocklist.yml` executa diariamente e também pode ser
-executado manualmente. Ele baixa, normaliza, valida e publica somente os
-artefatos permitidos. Mudanças inesperadas devem fazer o workflow falhar.
+executado manualmente em Ubuntu. Ele baixa, normaliza, valida e publica somente
+os artefatos permitidos. Se houver mudança real, ele despacha o deploy da
+landing; quando não houver mudança, não cria commit nem deploy. Mudanças
+inesperadas devem fazer o workflow falhar.
 
 `.github/workflows/deploy-pages.yml` constrói a landing e publica o diretório
-`apps/landing-page/dist` no GitHub Pages após alterações na `main` ou execução
-manual. O workflow usa as versões atuais das actions e não deve receber
-segredos desnecessários.
+`apps/landing-page/dist` após alterações relevantes da landing na `main`, após o
+dispatch do workflow de blocklist ou execução manual. Ele não usa mais
+`workflow_run`, evitando deploy duplicado e checkout de um commit antigo. O
+workflow usa as versões atuais das actions e não deve receber segredos
+desnecessários.
 
 `.github/workflows/release-ios.yml` executa no `main` quando há alteração no
-projeto iOS e roda testes, archive, validação, upload e submissão no App Store
-Connect. Ele usa somente os secrets `ASC_KEY_ID`, `ASC_ISSUER_ID` e
+projeto de produção do iOS e roda testes, archive, validação, upload e
+submissão no App Store Connect. O workflow de testes separado roda em PRs e na
+`develop`; assim o mesmo teste não é executado duas vezes no `main`. Ele usa
+somente os secrets `ASC_KEY_ID`, `ASC_ISSUER_ID` e
 `ASC_PRIVATE_KEY`; a chave é materializada apenas no diretório temporário do
 runner. Versões já em revisão são ignoradas sem erro para evitar submissões
 duplicadas. O fluxo de desenvolvimento é `develop` → pull request → `main`.

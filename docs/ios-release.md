@@ -6,8 +6,8 @@ The repository uses a two-branch flow:
 develop  ->  pull request  ->  main  ->  test, archive, upload, submit
 ```
 
-Every push to `main` that changes the iOS project, the App Store Connect
-release helper, or the export options starts
+Every push to `main` that changes production iOS code/resources, the App Store
+Connect release helper, or the export options starts
 `.github/workflows/release-ios.yml`. A blocklist-only commit does not start an
 iOS binary release. The workflow keeps only one release in flight and never
 cancels an active upload.

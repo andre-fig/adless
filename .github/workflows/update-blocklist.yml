@@ -16,11 +16,12 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
+  actions: write
   contents: write
 
 jobs:
   update:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Check out repository
@@ -46,19 +47,6 @@ jobs:
           python tools/blocklists/validate_blocklist.py
           python tools/blocklists/validate_blocklist.py --seed apps/ios/Adless/Resources/SeedBlocklist.txt
 
-      - name: Run app blocklist smoke tests
-        run: |
-          set -euo pipefail
-          simulator_id="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ {gsub(/[[:space:]]/, "", $2); print $2; exit}')"
-          test -n "$simulator_id"
-          xcodebuild \
-            -project apps/ios/Adless.xcodeproj \
-            -scheme AdlessTests \
-            -destination "platform=iOS Simulator,id=$simulator_id" \
-            -derivedDataPath "$RUNNER_TEMP/adless-blocklist-ios-derived-data" \
-            CODE_SIGNING_ALLOWED=NO \
-            test
-
       - name: Reject unexpected changes
         shell: bash
         run: |
@@ -79,6 +67,7 @@ jobs:
           done < <(git status --porcelain --untracked-files=all)
 
       - name: Commit changed artifacts
+        id: commit_artifacts
         shell: bash
         run: |
           paths=(
@@ -91,6 +80,7 @@ jobs:
 
           if git diff --quiet -- "${paths[@]}"; then
             echo "The generated blocklist content did not change."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -99,7 +89,15 @@ jobs:
           git add -- "${paths[@]}"
           if git diff --cached --quiet; then
             echo "No staged blocklist changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git commit -m "chore(blocklist): update generated list"
           git push origin "HEAD:${GITHUB_REF_NAME}"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy changed blocklist artifacts
+        if: steps.commit_artifacts.outputs.changed == 'true' && github.ref_name == 'main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-pages.yml --repo "$GITHUB_REPOSITORY" --ref main

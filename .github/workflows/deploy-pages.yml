@@ -4,12 +4,20 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "apps/landing-page/src/**"
+      - "apps/landing-page/index.html"
+      - "apps/landing-page/vite.config.ts"
+      - "apps/landing-page/tsconfig*.json"
+      - "apps/landing-page/package.json"
+      - "apps/landing-page/public/adless-favicon.png"
+      - "apps/landing-page/public/favicon.ico"
+      - "apps/landing-page/public/placeholder.svg"
+      - "apps/landing-page/public/robots.txt"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
-  workflow_run:
-    workflows:
-      - Update Adless blocklist
-    types:
-      - completed
 
 concurrency:
   group: github-pages
@@ -22,14 +30,11 @@ permissions:
 
 jobs:
   build:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v7

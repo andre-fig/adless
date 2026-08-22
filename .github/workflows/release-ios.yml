@@ -5,7 +5,15 @@ on:
     branches:
       - main
     paths:
-      - "apps/ios/**"
+      - "apps/ios/Adless/*.swift"
+      - "apps/ios/Adless/Managers/**"
+      - "apps/ios/Adless/Services/**"
+      - "apps/ios/Adless/Resources/Assets.xcassets/**"
+      - "apps/ios/Adless/Resources/Adless.entitlements"
+      - "apps/ios/Adless/Resources/Info.plist"
+      - "apps/ios/AdlessDNSProxy/**"
+      - "apps/ios/Adless.xcodeproj/**"
+      - "apps/ios/Adless.storekit"
       - "docs/app-store/ExportOptions.plist"
       - "tools/appstore/**"
       - ".github/workflows/release-ios.yml"
