@@ -77,7 +77,12 @@ struct SubscriptionView: View {
                 .accessibilityHidden(true)
                 .allowsHitTesting(false)
 
-            ScrollView {
+            if let presentedLegalDocument {
+                AdlessLegalDocumentView(document: presentedLegalDocument) {
+                    self.presentedLegalDocument = nil
+                }
+            } else {
+                ScrollView {
                 VStack(spacing: 28) {
                     VStack(spacing: 24) {
                         VStack(spacing: 26) {
@@ -263,15 +268,9 @@ struct SubscriptionView: View {
                     Text(manager.message ?? "")
                 }
             }
-        }
-        .background(AdlessTheme.subscriptionDrawerBackground)
-        .overlay {
-            if let presentedLegalDocument {
-                AdlessLegalDocumentView(document: presentedLegalDocument) {
-                    self.presentedLegalDocument = nil
-                }
             }
         }
+        .background(AdlessTheme.subscriptionDrawerBackground)
     }
 
     private func planSortIndex(for productID: String) -> Int {
@@ -392,11 +391,9 @@ private struct AdlessLegalDocumentView: View {
                 Button {
                     onBack()
                 } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.body.weight(.semibold))
+                    Label("Back", systemImage: "chevron.left")
                 }
                 .foregroundStyle(Color(red: 0.0, green: 0.32, blue: 0.78))
-                .accessibilityLabel("Back")
 
                 Text(document.title)
                     .font(.headline)
@@ -443,6 +440,5 @@ private struct AdlessLegalDocumentView: View {
             }
         }
         .background(AdlessTheme.subscriptionDrawerBackground)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
