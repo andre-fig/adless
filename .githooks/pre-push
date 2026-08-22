@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+source "$(dirname "$0")/common.sh"
+
+changed_paths_file="$(mktemp "${TMPDIR:-/tmp}/adless-pre-push.XXXXXX")"
+trap 'rm -f "$changed_paths_file"' EXIT
+
+: > "$changed_paths_file"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -n "$local_ref" ] || continue
+  [ "$local_ref" != "(delete)" ] || continue
+
+  if [[ "$remote_sha" =~ ^0+$ ]]; then
+    git ls-tree -r --name-only "$local_sha" >> "$changed_paths_file"
+  else
+    git diff --name-only "$remote_sha" "$local_sha" >> "$changed_paths_file"
+  fi
+done
+
+sort -u "$changed_paths_file" -o "$changed_paths_file"
+
+needs_actionlint=false
+needs_python_syntax=false
+needs_blocklist=false
+needs_landing=false
+needs_ios=false
+
+while IFS= read -r path; do
+  case "$path" in
+    .github/workflows/*.yml|.github/workflows/*.yaml)
+      needs_actionlint=true
+      ;;
+    tools/blocklists/*.py|tools/blocklists/**/*.py|tools/appstore/*.py|tools/appstore/**/*.py)
+      needs_python_syntax=true
+      ;;
+    tools/blocklists/**|apps/ios/Adless/Resources/SeedBlocklist.txt)
+      needs_blocklist=true
+      ;;
+    apps/landing-page/**|package.json|package-lock.json)
+      needs_landing=true
+      ;;
+    apps/ios/Adless/*.swift|apps/ios/Adless/Managers/**|apps/ios/Adless/Services/**|apps/ios/Adless/Resources/Assets.xcassets/**|apps/ios/Adless/Resources/Adless.entitlements|apps/ios/Adless/Resources/Info.plist|apps/ios/AdlessDNSProxy/**|apps/ios/AdlessTests/**|apps/ios/Adless.xcodeproj/**|apps/ios/Adless.storekit)
+      needs_ios=true
+      ;;
+  esac
+done < "$changed_paths_file"
+
+if [ "$needs_actionlint" = true ]; then
+  run_actionlint
+fi
+
+if [ "$needs_python_syntax" = true ]; then
+  run_python_syntax "$changed_paths_file"
+fi
+
+if [ "$needs_blocklist" = true ]; then
+  run_blocklist_tests
+fi
+
+if [ "$needs_landing" = true ]; then
+  run_landing_checks
+fi
+
+if [ "$needs_ios" = true ]; then
+  run_ios_tests
+fi
+
+if [ "$needs_actionlint" = false ] && [ "$needs_python_syntax" = false ] && \
+   [ "$needs_blocklist" = false ] && [ "$needs_landing" = false ] && [ "$needs_ios" = false ]; then
+  echo "Adless pre-push: no targeted checks for these paths."
+fi
+
+echo "Adless pre-push checks passed."

@@ -25,7 +25,14 @@ Outros comandos úteis:
 npm run build:landing
 npm run lint
 npm run preview:landing
+npm run setup:hooks
 ```
+
+`npm run setup:hooks` ativa os hooks locais versionados em `.githooks/`. O
+`pre-commit` executa somente verificações rápidas nos arquivos staged. O
+`pre-push` roda apenas os testes relacionados aos caminhos que serão enviados:
+blocklist, landing ou XCTest do iOS. Isso antecipa falhas antes de consumir um
+runner do GitHub; os workflows continuam sendo a validação final.
 
 ## Aplicativo iOS
 

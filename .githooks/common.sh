@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+has_path_matching() {
+  local paths_file="$1"
+  shift
+  local path pattern
+
+  while IFS= read -r path; do
+    [ -n "$path" ] || continue
+    for pattern in "$@"; do
+      if [[ "$path" == $pattern ]]; then
+        return 0
+      fi
+    done
+  done < "$paths_file"
+
+  return 1
+}
+
+require_command() {
+  local command_name="$1"
+  local install_hint="$2"
+
+  if ! command -v "$command_name" >/dev/null 2>&1; then
+    echo "Adless hook: '$command_name' is required for this change." >&2
+    echo "Install it with: $install_hint" >&2
+    return 1
+  fi
+}
+
+run_actionlint() {
+  require_command actionlint "brew install actionlint"
+  actionlint "$REPO_ROOT"/.github/workflows/*.yml
+}
+
+run_python_syntax() {
+  local paths_file="$1"
+  local path
+
+  require_command python3 "install Python 3"
+  while IFS= read -r path; do
+    case "$path" in
+      *.py)
+        python3 - "$REPO_ROOT/$path" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+compile(path.read_text(encoding="utf-8"), str(path), "exec")
+PY
+        ;;
+    esac
+  done < "$paths_file"
+}
+
+run_blocklist_tests() {
+  require_command python3 "install Python 3"
+  python3 -m unittest discover -s "$REPO_ROOT/tools/blocklists/tests" -v
+}
+
+run_landing_lint() {
+  require_command npm "install Node.js 20 or newer"
+  npm --prefix "$REPO_ROOT" run lint
+}
+
+run_landing_checks() {
+  run_landing_lint
+  npm --prefix "$REPO_ROOT" run build:landing
+}
+
+run_ios_tests() {
+  require_command xcodebuild "install Xcode"
+  require_command xcrun "install Xcode command-line tools"
+
+  local simulator_id derived_data
+  simulator_id="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ {gsub(/[[:space:]]/, "", $2); print $2; exit}')"
+  if [ -z "$simulator_id" ]; then
+    echo "Adless hook: no available iPhone simulator was found." >&2
+    return 1
+  fi
+
+  derived_data="$(mktemp -d "${TMPDIR:-/tmp}/adless-pre-push.XXXXXX")"
+  trap 'rm -rf "$derived_data"' RETURN
+
+  xcodebuild \
+    -project "$REPO_ROOT/apps/ios/Adless.xcodeproj" \
+    -scheme AdlessTests \
+    -destination "platform=iOS Simulator,id=$simulator_id" \
+    -derivedDataPath "$derived_data" \
+    CODE_SIGNING_ALLOWED=NO \
+    test
+}

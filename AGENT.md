@@ -197,6 +197,11 @@ Ao alterar workflows:
 - Não introduza URLs HTTP ou segredos no repositório.
 - Não edite arquivos gerados manualmente quando houver um gerador responsável.
 - Não inclua `apps/ios/build/` ou outros artefatos locais de build em commits.
+- Depois de clonar, ative os hooks locais com `npm run setup:hooks`. O
+  `pre-commit` deve permanecer rápido; o `pre-push` pode executar testes
+  direcionados ao conjunto de arquivos alterados. Hooks locais podem ser
+  ignorados com `--no-verify`, mas isso não deve ser usado para contornar uma
+  falha sem registrá-la no PR.
 - Antes de editar, confira `git status` e mantenha mudanças não relacionadas
   intactas.
 - Faça commit e push somente quando o usuário autorizar explicitamente.
