@@ -37,6 +37,7 @@ Requer Node.js 20 ou superior e npm.
 npm ci
 npm run dev:landing
 npm run lint
+npm run typecheck
 npm run build:landing
 npm run preview:landing
 ```
@@ -216,6 +217,7 @@ Ao alterar workflows:
 git diff --check
 python3 -m unittest discover -s tools/blocklists/tests -v
 npm run lint
+npm run typecheck
 npm run build:landing
 git status --short --branch
 ```

@@ -24,6 +24,7 @@ Outros comandos úteis:
 ```sh
 npm run build:landing
 npm run lint
+npm run typecheck
 npm run preview:landing
 npm run setup:hooks
 ```
@@ -33,8 +34,9 @@ npm run setup:hooks
 manualmente. O
 `pre-commit` executa somente verificações rápidas nos arquivos staged. O
 `pre-push` roda apenas os testes relacionados aos caminhos que serão enviados:
-blocklist, landing ou XCTest do iOS. Isso antecipa falhas antes de consumir um
-runner do GitHub; os workflows continuam sendo a validação final.
+blocklist, lint/typecheck/build da landing ou XCTest do iOS. Isso antecipa
+falhas antes de consumir um runner do GitHub; os workflows continuam sendo a
+validação final.
 
 ## Aplicativo iOS
 

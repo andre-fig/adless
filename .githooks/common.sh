@@ -67,8 +67,14 @@ run_landing_lint() {
   npm --prefix "$REPO_ROOT" run lint
 }
 
+run_landing_typecheck() {
+  require_command npm "install Node.js 20 or newer"
+  npm --prefix "$REPO_ROOT" run typecheck
+}
+
 run_landing_checks() {
   run_landing_lint
+  run_landing_typecheck
   npm --prefix "$REPO_ROOT" run build:landing
 }
 
