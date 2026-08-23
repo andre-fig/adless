@@ -10,6 +10,7 @@
 		3EB23F76CFD2401E89E6E97D /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 16D53242EC7B41E58FC5AB0B /* Sentry */; };
 		B10000000000000000000008 /* AdlessDNSProxy.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* AdlessDNSProxy.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		C10000000000000000000003 /* Adless/Services/BlockingStatsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000002 /* Adless/Services/BlockingStatsStore.swift */; };
+		D10000000000000000000003 /* Adless/Services/DNSDoHTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000002 /* Adless/Services/DNSDoHTransport.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +50,7 @@
 		B10000000000000000000016 /* AdlessTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AdlessTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C10000000000000000000001 /* Adless.storekit */ = {isa = PBXFileReference; lastKnownFileType = com.apple.dt.storekit; path = Adless.storekit; sourceTree = "<group>"; };
 		C10000000000000000000002 /* Adless/Services/BlockingStatsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Adless/Services/BlockingStatsStore.swift; sourceTree = "<group>"; };
+		D10000000000000000000002 /* Adless/Services/DNSDoHTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Adless/Services/DNSDoHTransport.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -118,6 +120,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A41ED7D4303B49C300A0A0DA /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				D10000000000000000000002 /* Adless/Services/DNSDoHTransport.swift */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		A432D6D42EF4DE1800F87DE0 = {
 			isa = PBXGroup;
 			children = (
@@ -127,6 +137,7 @@
 				C10000000000000000000001 /* Adless.storekit */,
 				C10000000000000000000002 /* Adless/Services/BlockingStatsStore.swift */,
 				A432D6DE2EF4DE1800F87DE0 /* Products */,
+				A41ED7D4303B49C300A0A0DA /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -305,6 +316,7 @@
 		};
 		DA5CE2B12386405DA6E8C1C8 /* Upload Debug Symbols to Sentry */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
@@ -314,7 +326,6 @@
 			name = "Upload Debug Symbols to Sentry";
 			outputPaths = (
 			);
-			alwaysOutOfDate = 1;
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# This script is responsible for uploading debug symbols and source context for Sentry.\nif [ \"$CONFIGURATION\" != \"Release\" ]; then\n  exit 0\nfi\n\nif [[ \"$(uname -m)\" == arm64 ]]; then\n  export PATH=\"/opt/homebrew/bin:$PATH\"\nfi\n\nif which sentry-cli >/dev/null; then\n  export SENTRY_ORG=portside-xz\n  export SENTRY_PROJECT=adless\n  ERROR=$(sentry-cli debug-files upload --include-sources \"$DWARF_DSYM_FOLDER_PATH\" 2>&1 >/dev/null)\n  if [ ! $? -eq 0 ]; then\n    echo \"warning: sentry-cli - $ERROR\"\n  fi\nelse\n  echo \"warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases\"\nfi\n";
@@ -334,6 +345,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C10000000000000000000003 /* Adless/Services/BlockingStatsStore.swift in Sources */,
+				D10000000000000000000003 /* Adless/Services/DNSDoHTransport.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

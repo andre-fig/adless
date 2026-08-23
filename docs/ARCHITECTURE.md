@@ -23,9 +23,9 @@ OISD Small ──► Python generator ──► GitHub Pages static files
                  DNS Proxy Network Extension on the iPhone
 ```
 
-The landing page and blocklist distribution are static. The only external
-runtime service used by the app is the configured DNS upstreams; DNS queries
-are forwarded directly from the Network Extension to those resolvers.
+The landing page and blocklist distribution are static. The app has no
+backend. For permitted DNS queries, the Network Extension uses encrypted
+DNS-over-HTTPS directly with the configured public resolvers.
 
 ## Repository structure
 
@@ -71,8 +71,8 @@ internet update and never disables protection because a list update failed.
 `AdlessDNSProxy` implements `NEDNSProxyProvider` with the existing DNS Proxy
 capability. The app configures it with:
 
-- primary upstream: `1.1.1.1`;
-- secondary upstream: `8.8.8.8`;
+- primary DoH endpoint: `https://cloudflare-dns.com/dns-query`;
+- fallback DoH endpoint: `https://dns.quad9.net/dns-query`;
 - App Group: `group.com.orbeworks.adless`.
 
 The extension:
@@ -85,18 +85,51 @@ The extension:
 5. normalizes the queried domain and checks the complete name plus each parent
    domain in the set;
 6. returns a local blocked DNS response for blocked names;
-7. forwards allowed queries to the primary upstream;
-8. retries the secondary upstream after timeout or primary failure;
-9. returns DNS `SERVFAIL` when both upstreams fail instead of leaving the
+7. forwards allowed DNS wire queries to the primary DoH endpoint over HTTPS;
+8. retries the fallback DoH endpoint after timeout, transport/TLS/HTTP failure,
+   empty body, or invalid DNS payload;
+9. returns DNS `SERVFAIL` when both encrypted providers fail instead of leaving the
    client query without a response.
 
-UDP handlers keep upstream connections alive for the flow and continue reading
-datagrams. TCP handlers parse length-prefixed DNS messages, maintain a bounded
-upstream buffer, and use the same block/forward decision.
+UDP handlers retain the client flow and continue reading datagrams. TCP handlers
+parse length-prefixed DNS messages, maintain a bounded response buffer, and use
+the same block/forward decision. Allowed requests are resolved concurrently;
+writes are associated with their original flow request, and cancellation closes
+the corresponding task.
+
+### DNS-over-HTTPS transport
+
+`Adless/Services/DNSDoHTransport.swift` separates upstream transport from the
+flow handlers:
+
+- `DNSDoHTransport` validates the original DNS wire query, creates an HTTP POST
+  with `Content-Type` and `Accept` set to `application/dns-message`, and accepts
+  only a successful HTTP response with a structurally valid DNS message that
+  preserves the transaction ID and question count;
+- `DNSUpstreamResolver` owns the primary/fallback policy. A valid `NXDOMAIN`
+  is returned normally and does not trigger fallback;
+- `URLSessionDNSDoHHTTPClient` uses an ephemeral `URLSession` over HTTPS. The
+  system validates the certificate and hostname, and negotiates HTTP/2 when
+  the provider requires it; the app does not use certificate pinning or an
+  insecure delegate;
+- the session has no URL cache, cookies, credentials, or persistent storage.
+  Each request has a bounded timeout and the task is canceled when its flow
+  ends;
+- if the proxy observes the session resolving `cloudflare-dns.com` or
+  `dns.quad9.net`, `DNSDoHEndpoint.bootstrapResponse(for:)` answers only the
+  matching A/AAAA bootstrap query locally. This explicit public-API guard is
+  the recursion-avoidance mechanism; the implementation does not assume that
+  `URLSession` is automatically excluded from the DNS proxy.
+
+The extension never sends an upstream query to UDP/TCP port 53, and it never
+falls back to plaintext DNS.
 
 This is DNS interception, not traffic tunneling. Adless does not see or proxy
 HTTP request bodies, TLS traffic, passwords, or page content. It receives DNS
-queries from the system and sends DNS packets to the configured upstreams.
+queries from the system and sends permitted DNS wire packets to Cloudflare DNS
+or Quad9 over HTTPS. The configured providers can process those permitted
+queries to produce answers; Adless does not send them to an Orbe Works server,
+and does not send them to Sentry.
 
 ### Shared App Group data
 
@@ -253,9 +286,9 @@ never committed or logged.
   embedded seed; protection remains usable offline.
 - **Invalid or suspicious blocklist:** reject it before installation and retain
   the previous version.
-- **Primary DNS upstream unavailable:** try the secondary upstream.
-- **Both DNS upstreams unavailable:** return `SERVFAIL` promptly; do not leave
-  the client flow waiting indefinitely.
+- **Primary DoH provider unavailable or invalid:** try Quad9 over DoH.
+- **Both DoH providers unavailable:** return `SERVFAIL` promptly; do not leave
+  the client flow waiting indefinitely and do not use plaintext DNS.
 - **Subscription expired:** StoreKit state is refreshed, the extension stops
   accepting DNS flows, and the UI requests renewed access.
 - **Workflow failure before commit:** no generated artifacts are published.

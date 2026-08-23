@@ -49,6 +49,18 @@ A cobrança é feita exclusivamente pela App Store com StoreKit 2, sem backend,
 login ou banco próprio. O app oferece assinaturas mensal e anual com trial de
 7 dias configurado no App Store Connect.
 
+### DNS criptografado
+
+O bloqueio continua local: consultas bloqueadas recebem uma resposta local e
+não saem do aparelho. Consultas permitidas são encaminhadas pela extensão por
+DNS-over-HTTPS (DoH), usando HTTPS/TLS válido, para o Cloudflare DNS como
+principal (`https://cloudflare-dns.com/dns-query`) e Quad9 como fallback
+(`https://dns.quad9.net/dns-query`). O app não possui servidor próprio, não
+envia métricas ou logs e nunca faz fallback silencioso para DNS UDP em texto
+puro. A política e os testes estão detalhados em
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) e
+[`docs/TESTING.md`](docs/TESTING.md).
+
 ## Blocklist
 
 A blocklist é gerada sem backend pelo workflow diário

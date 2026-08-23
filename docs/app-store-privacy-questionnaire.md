@@ -12,10 +12,20 @@ Official Apple instructions: [Manage app privacy](https://developer.apple.com/he
 - Data linked to the user: **Not linked to the user**; Adless does not create an account, set a Sentry user identity, or send custom identifiers.
 - Account creation or login: **None**.
 - Advertising or analytics SDK: **None**. Sentry is used only for crash and performance diagnostics.
-- Browsing history and DNS queries: **Not collected by Orbe Works or sent to Sentry**.
+- Browsing history and DNS queries: **Not collected or retained by Orbe Works
+  or sent to Sentry**. Permitted DNS queries are sent to the configured
+  third-party DoH providers solely to obtain DNS answers.
 - Purchases: StoreKit presents the App Store subscription purchase flow; payment and subscription management are handled by Apple, not by an Adless account or backend.
 
-Adless does make HTTPS requests to the public GitHub Pages blocklist to retrieve a manifest and a static list. Those requests are not associated with an account, are not used for tracking, and the app does not retain or send browsing history or DNS query data to Orbe Works or Sentry. Sentry is configured with default PII collection disabled, network tracking disabled, and no screenshots or view hierarchy attachments.
+Adless makes HTTPS requests to the public GitHub Pages blocklist to retrieve a
+manifest and a static list. It also sends permitted DNS wire queries over
+DNS-over-HTTPS to Cloudflare DNS or Quad9 to obtain answers. These requests are
+not associated with an Adless account, are not used for tracking, and Adless
+does not retain or send browsing history or DNS query data to Orbe Works or
+Sentry. Sentry is configured with default PII collection disabled, network
+tracking disabled, and no screenshots or view hierarchy attachments. Recheck
+the App Store privacy answers against the final binary and the providers'
+current privacy terms before submitting a release.
 
 ## Privacy policy
 

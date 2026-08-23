@@ -5,13 +5,13 @@ export const translations = {
     // Page
     pageTitle: "Adless — Ad Blocking. Done Right.",
     pageDescription:
-      "Block ads and trackers across your entire iPhone. No remote VPN. No browsing data collection. Just privacy that works.",
+      "Block ads and trackers across your entire iPhone. No remote VPN. No Adless account. Just privacy that works.",
 
     // Hero
     heroHeadline1: "Ad blocking.",
     heroHeadline2: "Done right.",
     heroSubheadline:
-      "Block ads and trackers across your entire iPhone. No remote VPN. No browsing data collection. Just privacy that works.",
+      "Block ads and trackers across your entire iPhone. No remote VPN. No Adless account. Just privacy that works.",
     downloadOnThe: "Download on the",
     appStore: "App Store",
     availableFor: "Available for iPhone and iPad",
@@ -23,7 +23,7 @@ export const translations = {
     benefit1Title: "System-wide blocking",
     benefit1Desc: "Works across all apps, not just your browser.",
     benefit2Title: "Real privacy",
-    benefit2Desc: "No browsing data collected. No external servers.",
+    benefit2Desc: "No browsing history stored by Adless. No Adless server.",
     benefit3Title: "Light & efficient",
     benefit3Desc: "Minimal battery usage with native performance.",
     benefit4Title: "Smart local DNS",
@@ -33,11 +33,12 @@ export const translations = {
 
     // How it works
     howTitle: "How it works",
-    howSubtitle: "Simple, transparent, and entirely on your device.",
+    howSubtitle: "Simple, transparent, with local blocking.",
     step1Title: "Local VPN created",
     step1Desc: "Adless creates a VPN configuration that stays on your device.",
     step2Title: "DNS filtering",
-    step2Desc: "All DNS requests are filtered directly on your iPhone.",
+    step2Desc:
+      "Blocked DNS requests are answered locally. Allowed requests use encrypted HTTPS.",
     step3Title: "Ads & trackers blocked",
     step3Desc: "Known ad and tracker domains are silently blocked.",
     step4Title: "Internet works normally",
@@ -52,8 +53,8 @@ export const translations = {
     feature: "Feature",
     others: "Others",
     localBlocking: "Local blocking",
-    noExternalServers: "No external servers",
-    noDataCollection: "No browsing data collection",
+    noExternalServers: "No Adless server",
+    noDataCollection: "No browsing history stored by Adless",
     nativeInterface: "Native iOS interface",
     oneTimePurchase: "One-time purchase",
 
@@ -61,7 +62,7 @@ export const translations = {
     privacyTitle1: "Your privacy isn't a feature.",
     privacyTitle2: "It's the default.",
     privacySubtitle:
-      "Adless was built with one principle: what happens on your device stays on your device.",
+      "Adless was built so your blocking history stays on your device and no Adless server is required.",
     noLogin: "No login required",
     noAccount: "No account needed",
     noTracking: "No tracking",
@@ -82,13 +83,13 @@ export const translations = {
     // Page
     pageTitle: "Adless — Bloqueio de anúncios. Do jeito certo.",
     pageDescription:
-      "Bloqueie anúncios e rastreadores em todo o iPhone. Sem VPN remota. Sem coleta do histórico de navegação. Privacidade que funciona.",
+      "Bloqueie anúncios e rastreadores em todo o iPhone. Sem VPN remota. Sem conta Adless. Privacidade que funciona.",
 
     // Hero
     heroHeadline1: "Bloqueio de anúncios.",
     heroHeadline2: "Do jeito certo.",
     heroSubheadline:
-      "Bloqueie anúncios e rastreadores em todo o iPhone. Sem VPN remota. Sem coleta do histórico de navegação. Privacidade que funciona.",
+      "Bloqueie anúncios e rastreadores em todo o iPhone. Sem VPN remota. Sem conta Adless. Privacidade que funciona.",
     downloadOnThe: "Baixar na",
     appStore: "App Store",
     availableFor: "Disponível para iPhone e iPad",
@@ -100,7 +101,7 @@ export const translations = {
     benefit1Title: "Bloqueio em todo sistema",
     benefit1Desc: "Funciona em todos os apps, não só no navegador.",
     benefit2Title: "Privacidade real",
-    benefit2Desc: "Nenhum histórico de navegação coletado. Sem servidores externos.",
+    benefit2Desc: "Nenhum histórico guardado pelo Adless. Sem servidor Adless.",
     benefit3Title: "Leve e eficiente",
     benefit3Desc: "Consumo mínimo de bateria com performance nativa.",
     benefit4Title: "DNS local inteligente",
@@ -110,12 +111,12 @@ export const translations = {
 
     // How it works
     howTitle: "Como funciona",
-    howSubtitle: "Simples, transparente e totalmente no seu dispositivo.",
+    howSubtitle: "Simples, transparente e com bloqueio local.",
     step1Title: "VPN local criada",
     step1Desc: "Adless cria uma configuração VPN que fica no seu dispositivo.",
     step2Title: "Filtragem DNS",
     step2Desc:
-      "Todas as requisições DNS são filtradas diretamente no seu iPhone.",
+      "Consultas bloqueadas recebem resposta local. As permitidas usam HTTPS criptografado.",
     step3Title: "Anúncios e rastreadores bloqueados",
     step3Desc:
       "Domínios de anúncios e rastreadores conhecidos são bloqueados silenciosamente.",
@@ -131,8 +132,8 @@ export const translations = {
     feature: "Recurso",
     others: "Outros",
     localBlocking: "Bloqueio local",
-    noExternalServers: "Sem servidores externos",
-    noDataCollection: "Sem coleta do histórico de navegação",
+    noExternalServers: "Sem servidor Adless",
+    noDataCollection: "Sem histórico guardado pelo Adless",
     nativeInterface: "Interface iOS nativa",
     oneTimePurchase: "Compra única",
 
@@ -140,7 +141,7 @@ export const translations = {
     privacyTitle1: "Sua privacidade não é um recurso.",
     privacyTitle2: "É o padrão.",
     privacySubtitle:
-      "Adless foi criado com um princípio: o que acontece no seu dispositivo fica no seu dispositivo.",
+      "O Adless mantém seu histórico de bloqueio no dispositivo e não exige um servidor próprio.",
     noLogin: "Sem login necessário",
     noAccount: "Sem conta necessária",
     noTracking: "Sem rastreamento",
@@ -161,13 +162,13 @@ export const translations = {
     // Page
     pageTitle: "Adless — Bloqueo de anuncios. Bien hecho.",
     pageDescription:
-      "Bloquea anuncios y rastreadores en todo tu iPhone. Sin VPN remota. Sin recopilación del historial de navegación. Privacidad que funciona.",
+      "Bloquea anuncios y rastreadores en todo tu iPhone. Sin VPN remota. Sin cuenta de Adless. Privacidad que funciona.",
 
     // Hero
     heroHeadline1: "Bloqueo de anuncios.",
     heroHeadline2: "Bien hecho.",
     heroSubheadline:
-      "Bloquea anuncios y rastreadores en todo tu iPhone. Sin VPN remota. Sin recopilación del historial de navegación. Privacidad que funciona.",
+      "Bloquea anuncios y rastreadores en todo tu iPhone. Sin VPN remota. Sin cuenta de Adless. Privacidad que funciona.",
     downloadOnThe: "Descargar en",
     appStore: "App Store",
     availableFor: "Disponible para iPhone y iPad",
@@ -179,7 +180,7 @@ export const translations = {
     benefit1Title: "Bloqueo en todo el sistema",
     benefit1Desc: "Funciona en todas las apps, no solo en el navegador.",
     benefit2Title: "Privacidad real",
-    benefit2Desc: "Sin historial de navegación recopilado. Sin servidores externos.",
+    benefit2Desc: "Adless no guarda tu historial. Sin servidor propio de Adless.",
     benefit3Title: "Ligero y eficiente",
     benefit3Desc: "Consumo mínimo de batería con rendimiento nativo.",
     benefit4Title: "DNS local inteligente",
@@ -190,13 +191,13 @@ export const translations = {
 
     // How it works
     howTitle: "Cómo funciona",
-    howSubtitle: "Simple, transparente y completamente en tu dispositivo.",
+    howSubtitle: "Simple, transparente y con bloqueo local.",
     step1Title: "VPN local creada",
     step1Desc:
       "Adless crea una configuración VPN que permanece en tu dispositivo.",
     step2Title: "Filtrado DNS",
     step2Desc:
-      "Todas las solicitudes DNS se filtran directamente en tu iPhone.",
+      "Las consultas bloqueadas reciben una respuesta local. Las permitidas usan HTTPS cifrado.",
     step3Title: "Anuncios y rastreadores bloqueados",
     step3Desc:
       "Los dominios de anuncios y rastreadores conocidos se bloquean silenciosamente.",
@@ -212,8 +213,8 @@ export const translations = {
     feature: "Característica",
     others: "Otros",
     localBlocking: "Bloqueo local",
-    noExternalServers: "Sin servidores externos",
-    noDataCollection: "Sin recopilación del historial de navegación",
+    noExternalServers: "Sin servidor propio de Adless",
+    noDataCollection: "Adless no guarda tu historial",
     nativeInterface: "Interfaz iOS nativa",
     oneTimePurchase: "Compra única",
 
@@ -221,7 +222,7 @@ export const translations = {
     privacyTitle1: "Tu privacidad no es una función.",
     privacyTitle2: "Es el estándar.",
     privacySubtitle:
-      "Adless fue creado con un principio: lo que pasa en tu dispositivo se queda en tu dispositivo.",
+      "Adless mantiene tu historial de bloqueos en el dispositivo y no necesita un servidor propio.",
     noLogin: "Sin inicio de sesión",
     noAccount: "Sin cuenta necesaria",
     noTracking: "Sin rastreo",

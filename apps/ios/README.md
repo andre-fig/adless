@@ -1,6 +1,6 @@
 # Adless iOS app
 
-Adless is a system-wide DNS sinkhole for iOS built with SwiftUI and a NetworkExtension DNS Proxy. It blocks ads and trackers locally without routing traffic to external VPN servers.
+Adless is a system-wide DNS sinkhole for iOS built with SwiftUI and a NetworkExtension DNS Proxy. It blocks ads and trackers locally without routing traffic through an external VPN server.
 
 ## Targets
 
@@ -41,6 +41,45 @@ write. The app group and Network Extension entitlement still require matching
 configuration in the Apple Developer portal before device distribution.
 
 The DNS proxy needs a real device for full interception; simulator limitations apply.
+
+## Encrypted DNS forwarding
+
+Blocked names are answered locally from the active `Set<String>` blocklist.
+Permitted DNS wire packets are sent with an HTTPS `POST` using the
+`application/dns-message` media type. The production order is:
+
+1. Cloudflare DoH: `https://cloudflare-dns.com/dns-query`;
+2. Quad9 DoH: `https://dns.quad9.net/dns-query`.
+
+The Network Extension uses an ephemeral `URLSession` over HTTPS. The system
+validates the TLS certificate and hostname and negotiates HTTP/2 when the
+provider requires it; the app does not use certificate pinning or disable
+validation. If the proxy observes the URLSession resolving either DoH
+hostname, it answers only that provider's A/AAAA bootstrap query locally.
+This explicit public-API guard prevents a recursive loop without relying on
+plaintext DNS or private Network Extension behavior.
+
+Each permitted query is handled concurrently and has a bounded timeout. A
+transport, TLS, HTTP, empty-body, or invalid-DNS response from Cloudflare
+causes a retry through Quad9. A valid DNS response such as `NXDOMAIN` is
+returned directly. If both encrypted providers fail, the extension returns a
+local `SERVFAIL` promptly. There is deliberately no plaintext UDP/TCP port 53
+fallback.
+
+The app does not send queries, logs, metrics, or browsing history to an Orbe
+Works backend (there is no backend). The configured DNS providers receive the
+permitted DNS wire queries needed to answer them; see the in-app and hosted
+privacy policies for that third-party processing detail.
+
+Unit tests use HTTP mocks. An optional live smoke test can be run from the
+repository root with:
+
+```sh
+python3 tools/dns/smoke_doh.py
+```
+
+It validates both official endpoints without being part of the normal XCTest
+suite.
 
 ## Subscription
 

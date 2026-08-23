@@ -2,7 +2,7 @@
 
 Este documento descreve os testes automatizados e manuais do Adless, além dos
 limites de cada ambiente. O objetivo é validar o bloqueio sem transformar
-falhas de uma fonte, de um upstream DNS ou de uma assinatura em perda de
+falhas de uma fonte, de um provedor DoH ou de uma assinatura em perda de
 conectividade ou de proteção.
 
 ## Pirâmide de validação
@@ -180,6 +180,29 @@ testes. Se o nome do simulador variar, use o identificador exibido por
 - persistência atômica do estado de assinatura;
 - contadores diários e all-time de bloqueios.
 
+`apps/ios/AdlessTests/DNSDoHTests.swift` usa mocks de HTTP e cobre:
+
+- POST com o DNS wire body sem alteração;
+- cabeçalhos `Content-Type` e `Accept` de `application/dns-message`;
+- respostas `A` e `AAAA` válidas;
+- `NXDOMAIN` sem fallback;
+- timeout, HTTP 500, corpo vazio e payload DNS inválido no principal com
+  fallback para Quad9;
+- falha dos dois provedores produzindo erro para o handler, que responde
+  `SERVFAIL` localmente;
+- consultas concorrentes sem troca de transaction ID/resposta;
+- cancelamento sem iniciar o fallback;
+- endpoints HTTPS, bootstrap local dos hostnames DoH para evitar recursão e
+  ausência de um upstream UDP tradicional.
+
+Os testes não acessam Cloudflare, Quad9 ou GitHub Pages. Para uma verificação
+manual opcional dos endpoints reais, use:
+
+```sh
+python3 tools/dns/smoke_doh.py
+python3 tools/dns/smoke_doh.py --endpoint cloudflare
+```
+
 Os testes de rede substituem `URLSession` com `StubURLProtocol` e usam
 diretórios temporários. Eles não acessam GitHub Pages.
 
@@ -263,23 +286,40 @@ dispositivo:
 O provider aceita os dois tipos de flow:
 
 - UDP: mantém o flow retido, lê datagrams continuamente e reutiliza a conexão
-  upstream durante a vida do flow;
-- TCP: processa mensagens DNS com prefixo de tamanho e mantém uma conexão TCP
-  upstream com buffer limitado.
+  do cliente durante a vida do flow; cada consulta permitida é resolvida por
+  um intercâmbio HTTPS limitado;
+- TCP: processa mensagens DNS com prefixo de tamanho e mantém uma fila de
+  respostas com buffer limitado; os pedidos DoH podem ser concorrentes.
 
 Valide manualmente:
 
 1. várias consultas em sequência na mesma sessão;
 2. abertura simultânea de várias consultas por um app;
 3. consulta permitida com upstream primário disponível;
-4. fallback para `8.8.8.8` quando `1.1.1.1` falha;
-5. resposta rápida `SERVFAIL` quando os dois upstreams não respondem;
+4. fallback para Quad9 DoH quando Cloudflare DoH falha;
+5. resposta rápida `SERVFAIL` quando os dois provedores DoH não respondem;
 6. encerramento do app ou da rede sem flow preso;
 7. retomada após alternar entre Wi-Fi e rede celular.
 
 O app não deve deixar páginas permitidas aguardando silenciosamente. Também
-não deve enviar HTTP, HTTPS ou conteúdo de aplicativos ao upstream; somente
-consultas DNS são encaminhadas.
+não deve enviar HTTP, HTTPS ou conteúdo de aplicativos aos resolvedores; somente
+o pacote DNS permitido é encaminhado, dentro de HTTPS. Não deve existir
+conexão do proxy para UDP/TCP port 53.
+
+### Diagnóstico sem expor domínios
+
+Em builds de desenvolvimento, observe somente estados, contadores e erros
+sanitizados do subsistema `com.orbeworks.adless`:
+
+```sh
+log stream --style compact --level debug \
+  --predicate 'subsystem == "com.orbeworks.adless"'
+```
+
+O código não registra o conteúdo das consultas permitidas nem a URL completa
+dos provedores. Para confirmar o caminho criptografado, use o smoke test, os
+testes de mock e uma captura de rede do dispositivo que mostre somente TLS
+para TCP 443; não habilite logging de payload DNS em uma build de produção.
 
 Para acompanhar os logs no Mac conectado ao dispositivo:
 

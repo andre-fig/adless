@@ -147,7 +147,7 @@ real da internet.
 
 Use o simulador para ajustar layout, temas, drawer de assinatura, build e
 XCTest. Use um iPhone físico para ativar a Network Extension, verificar DNS
-UDP/TCP, testar o failover dos upstreams e confirmar o bloqueio em outros
+UDP/TCP, testar o failover dos provedores DoH e confirmar o bloqueio em outros
 aplicativos e redes.
 
 O simulador pode representar o estado de ativação para desenvolvimento de UI,

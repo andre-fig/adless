@@ -146,9 +146,18 @@ Connect. O trial gratuito de 7 dias precisa ser configurado como Introductory
 Offer no App Store Connect; não basta alterar uma constante no código.
 
 O app considera `subscribed` e `inGracePeriod` como acesso válido, persiste um
-snapshot verificado no App Group e a extensão recusa iniciar ou processar DNS
-quando o snapshot está ausente ou expirado. Compras são restauradas com
+snapshot verificado no App Group e a extensão mantém o modo pass-through quando
+o snapshot está ausente ou expirado, sem bloquear DNS. Compras são restauradas com
 `AppStore.sync()` e atualizações são observadas por `Transaction.updates`.
+
+Consultas permitidas usam DNS-over-HTTPS pela extensão, com Cloudflare como
+principal e Quad9 como fallback. Consultas bloqueadas recebem resposta local.
+O transporte usa uma `URLSession` efêmera, com TLS/hostname validados pelo
+sistema e negociação HTTP/2 quando oferecida pelo provedor. A extensão responde
+localmente às consultas A/AAAA dos dois hostnames DoH caso elas sejam observadas
+no proxy, evitando recursão sem depender de DNS em texto puro. Não existe
+fallback para DNS UDP tradicional. Consulte `docs/ARCHITECTURE.md` e
+`docs/TESTING.md` antes de alterar esse caminho.
 
 Não coloque uma flag manual permanente como `isSubscribed = true`. O acesso
 deve derivar da transação verificada pela Apple e da data de validade. Para
