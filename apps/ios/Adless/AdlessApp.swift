@@ -1,10 +1,15 @@
 import SwiftUI
 import Combine
 import NetworkExtension
+import Sentry
 
 @main
 struct AdlessApp: App {
     @StateObject private var viewModel = AppViewModel()
+
+    init() {
+        AdlessSentry.start()
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -69,10 +74,13 @@ final class AppViewModel: ObservableObject {
         }
 
         if isOn {
+            let transaction = AdlessSentry.startTransaction(name: "protection.deactivate", operation: "networkextension")
+            defer { transaction?.finish() }
             do {
                 try await vpnManager.stop()
                 await refreshStatus()
             } catch {
+                AdlessSentry.capture(error, operation: "protection.deactivate")
                 statusText = "Could not change blocking status"
             }
             return
@@ -96,11 +104,15 @@ final class AppViewModel: ObservableObject {
         statusText = "Connecting"
         await Task.yield()
 
+        let transaction = AdlessSentry.startTransaction(name: "protection.activate", operation: "networkextension")
+        defer { transaction?.finish() }
+
         do {
             _ = try blocklistManager.ensureActiveBlocklist()
             try await vpnManager.start()
             await refreshStatus()
         } catch {
+            AdlessSentry.capture(error, operation: "protection.activate")
             isOn = false
             statusText = "Could not change blocking status"
         }

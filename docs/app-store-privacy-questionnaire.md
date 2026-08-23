@@ -6,15 +6,16 @@ Official Apple instructions: [Manage app privacy](https://developer.apple.com/he
 
 ## Recommended answers for the current binary
 
-- Data collection: **No, we do not collect data from this app.**
+- Data collection: **Yes — diagnostics only.**
+- Diagnostics: crash data, performance data, and other technical diagnostics sent to Sentry to improve reliability.
 - Tracking: **No**.
-- Data linked to the user: **None**.
+- Data linked to the user: **Not linked to the user**; Adless does not create an account, set a Sentry user identity, or send custom identifiers.
 - Account creation or login: **None**.
-- Advertising or analytics SDK: **None**.
-- Browsing history and DNS queries: **Not collected by Orbe Works**.
+- Advertising or analytics SDK: **None**. Sentry is used only for crash and performance diagnostics.
+- Browsing history and DNS queries: **Not collected by Orbe Works or sent to Sentry**.
 - Purchases: StoreKit presents the App Store subscription purchase flow; payment and subscription management are handled by Apple, not by an Adless account or backend.
 
-Adless does make HTTPS requests to the public GitHub Pages blocklist to retrieve a manifest and a static list. Those requests are not associated with an account, are not used for tracking, and the app does not retain or send browsing history or DNS query data to Orbe Works.
+Adless does make HTTPS requests to the public GitHub Pages blocklist to retrieve a manifest and a static list. Those requests are not associated with an account, are not used for tracking, and the app does not retain or send browsing history or DNS query data to Orbe Works or Sentry. Sentry is configured with default PII collection disabled, network tracking disabled, and no screenshots or view hierarchy attachments.
 
 ## Privacy policy
 
@@ -26,4 +27,4 @@ The policy is part of the landing-page build and is also recorded in `docs/app-s
 
 ## Important verification
 
-Before saving the questionnaire, compare these notes with the final App Store Connect questions and the production binary. If a future version adds analytics, crash reporting, login, remote filtering, or any server-side account feature, this questionnaire must be reviewed again.
+Before saving the questionnaire, compare these notes with the final App Store Connect questions and the production binary. Also verify in Sentry project settings that IP-address storage is disabled if that is the intended privacy posture. If a future version adds analytics, login, remote filtering, or any server-side account feature, this questionnaire must be reviewed again.

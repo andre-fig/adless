@@ -87,6 +87,7 @@ final class BlocklistUpdateService {
             let delay = min(pow(2.0, Double(max(state.failureCount - 1, 0))) * 15 * 60, 24 * 60 * 60)
             state.nextRetryAt = currentDate.addingTimeInterval(delay)
             try? storage.saveUpdateState(state)
+            AdlessSentry.capture(error, operation: "blocklist.refresh")
             os_log("Blocklist refresh failed: %{public}@", log: .default, type: .error, error.localizedDescription)
             throw error
         }

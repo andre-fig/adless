@@ -81,6 +81,7 @@ final class SubscriptionManager: ObservableObject {
                 message = "The purchase could not be completed"
             }
         } catch {
+            AdlessSentry.capture(error, operation: "subscription.purchase")
             os_log("Subscription purchase failed: %{public}@", log: .default, type: .error, error.localizedDescription)
             message = "The purchase could not be completed"
         }
@@ -108,6 +109,7 @@ final class SubscriptionManager: ObservableObject {
             try await AppStore.sync()
             await refreshEntitlement()
         } catch {
+            AdlessSentry.capture(error, operation: "subscription.restore")
             os_log("Subscription restore failed: %{public}@", log: .default, type: .error, error.localizedDescription)
             message = "Purchases could not be restored"
         }

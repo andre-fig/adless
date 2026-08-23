@@ -16,15 +16,22 @@ App Store state and avoids submitting a duplicate version.
 
 ## GitHub secrets
 
-The private repository must contain these three Actions secrets:
+The private repository must contain these three Apple Actions secrets:
 
 - `ASC_KEY_ID`: App Store Connect API key ID;
 - `ASC_ISSUER_ID`: App Store Connect issuer ID;
-- `ASC_PRIVATE_KEY`: the complete contents of the `.p8` key.
+- `ASC_PRIVATE_KEY`: the complete contents of the `.p8` key;
+
+`SENTRY_AUTH_TOKEN` is an optional fourth secret: when present, it must be a
+Sentry token allowed to upload debug symbols for the `portside-xz/adless`
+project.
 
 The key is written only to the runner's temporary directory with mode `600`.
 It is never committed, logged, or included in the IPA. The workflow uses the
 same key for the App Store Connect API and for Xcode automatic provisioning.
+When `SENTRY_AUTH_TOKEN` is present, the release runner installs `sentry-cli`
+and the Xcode archive phase uploads dSYMs to Sentry. If it is absent, the app
+still builds, but Sentry issues from that build will not have uploaded symbols.
 
 The Apple Developer team must allow automatic signing for the app and the DNS
 Proxy extension. If Apple requires a distribution certificate or profile to be

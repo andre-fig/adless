@@ -348,11 +348,11 @@ private enum AdlessLegalDocument: Hashable {
                 ),
                 AdlessLegalSection(
                     title: "Information we collect",
-                    body: "Orbe Works does not collect account information, browsing history, DNS query history, device identifiers, advertising identifiers, analytics, or payment information through Adless. The app has no account, login, or custom backend. Blocking statistics are stored locally in the app’s protected storage."
+                    body: "Orbe Works does not collect account information, browsing history, DNS query history, advertising identifiers, or payment information through Adless. The app has no account, login, or custom backend. Blocking statistics are stored locally in the app’s protected storage. Adless uses Sentry for crash and performance diagnostics. Sentry receives technical diagnostic data such as app version, operating system, device model, stack traces, and timing data. Adless does not send DNS queries, domain names, browsing history, or a user identity to Sentry."
                 ),
                 AdlessLegalSection(
                     title: "Third parties",
-                    body: "Apple processes App Store purchases and subscriptions under Apple’s own terms and privacy policy. Adless downloads public, static blocklist files from GitHub Pages. Those requests can include standard technical connection information handled by the hosting provider, such as an IP address."
+                    body: "Apple processes App Store purchases and subscriptions under Apple’s own terms and privacy policy. Sentry, operated by Functional Software, Inc., processes crash and performance diagnostics for reliability purposes under its privacy policy. Adless downloads public, static blocklist files from GitHub Pages. Those requests can include standard technical connection information handled by the hosting provider, such as an IP address."
                 ),
                 AdlessLegalSection(
                     title: "Data retention",

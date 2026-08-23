@@ -5,13 +5,13 @@ export const translations = {
     // Page
     pageTitle: "Adless — Ad Blocking. Done Right.",
     pageDescription:
-      "Block ads and trackers across your entire iPhone. No remote VPN. No data collection. Just privacy that works.",
+      "Block ads and trackers across your entire iPhone. No remote VPN. No browsing data collection. Just privacy that works.",
 
     // Hero
     heroHeadline1: "Ad blocking.",
     heroHeadline2: "Done right.",
     heroSubheadline:
-      "Block ads and trackers across your entire iPhone. No remote VPN. No data collection. Just privacy that works.",
+      "Block ads and trackers across your entire iPhone. No remote VPN. No browsing data collection. Just privacy that works.",
     downloadOnThe: "Download on the",
     appStore: "App Store",
     availableFor: "Available for iPhone and iPad",
@@ -23,7 +23,7 @@ export const translations = {
     benefit1Title: "System-wide blocking",
     benefit1Desc: "Works across all apps, not just your browser.",
     benefit2Title: "Real privacy",
-    benefit2Desc: "No data collected. No external servers. Ever.",
+    benefit2Desc: "No browsing data collected. No external servers.",
     benefit3Title: "Light & efficient",
     benefit3Desc: "Minimal battery usage with native performance.",
     benefit4Title: "Smart local DNS",
@@ -53,7 +53,7 @@ export const translations = {
     others: "Others",
     localBlocking: "Local blocking",
     noExternalServers: "No external servers",
-    noDataCollection: "No data collection",
+    noDataCollection: "No browsing data collection",
     nativeInterface: "Native iOS interface",
     oneTimePurchase: "One-time purchase",
 
@@ -82,13 +82,13 @@ export const translations = {
     // Page
     pageTitle: "Adless — Bloqueio de anúncios. Do jeito certo.",
     pageDescription:
-      "Bloqueie anúncios e rastreadores em todo o iPhone. Sem VPN remota. Sem coleta de dados. Privacidade que funciona.",
+      "Bloqueie anúncios e rastreadores em todo o iPhone. Sem VPN remota. Sem coleta do histórico de navegação. Privacidade que funciona.",
 
     // Hero
     heroHeadline1: "Bloqueio de anúncios.",
     heroHeadline2: "Do jeito certo.",
     heroSubheadline:
-      "Bloqueie anúncios e rastreadores em todo o iPhone. Sem VPN remota. Sem coleta de dados. Privacidade que funciona.",
+      "Bloqueie anúncios e rastreadores em todo o iPhone. Sem VPN remota. Sem coleta do histórico de navegação. Privacidade que funciona.",
     downloadOnThe: "Baixar na",
     appStore: "App Store",
     availableFor: "Disponível para iPhone e iPad",
@@ -100,7 +100,7 @@ export const translations = {
     benefit1Title: "Bloqueio em todo sistema",
     benefit1Desc: "Funciona em todos os apps, não só no navegador.",
     benefit2Title: "Privacidade real",
-    benefit2Desc: "Nenhum dado coletado. Nenhum servidor externo. Nunca.",
+    benefit2Desc: "Nenhum histórico de navegação coletado. Sem servidores externos.",
     benefit3Title: "Leve e eficiente",
     benefit3Desc: "Consumo mínimo de bateria com performance nativa.",
     benefit4Title: "DNS local inteligente",
@@ -132,7 +132,7 @@ export const translations = {
     others: "Outros",
     localBlocking: "Bloqueio local",
     noExternalServers: "Sem servidores externos",
-    noDataCollection: "Sem coleta de dados",
+    noDataCollection: "Sem coleta do histórico de navegação",
     nativeInterface: "Interface iOS nativa",
     oneTimePurchase: "Compra única",
 
@@ -161,13 +161,13 @@ export const translations = {
     // Page
     pageTitle: "Adless — Bloqueo de anuncios. Bien hecho.",
     pageDescription:
-      "Bloquea anuncios y rastreadores en todo tu iPhone. Sin VPN remota. Sin recopilación de datos. Privacidad que funciona.",
+      "Bloquea anuncios y rastreadores en todo tu iPhone. Sin VPN remota. Sin recopilación del historial de navegación. Privacidad que funciona.",
 
     // Hero
     heroHeadline1: "Bloqueo de anuncios.",
     heroHeadline2: "Bien hecho.",
     heroSubheadline:
-      "Bloquea anuncios y rastreadores en todo tu iPhone. Sin VPN remota. Sin recopilación de datos. Privacidad que funciona.",
+      "Bloquea anuncios y rastreadores en todo tu iPhone. Sin VPN remota. Sin recopilación del historial de navegación. Privacidad que funciona.",
     downloadOnThe: "Descargar en",
     appStore: "App Store",
     availableFor: "Disponible para iPhone y iPad",
@@ -179,7 +179,7 @@ export const translations = {
     benefit1Title: "Bloqueo en todo el sistema",
     benefit1Desc: "Funciona en todas las apps, no solo en el navegador.",
     benefit2Title: "Privacidad real",
-    benefit2Desc: "Sin datos recopilados. Sin servidores externos. Nunca.",
+    benefit2Desc: "Sin historial de navegación recopilado. Sin servidores externos.",
     benefit3Title: "Ligero y eficiente",
     benefit3Desc: "Consumo mínimo de batería con rendimiento nativo.",
     benefit4Title: "DNS local inteligente",
@@ -213,7 +213,7 @@ export const translations = {
     others: "Otros",
     localBlocking: "Bloqueo local",
     noExternalServers: "Sin servidores externos",
-    noDataCollection: "Sin recopilación de datos",
+    noDataCollection: "Sin recopilación del historial de navegación",
     nativeInterface: "Interfaz iOS nativa",
     oneTimePurchase: "Compra única",
 

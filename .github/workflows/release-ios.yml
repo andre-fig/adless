@@ -30,6 +30,9 @@ env:
   ASC_APP_ID: "6803552143"
   ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
   ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+  SENTRY_ORG: portside-xz
+  SENTRY_PROJECT: adless
   IOS_PROJECT: apps/ios/Adless.xcodeproj
   IOS_SCHEME: Adless
 
@@ -96,6 +99,13 @@ jobs:
             --minimum "$minimum_build")"
           echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
           echo "Selected build number $build_number"
+
+      - name: Install Sentry CLI
+        if: steps.preflight.outputs.should_release == 'true' && env.SENTRY_AUTH_TOKEN != ''
+        run: |
+          set -euo pipefail
+          brew install getsentry/tools/sentry-cli
+          sentry-cli --version
 
       - name: Archive signed iOS app
         if: steps.preflight.outputs.should_release == 'true'
