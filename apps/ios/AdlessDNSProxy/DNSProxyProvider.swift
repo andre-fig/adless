@@ -9,7 +9,7 @@ final class DNSProxyProvider: NEDNSProxyProvider {
     private let appGroupIdentifier = "group.com.orbeworks.adless"
     private let subscriptionStatePath = "Library/Application Support/Subscription/subscription-state.json"
     private let flowLock = NSLock()
-    private let upstreamResolver = DNSUpstreamResolver.production
+    private let upstreamResolver = DNSUpstreamResolver.production()
 
     private var blocklist: Set<String> = []
     private var subscriptionState: SharedSubscriptionAccessSnapshot?

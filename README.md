@@ -57,7 +57,9 @@ DNS-over-HTTPS (DoH), usando HTTPS/TLS válido, para o Cloudflare DNS como
 principal (`https://cloudflare-dns.com/dns-query`) e Quad9 como fallback
 (`https://dns.quad9.net/dns-query`). O app não possui servidor próprio, não
 envia métricas ou logs e nunca faz fallback silencioso para DNS UDP em texto
-puro. A política e os testes estão detalhados em
+puro. Uma única sessão HTTPS é reutilizada durante a vida do provider; após
+falhas consecutivas do primário, um circuit breaker usa temporariamente o
+fallback e é resetado quando a rede muda. A política e os testes estão detalhados em
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) e
 [`docs/TESTING.md`](docs/TESTING.md).
 

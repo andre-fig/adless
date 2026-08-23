@@ -194,6 +194,13 @@ testes. Se o nome do simulador variar, use o identificador exibido por
 - cancelamento sem iniciar o fallback;
 - endpoints HTTPS, bootstrap local dos hostnames DoH para evitar recursão e
   ausência de um upstream UDP tradicional.
+- circuit breaker após três falhas consecutivas, expiração do intervalo aberto
+  e reset explícito de rede;
+- reutilização do mesmo cliente HTTP em consultas subsequentes;
+- registro agregado de latência sem dados da consulta;
+- comparação controlada entre uma baseline simulada do antigo UDP, DoH frio e
+  DoH reutilizado. Como o produto não pode voltar a usar UDP em texto puro,
+  essa comparação não abre um socket UDP real.
 
 Os testes não acessam Cloudflare, Quad9 ou GitHub Pages. Para uma verificação
 manual opcional dos endpoints reais, use:

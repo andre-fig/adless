@@ -1,4 +1,5 @@
 import Foundation
+import Network
 
 /// The transport used by the DNS proxy for permitted DNS queries.
 ///
@@ -13,6 +14,128 @@ protocol DNSUpstreamTransport: Sendable {
 
 protocol DNSDoHHTTPClient: Sendable {
     func send(_ request: DNSDoHRequest) async throws -> DNSDoHHTTPResponse
+}
+
+struct DNSResolutionDiagnosticsSnapshot: Sendable, Equatable {
+    let sampleCount: Int
+    let successfulCount: Int
+    let failedCount: Int
+    let averageMilliseconds: Double
+    let lastMilliseconds: Double?
+    let lastProvider: String?
+}
+
+/// In-memory aggregate timing only. It deliberately does not retain a DNS
+/// query, domain, transaction ID, URL, or response payload.
+final class DNSResolutionDiagnostics: @unchecked Sendable {
+    private let lock = NSLock()
+    private var sampleCount = 0
+    private var successfulCount = 0
+    private var totalMilliseconds = 0.0
+    private var lastMilliseconds: Double?
+    private var lastProvider: String?
+
+    func record(provider: DNSDoHEndpoint, duration: TimeInterval, succeeded: Bool) {
+        lock.lock()
+        defer { lock.unlock() }
+        sampleCount += 1
+        if succeeded {
+            successfulCount += 1
+        }
+        let milliseconds = max(0, duration * 1_000)
+        totalMilliseconds += milliseconds
+        lastMilliseconds = milliseconds
+        lastProvider = provider.hostname
+    }
+
+    func snapshot() -> DNSResolutionDiagnosticsSnapshot {
+        lock.lock()
+        defer { lock.unlock() }
+        return DNSResolutionDiagnosticsSnapshot(
+            sampleCount: sampleCount,
+            successfulCount: successfulCount,
+            failedCount: sampleCount - successfulCount,
+            averageMilliseconds: sampleCount == 0 ? 0 : totalMilliseconds / Double(sampleCount),
+            lastMilliseconds: lastMilliseconds,
+            lastProvider: lastProvider
+        )
+    }
+}
+
+actor DNSCircuitBreaker {
+    static let failureThreshold = 3
+    static let openDuration: TimeInterval = 15
+
+    private let now: @Sendable () -> Date
+    private var consecutiveFailures = 0
+    private var openedUntil: Date?
+
+    init(now: @escaping @Sendable () -> Date = { Date() }) {
+        self.now = now
+    }
+
+    func shouldBypassPrimary() -> Bool {
+        guard let openedUntil else { return false }
+        if now() < openedUntil {
+            return true
+        }
+        self.openedUntil = nil
+        consecutiveFailures = 0
+        return false
+    }
+
+    func recordSuccess() {
+        consecutiveFailures = 0
+        openedUntil = nil
+    }
+
+    func recordFailure() {
+        consecutiveFailures += 1
+        if consecutiveFailures >= Self.failureThreshold {
+            openedUntil = now().addingTimeInterval(Self.openDuration)
+        }
+    }
+
+    func reset() {
+        consecutiveFailures = 0
+        openedUntil = nil
+    }
+}
+
+/// Resets the primary circuit when the device changes network path.
+final class DNSNetworkPathMonitor: @unchecked Sendable {
+    private let monitor = NWPathMonitor()
+    private let queue = DispatchQueue(label: "com.orbeworks.adless.dns-path")
+    private let onChange: @Sendable () -> Void
+    private var lastSignature: String?
+
+    init(onChange: @escaping @Sendable () -> Void) {
+        self.onChange = onChange
+        monitor.pathUpdateHandler = { [weak self] path in
+            self?.handle(path: path)
+        }
+        monitor.start(queue: queue)
+    }
+
+    deinit {
+        monitor.cancel()
+    }
+
+    private func handle(path: NWPath) {
+        let interfaces = path.availableInterfaces
+            .map { String(describing: $0.type) }
+            .sorted()
+            .joined(separator: ",")
+        let signature = "\(String(describing: path.status))|\(path.isExpensive)|\(path.isConstrained)|\(interfaces)"
+        guard let previous = lastSignature else {
+            lastSignature = signature
+            return
+        }
+        lastSignature = signature
+        if previous != signature {
+            onChange()
+        }
+    }
 }
 
 struct DNSDoHEndpoint: Equatable, Sendable {
@@ -148,10 +271,16 @@ enum DNSDoHError: Error, Equatable {
 struct DNSDoHTransport: DNSUpstreamTransport, @unchecked Sendable {
     let endpoint: DNSDoHEndpoint
     private let client: any DNSDoHHTTPClient
+    private let diagnostics: DNSResolutionDiagnostics?
 
-    init(endpoint: DNSDoHEndpoint, client: (any DNSDoHHTTPClient)? = nil) {
+    init(
+        endpoint: DNSDoHEndpoint,
+        client: (any DNSDoHHTTPClient)? = nil,
+        diagnostics: DNSResolutionDiagnostics? = nil
+    ) {
         self.endpoint = endpoint
         self.client = client ?? URLSessionDNSDoHHTTPClient()
+        self.diagnostics = diagnostics
     }
 
     func resolve(_ query: Data) async throws -> Data {
@@ -161,48 +290,112 @@ struct DNSDoHTransport: DNSUpstreamTransport, @unchecked Sendable {
             throw DNSDoHError.invalidQuery
         }
 
-        let response = try await client.send(DNSDoHRequest(endpoint: endpoint, body: query))
-        guard (200..<300).contains(response.statusCode) else {
-            throw DNSDoHError.invalidHTTPStatus(response.statusCode)
+        let startedAt = DispatchTime.now().uptimeNanoseconds
+        var succeeded = false
+        defer {
+            let elapsed = DispatchTime.now().uptimeNanoseconds - startedAt
+            diagnostics?.record(
+                provider: endpoint,
+                duration: TimeInterval(elapsed) / 1_000_000_000,
+                succeeded: succeeded
+            )
         }
-        guard response.contentType == "application/dns-message" else {
-            throw DNSDoHError.invalidContentType
+
+        do {
+            let response = try await client.send(DNSDoHRequest(endpoint: endpoint, body: query))
+            guard (200..<300).contains(response.statusCode) else {
+                throw DNSDoHError.invalidHTTPStatus(response.statusCode)
+            }
+            guard response.contentType == "application/dns-message" else {
+                throw DNSDoHError.invalidContentType
+            }
+            guard !response.body.isEmpty else {
+                throw DNSDoHError.emptyResponse
+            }
+            guard DNSDoHResponseValidator.validate(
+                query: query,
+                response: response.body,
+                queryHeader: queryHeader
+            ) else {
+                throw DNSDoHError.invalidDNSResponse
+            }
+            succeeded = true
+            return response.body
+        } catch {
+            throw error
         }
-        guard !response.body.isEmpty else {
-            throw DNSDoHError.emptyResponse
-        }
-        guard DNSDoHResponseValidator.validate(
-            query: query,
-            response: response.body,
-            queryHeader: queryHeader
-        ) else {
-            throw DNSDoHError.invalidDNSResponse
-        }
-        return response.body
     }
 }
 
 struct DNSUpstreamResolver: DNSUpstreamTransport, @unchecked Sendable {
     let primary: any DNSUpstreamTransport
     let fallback: any DNSUpstreamTransport
+    private let circuitBreaker: DNSCircuitBreaker
+    private let networkPathMonitor: DNSNetworkPathMonitor?
 
-    static let production = DNSUpstreamResolver(
-        primary: DNSDoHTransport(endpoint: .cloudflare),
-        fallback: DNSDoHTransport(endpoint: .quad9)
-    )
+    init(
+        primary: any DNSUpstreamTransport,
+        fallback: any DNSUpstreamTransport,
+        circuitBreaker: DNSCircuitBreaker = DNSCircuitBreaker(),
+        observesNetworkChanges: Bool = false
+    ) {
+        self.primary = primary
+        self.fallback = fallback
+        self.circuitBreaker = circuitBreaker
+        if observesNetworkChanges {
+            self.networkPathMonitor = DNSNetworkPathMonitor {
+                Task { await circuitBreaker.reset() }
+            }
+        } else {
+            self.networkPathMonitor = nil
+        }
+    }
+
+    /// Creates one resolver, one ephemeral URLSession shared by both providers,
+    /// and one circuit breaker for a single DNS proxy provider instance.
+    static func production() -> DNSUpstreamResolver {
+        let diagnostics = DNSResolutionDiagnostics()
+        let httpClient = URLSessionDNSDoHHTTPClient()
+        return DNSUpstreamResolver(
+            primary: DNSDoHTransport(
+                endpoint: .cloudflare,
+                client: httpClient,
+                diagnostics: diagnostics
+            ),
+            fallback: DNSDoHTransport(
+                endpoint: .quad9,
+                client: httpClient,
+                diagnostics: diagnostics
+            ),
+            observesNetworkChanges: true
+        )
+    }
 
     func resolve(_ query: Data) async throws -> Data {
+        if await circuitBreaker.shouldBypassPrimary() {
+            return try await fallback.resolve(query)
+        }
+
         do {
             // A valid NXDOMAIN response is returned normally and therefore
             // never reaches the fallback path.
-            return try await primary.resolve(query)
+            let response = try await primary.resolve(query)
+            await circuitBreaker.recordSuccess()
+            return response
         } catch is CancellationError {
             throw CancellationError()
         } catch let error as URLError where error.code == .cancelled {
             throw CancellationError()
+        } catch let error as DNSDoHError where error == .invalidQuery {
+            throw error
         } catch {
+            await circuitBreaker.recordFailure()
             return try await fallback.resolve(query)
         }
+    }
+
+    func resetCircuitBreaker() async {
+        await circuitBreaker.reset()
     }
 }
 
@@ -421,6 +614,8 @@ private final class URLSessionDNSDoHHTTPClient: DNSDoHHTTPClient, @unchecked Sen
             throw CancellationError()
         } catch let error as URLError where error.code == .cancelled {
             throw CancellationError()
+        } catch let error as URLError where error.code == .timedOut {
+            throw DNSDoHError.timeout
         } catch let error as DNSDoHError {
             throw error
         } catch {

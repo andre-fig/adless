@@ -108,13 +108,22 @@ flow handlers:
   preserves the transaction ID and question count;
 - `DNSUpstreamResolver` owns the primary/fallback policy. A valid `NXDOMAIN`
   is returned normally and does not trigger fallback;
-- `URLSessionDNSDoHHTTPClient` uses an ephemeral `URLSession` over HTTPS. The
-  system validates the certificate and hostname, and negotiates HTTP/2 when
-  the provider requires it; the app does not use certificate pinning or an
-  insecure delegate;
+- `DNSUpstreamResolver.production()` creates one ephemeral `URLSession` for
+  each DNS proxy provider instance and shares that HTTP client between the
+  Cloudflare and Quad9 transports. The system validates the certificate and
+  hostname, and negotiates HTTP/2 when the provider requires it; the app does
+  not use certificate pinning or an insecure delegate;
 - the session has no URL cache, cookies, credentials, or persistent storage.
-  Each request has a bounded timeout and the task is canceled when its flow
-  ends;
+  Each request has a 1.5-second request/resource timeout and the task is
+  canceled when its flow ends, allowing TLS connections and HTTP/2 streams to
+  be reused across queries;
+- the primary/fallback resolver is sequential per query. Its primary circuit
+  opens after three consecutive failures for 15 seconds, so subsequent queries
+  go directly to Quad9 instead of waiting for another Cloudflare timeout. A
+  network-path change resets the circuit;
+- `DNSResolutionDiagnostics` stores only aggregate in-memory timing data. It
+  does not retain the queried domain, wire packet, transaction ID, URL, or
+  response body;
 - if the proxy observes the session resolving `cloudflare-dns.com` or
   `dns.quad9.net`, `DNSDoHEndpoint.bootstrapResponse(for:)` answers only the
   matching A/AAAA bootstrap query locally. This explicit public-API guard is

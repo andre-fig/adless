@@ -156,7 +156,10 @@ O transporte usa uma `URLSession` efêmera, com TLS/hostname validados pelo
 sistema e negociação HTTP/2 quando oferecida pelo provedor. A extensão responde
 localmente às consultas A/AAAA dos dois hostnames DoH caso elas sejam observadas
 no proxy, evitando recursão sem depender de DNS em texto puro. Não existe
-fallback para DNS UDP tradicional. Consulte `docs/ARCHITECTURE.md` e
+fallback para DNS UDP tradicional. A mesma sessão HTTP é compartilhada pelos
+dois provedores durante a vida da instância do provider; após três falhas
+consecutivas do primário, o circuit breaker usa o fallback por 15 segundos e é
+resetado quando a rede muda. Consulte `docs/ARCHITECTURE.md` e
 `docs/TESTING.md` antes de alterar esse caminho.
 
 Não coloque uma flag manual permanente como `isSubscribed = true`. O acesso

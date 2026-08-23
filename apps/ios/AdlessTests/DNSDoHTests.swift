@@ -2,6 +2,45 @@ import Foundation
 import XCTest
 @testable import Adless
 
+private final class TestClock: @unchecked Sendable {
+    private let lock = NSLock()
+    private var currentDate = Date(timeIntervalSince1970: 1_000)
+
+    func now() -> Date {
+        lock.lock()
+        defer { lock.unlock() }
+        return currentDate
+    }
+
+    func advance(by interval: TimeInterval) {
+        lock.lock()
+        currentDate = currentDate.addingTimeInterval(interval)
+        lock.unlock()
+    }
+}
+
+private actor SimulatedLatencyTransport: DNSUpstreamTransport {
+    private let coldDelayNanoseconds: UInt64
+    private let warmDelayNanoseconds: UInt64
+    private var requestCount = 0
+
+    init(coldDelayNanoseconds: UInt64, warmDelayNanoseconds: UInt64) {
+        self.coldDelayNanoseconds = coldDelayNanoseconds
+        self.warmDelayNanoseconds = warmDelayNanoseconds
+    }
+
+    func resolve(_ query: Data) async throws -> Data {
+        let delay = requestCount == 0 ? coldDelayNanoseconds : warmDelayNanoseconds
+        requestCount += 1
+        try await Task.sleep(nanoseconds: delay)
+        return query
+    }
+
+    func requestCountForTesting() -> Int {
+        requestCount
+    }
+}
+
 private actor RecordingDoHClient: DNSDoHHTTPClient {
     enum Outcome: Sendable {
         case response(DNSDoHHTTPResponse)
@@ -155,6 +194,203 @@ final class DNSDoHTests: XCTestCase {
         let fallbackRequests = await fallback.requestSnapshot()
         XCTAssertEqual(primaryRequests.count, 1)
         XCTAssertEqual(fallbackRequests.count, 1)
+    }
+
+    func testPrimaryCircuitBreakerSkipsRepeatedTimeoutsAndReopensAfterInterval() async throws {
+        let query = makeQuery(id: 0x3500, type: 1)
+        let response = makeResponse(for: query, flags: 0x8180)
+        let clock = TestClock()
+        let breaker = DNSCircuitBreaker(now: { clock.now() })
+        let primary = RecordingDoHClient(outcomes: [
+            .error(.timeout),
+            .error(.timeout),
+            .error(.timeout),
+            .response(DNSDoHHTTPResponse(
+                statusCode: 200,
+                headers: ["Content-Type": "application/dns-message"],
+                body: response
+            ))
+        ])
+        let fallback = RecordingDoHClient(outcomes: [
+            .response(DNSDoHHTTPResponse(
+                statusCode: 200,
+                headers: ["Content-Type": "application/dns-message"],
+                body: response
+            )),
+            .response(DNSDoHHTTPResponse(
+                statusCode: 200,
+                headers: ["Content-Type": "application/dns-message"],
+                body: response
+            )),
+            .response(DNSDoHHTTPResponse(
+                statusCode: 200,
+                headers: ["Content-Type": "application/dns-message"],
+                body: response
+            )),
+            .response(DNSDoHHTTPResponse(
+                statusCode: 200,
+                headers: ["Content-Type": "application/dns-message"],
+                body: response
+            ))
+        ])
+        let resolver = DNSUpstreamResolver(
+            primary: DNSDoHTransport(endpoint: .cloudflare, client: primary),
+            fallback: DNSDoHTransport(endpoint: .quad9, client: fallback),
+            circuitBreaker: breaker
+        )
+
+        for _ in 0..<DNSCircuitBreaker.failureThreshold {
+            let result = try await resolver.resolve(query)
+            XCTAssertEqual(result, response)
+        }
+        let primaryAfterFailures = await primary.requestSnapshot()
+        XCTAssertEqual(primaryAfterFailures.count, DNSCircuitBreaker.failureThreshold)
+
+        // The next request goes straight to Quad9 while Cloudflare is open.
+        let bypassedResult = try await resolver.resolve(query)
+        XCTAssertEqual(bypassedResult, response)
+        let primaryWhileOpen = await primary.requestSnapshot()
+        let fallbackWhileOpen = await fallback.requestSnapshot()
+        XCTAssertEqual(primaryWhileOpen.count, DNSCircuitBreaker.failureThreshold)
+        XCTAssertEqual(fallbackWhileOpen.count, DNSCircuitBreaker.failureThreshold + 1)
+
+        // A short open interval expires without sleeping in the test.
+        clock.advance(by: DNSCircuitBreaker.openDuration + 1)
+        let reopenedResult = try await resolver.resolve(query)
+        XCTAssertEqual(reopenedResult, response)
+        let primaryAfterReopen = await primary.requestSnapshot()
+        XCTAssertEqual(primaryAfterReopen.count, DNSCircuitBreaker.failureThreshold + 1)
+    }
+
+    func testNetworkResetReopensPrimaryCircuitImmediately() async throws {
+        let query = makeQuery(id: 0x3600, type: 1)
+        let response = makeResponse(for: query, flags: 0x8180)
+        let primary = RecordingDoHClient(outcomes: [
+            .error(.timeout),
+            .error(.timeout),
+            .error(.timeout),
+            .response(DNSDoHHTTPResponse(
+                statusCode: 200,
+                headers: ["Content-Type": "application/dns-message"],
+                body: response
+            ))
+        ])
+        let fallback = RecordingDoHClient(outcomes: [
+            .response(DNSDoHHTTPResponse(
+                statusCode: 200,
+                headers: ["Content-Type": "application/dns-message"],
+                body: response
+            )),
+            .response(DNSDoHHTTPResponse(
+                statusCode: 200,
+                headers: ["Content-Type": "application/dns-message"],
+                body: response
+            )),
+            .response(DNSDoHHTTPResponse(
+                statusCode: 200,
+                headers: ["Content-Type": "application/dns-message"],
+                body: response
+            )),
+            .response(DNSDoHHTTPResponse(
+                statusCode: 200,
+                headers: ["Content-Type": "application/dns-message"],
+                body: response
+            ))
+        ])
+        let resolver = DNSUpstreamResolver(
+            primary: DNSDoHTransport(endpoint: .cloudflare, client: primary),
+            fallback: DNSDoHTransport(endpoint: .quad9, client: fallback)
+        )
+
+        for _ in 0..<DNSCircuitBreaker.failureThreshold {
+            _ = try await resolver.resolve(query)
+        }
+        _ = try await resolver.resolve(query)
+        let primaryBeforeReset = await primary.requestSnapshot()
+        XCTAssertEqual(primaryBeforeReset.count, DNSCircuitBreaker.failureThreshold)
+
+        await resolver.resetCircuitBreaker()
+        let resultAfterReset = try await resolver.resolve(query)
+        XCTAssertEqual(resultAfterReset, response)
+        let primaryAfterReset = await primary.requestSnapshot()
+        XCTAssertEqual(primaryAfterReset.count, DNSCircuitBreaker.failureThreshold + 1)
+    }
+
+    func testReusedTransportUsesTheSameHTTPClientForSubsequentQueries() async throws {
+        let firstQuery = makeQuery(id: 0x3700, type: 1)
+        let secondQuery = makeQuery(id: 0x3701, type: 28)
+        let client = RecordingDoHClient(outcomes: [
+            .response(DNSDoHHTTPResponse(
+                statusCode: 200,
+                headers: ["Content-Type": "application/dns-message"],
+                body: makeResponse(for: firstQuery, flags: 0x8180)
+            )),
+            .response(DNSDoHHTTPResponse(
+                statusCode: 200,
+                headers: ["Content-Type": "application/dns-message"],
+                body: makeResponse(for: secondQuery, flags: 0x8180)
+            ))
+        ])
+        let transport = DNSDoHTransport(endpoint: .cloudflare, client: client)
+
+        _ = try await transport.resolve(firstQuery)
+        _ = try await transport.resolve(secondQuery)
+
+        let requests = await client.requestSnapshot()
+        XCTAssertEqual(requests.count, 2)
+        XCTAssertEqual(requests.map(\.body), [firstQuery, secondQuery])
+    }
+
+    func testDoHColdAndReusedLatencyComparedWithLegacyUDPBaseline() async throws {
+        let query = makeQuery(id: 0x3800, type: 1)
+        let udpBaseline = SimulatedLatencyTransport(
+            coldDelayNanoseconds: 2_000_000,
+            warmDelayNanoseconds: 2_000_000
+        )
+        let coldDoH = SimulatedLatencyTransport(
+            coldDelayNanoseconds: 30_000_000,
+            warmDelayNanoseconds: 3_000_000
+        )
+        let reusedDoH = SimulatedLatencyTransport(
+            coldDelayNanoseconds: 30_000_000,
+            warmDelayNanoseconds: 3_000_000
+        )
+
+        let udpLatency = try await elapsed { try await udpBaseline.resolve(query) }
+        let coldLatency = try await elapsed { try await coldDoH.resolve(query) }
+        _ = try await reusedDoH.resolve(query)
+        let reusedLatency = try await elapsed { try await reusedDoH.resolve(query) }
+
+        XCTAssertGreaterThan(coldLatency, udpLatency)
+        XCTAssertLessThan(reusedLatency, coldLatency)
+        let reusedRequestCount = await reusedDoH.requestCountForTesting()
+        XCTAssertEqual(reusedRequestCount, 2)
+    }
+
+    func testDiagnosticsRecordLatencyWithoutQueryData() async throws {
+        let query = makeQuery(id: 0x3900, type: 1)
+        let diagnostics = DNSResolutionDiagnostics()
+        let client = RecordingDoHClient(outcomes: [
+            .response(DNSDoHHTTPResponse(
+                statusCode: 200,
+                headers: ["Content-Type": "application/dns-message"],
+                body: makeResponse(for: query, flags: 0x8180)
+            ))
+        ])
+        let transport = DNSDoHTransport(
+            endpoint: .cloudflare,
+            client: client,
+            diagnostics: diagnostics
+        )
+
+        _ = try await transport.resolve(query)
+
+        let snapshot = diagnostics.snapshot()
+        XCTAssertEqual(snapshot.sampleCount, 1)
+        XCTAssertEqual(snapshot.successfulCount, 1)
+        XCTAssertEqual(snapshot.failedCount, 0)
+        XCTAssertNotNil(snapshot.lastMilliseconds)
+        XCTAssertEqual(snapshot.lastProvider, "cloudflare-dns.com")
     }
 
     func testHTTP500EmptyAndInvalidPayloadsFallBack() async throws {
@@ -332,5 +568,12 @@ final class DNSDoHTests: XCTestCase {
     private func readUInt16(_ data: Data, at offset: Int) -> UInt16? {
         guard offset >= 0, offset + 2 <= data.count else { return nil }
         return UInt16(data[offset]) << 8 | UInt16(data[offset + 1])
+    }
+
+    private func elapsed<T>(_ operation: () async throws -> T) async rethrows -> TimeInterval {
+        let startedAt = DispatchTime.now().uptimeNanoseconds
+        _ = try await operation()
+        let elapsedNanoseconds = DispatchTime.now().uptimeNanoseconds - startedAt
+        return TimeInterval(elapsedNanoseconds) / 1_000_000_000
     }
 }

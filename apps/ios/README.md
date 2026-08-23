@@ -51,7 +51,8 @@ Permitted DNS wire packets are sent with an HTTPS `POST` using the
 1. Cloudflare DoH: `https://cloudflare-dns.com/dns-query`;
 2. Quad9 DoH: `https://dns.quad9.net/dns-query`.
 
-The Network Extension uses an ephemeral `URLSession` over HTTPS. The system
+The Network Extension creates one ephemeral `URLSession` per DNS proxy
+provider instance and shares it between Cloudflare and Quad9. The system
 validates the TLS certificate and hostname and negotiates HTTP/2 when the
 provider requires it; the app does not use certificate pinning or disable
 validation. If the proxy observes the URLSession resolving either DoH
@@ -59,12 +60,19 @@ hostname, it answers only that provider's A/AAAA bootstrap query locally.
 This explicit public-API guard prevents a recursive loop without relying on
 plaintext DNS or private Network Extension behavior.
 
-Each permitted query is handled concurrently and has a bounded timeout. A
-transport, TLS, HTTP, empty-body, or invalid-DNS response from Cloudflare
-causes a retry through Quad9. A valid DNS response such as `NXDOMAIN` is
-returned directly. If both encrypted providers fail, the extension returns a
+Each permitted query is handled concurrently and has a 1.5-second request and
+resource timeout. A transport, TLS, HTTP, empty-body, or invalid-DNS response
+from Cloudflare causes a retry through Quad9, sequentially for that query. A
+valid DNS response such as `NXDOMAIN` is returned directly. After three
+consecutive primary failures, a 15-second circuit breaker sends new queries
+directly to Quad9; the breaker resets when the network path changes or the
+interval expires. If both encrypted providers fail, the extension returns a
 local `SERVFAIL` promptly. There is deliberately no plaintext UDP/TCP port 53
 fallback.
+
+The extension keeps only aggregate in-memory latency diagnostics: sample count,
+success/failure count, duration, and provider. It never stores or logs the
+queried domain, DNS wire body, transaction ID, or response payload.
 
 The app does not send queries, logs, metrics, or browsing history to an Orbe
 Works backend (there is no backend). The configured DNS providers receive the
