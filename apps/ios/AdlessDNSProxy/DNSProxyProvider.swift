@@ -19,14 +19,16 @@ final class DNSProxyProvider: NEDNSProxyProvider {
 
     override func startProxy(options: [String: Any]? = nil, completionHandler: @escaping (Error?) -> Void) {
         dnsLogger.info("DNS proxy start requested")
-        guard hasSubscriptionAccess() else {
-            dnsLogger.error("DNS proxy start rejected: subscription inactive")
-            completionHandler(DNSProxyError.subscriptionInactive)
-            return
+        if hasSubscriptionAccess() {
+            loadBlocklist()
+            dnsLogger.info("DNS proxy started with \(self.blocklist.count, privacy: .public) domains")
+        } else {
+            // Keep DNS forwarding available after entitlement expiry. An empty
+            // blocklist makes the existing flow handlers pass every query to
+            // the configured upstreams instead of discarding the flow.
+            blocklist = []
+            dnsLogger.info("DNS proxy started in pass-through mode: subscription inactive")
         }
-
-        loadBlocklist()
-        dnsLogger.info("DNS proxy started with \(self.blocklist.count, privacy: .public) domains")
         completionHandler(nil)
     }
 
@@ -56,14 +58,17 @@ final class DNSProxyProvider: NEDNSProxyProvider {
     }
 
     override func handleNewFlow(_ flow: NEAppProxyFlow) -> Bool {
-        guard hasSubscriptionAccess() else { return false }
+        let filteringEnabled = hasSubscriptionAccess()
+        // A lapsed entitlement must not turn a DNS failure into an internet
+        // outage. Keep accepting supported flows and pass them through.
+        let flowBlocklist = filteringEnabled ? blocklist : []
 
         let identifier = ObjectIdentifier(flow)
         if let udpFlow = flow as? NEAppProxyUDPFlow {
-            dnsLogger.debug("New UDP DNS flow received")
+            dnsLogger.debug("New UDP DNS flow received; filtering enabled: \(filteringEnabled, privacy: .public)")
             let handler = DNSUDPFlowHandler(
                 flow: udpFlow,
-                blocklist: blocklist,
+                blocklist: flowBlocklist,
                 upstreams: upstreams,
                 onClose: { [weak self] in self?.removeFlow(identifier) },
                 onBlocked: { [weak self] in self?.statsRecorder.recordBlockedRequest() }
@@ -74,10 +79,10 @@ final class DNSProxyProvider: NEDNSProxyProvider {
         }
 
         if let tcpFlow = flow as? NEAppProxyTCPFlow {
-            dnsLogger.debug("New TCP DNS flow received")
+            dnsLogger.debug("New TCP DNS flow received; filtering enabled: \(filteringEnabled, privacy: .public)")
             let handler = DNSTCPFlowHandler(
                 flow: tcpFlow,
-                blocklist: blocklist,
+                blocklist: flowBlocklist,
                 upstreams: upstreams,
                 onClose: { [weak self] in self?.removeFlow(identifier) },
                 onBlocked: { [weak self] in self?.statsRecorder.recordBlockedRequest() }
@@ -870,7 +875,6 @@ private struct SharedSubscriptionAccessSnapshot: Decodable {
 }
 
 private enum DNSProxyError: LocalizedError {
-    case subscriptionInactive
     case invalidTCPDNSMessage
     case upstreamTimeout
     case upstreamUnavailable
@@ -878,8 +882,6 @@ private enum DNSProxyError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .subscriptionInactive:
-            return "Adless subscription is inactive"
         case .invalidTCPDNSMessage:
             return "Invalid DNS over TCP message"
         case .upstreamTimeout:

@@ -211,7 +211,8 @@ Teste cada cenário com proteção desligada e ligada quando aplicável:
 | Fechar e reabrir com proteção ativa | app abre diretamente como ativo |
 | Sem internet ao ativar | lista local funciona; ativação não depende do download |
 | Manifesto indisponível | lista anterior ou seed continua ativa |
-| Assinatura expirada | extensão não inicia e a tela pede acesso Premium |
+| Assinatura expirada com a extensão ativa | DNS Proxy permanece em pass-through, sem bloquear domínios; a internet continua funcionando |
+| Assinatura expirada ao abrir o app | app mostra Premium access required e não ativa uma nova sessão de bloqueio |
 | Compra concluída | drawer fecha e o app tenta ativar a proteção |
 | Atualização válida da lista | nova lista é instalada sem arquivo parcial |
 | Atualização inválida | lista anterior continua ativa |
