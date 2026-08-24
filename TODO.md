@@ -6,5 +6,5 @@
 - [ ] Implementar Content Blocker para Safari
 - [ ] Ajustar Landing Page com as novas caracteristicas do App
 - [ ] Ajustar telas de Privacy Policy, Terms e Support da Landing Page
-- [ ] Adicionar traduções em espanhol e português
+- [x] Adicionar traduções em espanhol e português
 - [ ] Ajustar valores do app em euro, real e dolar
