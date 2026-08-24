@@ -187,6 +187,24 @@ Testes de Sandbox, TestFlight e produção usam o App Store Connect, não o
 arquivo `.storekit`. Preços, disponibilidade, grupo, trial e acordos legais
 precisam estar configurados externamente.
 
+## Localização do iOS
+
+As traduções do app ficam em `apps/ios/Adless/Resources/Localizable.xcstrings`.
+O inglês é o idioma-base e `pt-BR` é a primeira tradução. O iOS escolhe
+automaticamente o primeiro idioma compatível na lista de preferências do
+dispositivo e usa inglês como fallback.
+
+Para adicionar um idioma futuro:
+
+1. adicione a região ao `knownRegions` do projeto Xcode;
+2. inclua a tradução no `Localizable.xcstrings`;
+3. localize os metadados dos produtos no App Store Connect;
+4. teste a interface e o fluxo de compra com o idioma selecionado no
+   simulador e no dispositivo.
+
+Os preços continuam vindo do StoreKit conforme o storefront da Conta Apple;
+não devem ser duplicados como valores fixos por idioma no código.
+
 ## Blocklist
 
 A fonte habilitada no MVP é a OISD Small, declarada em

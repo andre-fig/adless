@@ -191,15 +191,15 @@ final class BlocklistTests: XCTestCase {
     func testSubscriptionOfferFormatterUsesStoreKitPeriod() {
         XCTAssertEqual(
             SubscriptionOfferFormatter.freeTrialText(value: 7, unit: .day),
-            "7 days free for new subscribers"
+            String(format: String(localized: "free_trial_new_subscriber_format", defaultValue: "%d %@ free for new subscribers"), 7, String(localized: "days"))
         )
         XCTAssertEqual(
             SubscriptionOfferFormatter.freeTrialText(value: 1, unit: .week),
-            "1 week free for new subscribers"
+            String(format: String(localized: "free_trial_new_subscriber_format", defaultValue: "%d %@ free for new subscribers"), 1, String(localized: "week"))
         )
         XCTAssertEqual(
             SubscriptionOfferFormatter.freeTrialText(value: 1, unit: .month),
-            "1 month free for new subscribers"
+            String(format: String(localized: "free_trial_new_subscriber_format", defaultValue: "%d %@ free for new subscribers"), 1, String(localized: "month"))
         )
     }
 

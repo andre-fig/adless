@@ -134,3 +134,19 @@ The first auto-renewable subscription must be submitted together with an app
 version for review. Product metadata, prices, availability, the Subscription
 Group, the 7-day offer, and the App Store agreement are external App Store
 Connect configuration and cannot be completed from this repository alone.
+
+## Localization
+
+The app uses the String Catalog at
+`Adless/Resources/Localizable.xcstrings`. English (`en`) is the source
+language and Brazilian Portuguese (`pt-BR`) is currently included. iOS selects
+the first supported language in the user’s preferred language list and falls
+back to English when no translation is available.
+
+When adding another language, add its localization to the String Catalog and
+the project’s known regions, then add the same language to the StoreKit product
+metadata in App Store Connect. Keep product prices and trial eligibility in
+StoreKit/App Store Connect; the app only formats and displays the values
+returned by Apple. Legal documents, accessibility labels, subscription
+messages, and the simulator StoreKit configuration are localized alongside the
+main interface.

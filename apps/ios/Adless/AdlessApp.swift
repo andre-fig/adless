@@ -20,7 +20,7 @@ struct AdlessApp: App {
 
 final class AppViewModel: ObservableObject {
     @Published var isOn: Bool = false
-    @Published var statusText: String = "Off"
+    @Published var statusText: String = String(localized: "Off")
     @Published private(set) var isPreparing = true
     @Published private(set) var hasSubscription = false
     @Published var isSubscriptionPresented = false
@@ -81,7 +81,7 @@ final class AppViewModel: ObservableObject {
                 await refreshStatus()
             } catch {
                 AdlessSentry.capture(error, operation: "protection.deactivate")
-                statusText = "Could not change blocking status"
+                statusText = String(localized: "Could not change blocking status")
             }
             return
         }
@@ -101,7 +101,7 @@ final class AppViewModel: ObservableObject {
         // take a moment to save and start its configuration, so waiting for it
         // before changing the published state makes the button appear stuck.
         isOn = true
-        statusText = "Connecting"
+        statusText = String(localized: "Connecting")
         await Task.yield()
 
         let transaction = AdlessSentry.startTransaction(name: "protection.activate", operation: "networkextension")
@@ -114,7 +114,7 @@ final class AppViewModel: ObservableObject {
         } catch {
             AdlessSentry.capture(error, operation: "protection.activate")
             isOn = false
-            statusText = "Could not change blocking status"
+            statusText = String(localized: "Could not change blocking status")
         }
     }
 
@@ -123,17 +123,17 @@ final class AppViewModel: ObservableObject {
         let state = await vpnManager.currentStatus()
         isOn = hasSubscription && (state == .connected || state == .connecting)
         if !hasSubscription {
-            statusText = "Premium access required"
+            statusText = String(localized: "Premium access required")
             return
         }
         switch state {
-        case .invalid: statusText = "Invalid"
-        case .disconnected: statusText = "Off"
-        case .connecting: statusText = "Connecting"
-        case .connected: statusText = "On"
-        case .reasserting: statusText = "Reconnecting"
-        case .disconnecting: statusText = "Disconnecting"
-        @unknown default: statusText = "Unknown"
+        case .invalid: statusText = String(localized: "Invalid")
+        case .disconnected: statusText = String(localized: "Off")
+        case .connecting: statusText = String(localized: "Connecting")
+        case .connected: statusText = String(localized: "On")
+        case .reasserting: statusText = String(localized: "Reconnecting")
+        case .disconnecting: statusText = String(localized: "Disconnecting")
+        @unknown default: statusText = String(localized: "Unknown")
         }
     }
 
@@ -185,7 +185,7 @@ final class AppViewModel: ObservableObject {
         let state = await vpnManager.currentStatus()
         let wasAlreadyActive = state == .connected || state == .connecting
         isOn = hasSubscription && wasAlreadyActive
-        statusText = isOn ? "On" : "Off"
+        statusText = isOn ? String(localized: "On") : String(localized: "Off")
 
         isPreparing = false
         await applicationDidBecomeActive()
@@ -198,6 +198,6 @@ final class AppViewModel: ObservableObject {
         guard state == .connected || state == .connecting else { return }
         try? await vpnManager.stop()
         isOn = false
-        statusText = "Premium access required"
+        statusText = String(localized: "Premium access required")
     }
 }

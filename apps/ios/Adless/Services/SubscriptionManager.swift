@@ -72,27 +72,27 @@ final class SubscriptionManager: ObservableObject {
                     onPurchaseCompleted?()
                 }
             case .success(.unverified):
-                message = "The purchase could not be verified"
+                message = String(localized: "The purchase could not be verified")
             case .userCancelled:
                 break
             case .pending:
-                message = "The purchase is awaiting approval"
+                message = String(localized: "The purchase is awaiting approval")
             @unknown default:
-                message = "The purchase could not be completed"
+                message = String(localized: "The purchase could not be completed")
             }
         } catch {
             AdlessSentry.capture(error, operation: "subscription.purchase")
             os_log("Subscription purchase failed: %{public}@", log: .default, type: .error, error.localizedDescription)
-            message = "The purchase could not be completed"
+            message = String(localized: "The purchase could not be completed")
         }
     }
 
     func purchase(_ option: SubscriptionOption) async {
         guard let product = option.product else {
 #if DEBUG && os(iOS) && targetEnvironment(simulator)
-            message = "Run the Adless scheme from Xcode to test purchases in the simulator."
+            message = String(localized: "Run the Adless scheme from Xcode to test purchases in the simulator.")
 #else
-            message = "The purchase could not be completed"
+            message = String(localized: "The purchase could not be completed")
 #endif
             return
         }
@@ -111,7 +111,7 @@ final class SubscriptionManager: ObservableObject {
         } catch {
             AdlessSentry.capture(error, operation: "subscription.restore")
             os_log("Subscription restore failed: %{public}@", log: .default, type: .error, error.localizedDescription)
-            message = "Purchases could not be restored"
+            message = String(localized: "Purchases could not be restored")
         }
     }
 
@@ -172,21 +172,34 @@ final class SubscriptionManager: ObservableObject {
     private static func makeOption(from product: Product) -> SubscriptionOption {
         let isAnnual = product.id == SubscriptionConfiguration.yearlyProductID
         let trialText = product.subscription?.introductoryOffer.flatMap(SubscriptionOfferFormatter.trialDurationText)
-        let renewalText = "Then \(product.displayPrice) per \(isAnnual ? "year" : "month")."
+        let period = String(localized: isAnnual ? "year" : "month")
+        let renewalText = String(
+            format: String(localized: "Then %@ per %@.", defaultValue: "Then %@ per %@."),
+            product.displayPrice,
+            period
+        )
 
         let description: String
         if isAnnual {
             let monthlyPrice = (product.price / Decimal(12)).formatted(product.priceFormatStyle)
-            description = [trialText, "\(monthlyPrice)/mo"].compactMap { $0 }.joined(separator: " · ")
+            let monthlyDescription = String(
+                format: String(localized: "annual_monthly_price_format", defaultValue: "%@/mo"),
+                monthlyPrice
+            )
+            description = [trialText, monthlyDescription].compactMap { $0 }.joined(separator: " · ")
         } else {
             description = trialText ?? ""
         }
 
         return SubscriptionOption(
             id: product.id,
-            name: isAnnual ? "Annual" : "Monthly",
+            name: String(localized: isAnnual ? "Annual" : "Monthly"),
             price: product.price,
-            displayPrice: "\(product.displayPrice) / \(isAnnual ? "year" : "month")",
+            displayPrice: String(
+                format: String(localized: "display_price_format", defaultValue: "%@ / %@"),
+                product.displayPrice,
+                period
+            ),
             description: description,
             renewalText: renewalText,
             product: product
