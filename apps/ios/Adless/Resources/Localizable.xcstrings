@@ -5,637 +5,728 @@
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless is not directed at children and does not knowingly collect personal information from children." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless não é destinado a crianças e não coleta intencionalmente informações pessoais de crianças." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless não é destinado a crianças e não coleta intencionalmente informações pessoais de crianças." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless no está dirigido a niños y no recopila deliberadamente información personal de menores." } }
       }
     },
     "Apple processes App Store purchases and subscriptions under Apple’s own terms and privacy policy. Cloudflare DNS and Quad9 process permitted DNS-over-HTTPS queries to return DNS answers under their respective service and privacy policies. Sentry, operated by Functional Software, Inc., processes crash and performance diagnostics for reliability purposes under its privacy policy. Adless downloads public, static blocklist files from GitHub Pages. Those requests can include standard technical connection information handled by the hosting provider, such as an IP address." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Apple processes App Store purchases and subscriptions under Apple’s own terms and privacy policy. Cloudflare DNS and Quad9 process permitted DNS-over-HTTPS queries to return DNS answers under their respective service and privacy policies. Sentry, operated by Functional Software, Inc., processes crash and performance diagnostics for reliability purposes under its privacy policy. Adless downloads public, static blocklist files from GitHub Pages. Those requests can include standard technical connection information handled by the hosting provider, such as an IP address." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "A Apple processa compras e assinaturas da App Store de acordo com seus próprios termos e política de privacidade. O Cloudflare DNS e o Quad9 processam consultas DNS-over-HTTPS permitidas para retornar respostas DNS, conforme suas respectivas políticas de serviço e privacidade. O Sentry, operado pela Functional Software, Inc., processa diagnósticos de falhas e desempenho para fins de confiabilidade, conforme sua política de privacidade. O Adless baixa arquivos públicos e estáticos da lista de bloqueio pelo GitHub Pages. Essas solicitações podem incluir informações técnicas padrão de conexão tratadas pelo provedor de hospedagem, como um endereço IP." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "A Apple processa compras e assinaturas da App Store de acordo com seus próprios termos e política de privacidade. O Cloudflare DNS e o Quad9 processam consultas DNS-over-HTTPS permitidas para retornar respostas DNS, conforme suas respectivas políticas de serviço e privacidade. O Sentry, operado pela Functional Software, Inc., processa diagnósticos de falhas e desempenho para fins de confiabilidade, conforme sua política de privacidade. O Adless baixa arquivos públicos e estáticos da lista de bloqueio pelo GitHub Pages. Essas solicitações podem incluir informações técnicas padrão de conexão tratadas pelo provedor de hospedagem, como um endereço IP." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Apple procesa las compras y suscripciones de la App Store conforme a sus propios términos y política de privacidad. Cloudflare DNS y Quad9 procesan las consultas DNS-over-HTTPS permitidas para devolver respuestas DNS, de acuerdo con sus respectivas políticas de servicio y privacidad. Sentry, operado por Functional Software, Inc., procesa diagnósticos de fallos y rendimiento para fines de fiabilidad conforme a su política de privacidad. Adless descarga archivos públicos y estáticos de la lista de bloqueo desde GitHub Pages. Estas solicitudes pueden incluir información técnica estándar de conexión gestionada por el proveedor de alojamiento, como una dirección IP." } }
       }
     },
     "OK" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "OK" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "OK" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "OK" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "OK" } }
       }
     },
     "Orbe Works does not collect or retain account information, browsing history, DNS query history, advertising identifiers, or payment information through Adless. The app has no account, login, or custom backend. Blocking statistics are stored locally in the app’s protected storage. Permitted DNS queries are transmitted to the configured third-party DNS providers only to obtain DNS answers; their handling is governed by their own privacy policies. Adless uses Sentry for crash and performance diagnostics. Sentry receives technical diagnostic data such as app version, operating system, device model, stack traces, and timing data. Adless does not send DNS queries, domain names, browsing history, or a user identity to Sentry." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Orbe Works does not collect or retain account information, browsing history, DNS query history, advertising identifiers, or payment information through Adless. The app has no account, login, or custom backend. Blocking statistics are stored locally in the app’s protected storage. Permitted DNS queries are transmitted to the configured third-party DNS providers only to obtain DNS answers; their handling is governed by their own privacy policies. Adless uses Sentry for crash and performance diagnostics. Sentry receives technical diagnostic data such as app version, operating system, device model, stack traces, and timing data. Adless does not send DNS queries, domain names, browsing history, or a user identity to Sentry." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "A Orbe Works não coleta nem retém informações de conta, histórico de navegação, histórico de consultas DNS, identificadores de publicidade ou informações de pagamento por meio do Adless. O app não tem conta, login nem backend próprio. As estatísticas de bloqueio são armazenadas localmente no armazenamento protegido do app. As consultas DNS permitidas são transmitidas aos provedores DNS de terceiros configurados somente para obter respostas DNS; o tratamento delas é regido por suas próprias políticas de privacidade. O Adless usa o Sentry para diagnósticos de falhas e desempenho. O Sentry recebe dados técnicos de diagnóstico, como versão do app, sistema operacional, modelo do dispositivo, stack traces e dados de tempo. O Adless não envia consultas DNS, nomes de domínio, histórico de navegação ou identidade de usuário ao Sentry." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "A Orbe Works não coleta nem retém informações de conta, histórico de navegação, histórico de consultas DNS, identificadores de publicidade ou informações de pagamento por meio do Adless. O app não tem conta, login nem backend próprio. As estatísticas de bloqueio são armazenadas localmente no armazenamento protegido do app. As consultas DNS permitidas são transmitidas aos provedores DNS de terceiros configurados somente para obter respostas DNS; o tratamento delas é regido por suas próprias políticas de privacidade. O Adless usa o Sentry para diagnósticos de falhas e desempenho. O Sentry recebe dados técnicos de diagnóstico, como versão do app, sistema operacional, modelo do dispositivo, stack traces e dados de tempo. O Adless não envia consultas DNS, nomes de domínio, histórico de navegação ou identidade de usuário ao Sentry." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Orbe Works no recopila ni conserva información de cuentas, historial de navegación, historial de consultas DNS, identificadores publicitarios ni información de pago a través de Adless. La app no tiene cuenta, inicio de sesión ni backend propio. Las estadísticas de bloqueo se almacenan localmente en el almacenamiento protegido de la app. Las consultas DNS permitidas se transmiten a los proveedores DNS de terceros configurados únicamente para obtener respuestas DNS; su tratamiento se rige por sus propias políticas de privacidad. Adless utiliza Sentry para diagnósticos de fallos y rendimiento. Sentry recibe datos técnicos de diagnóstico, como la versión de la app, el sistema operativo, el modelo del dispositivo, los stack traces y datos de tiempo. Adless no envía consultas DNS, nombres de dominio, historial de navegación ni la identidad del usuario a Sentry." } }
       }
     },
     "Third parties" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Third parties" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Terceiros" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Terceiros" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Terceros" } }
       }
     },
     "Availability" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Availability" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Disponibilidade" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Disponibilidade" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Disponibilidad" } }
       }
     },
     "Back" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Back" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Voltar" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Voltar" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Atrás" } }
       }
     },
     "Children" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Children" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Crianças" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Crianças" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Menores" } }
       }
     },
     "Could not change blocking status" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Could not change blocking status" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Não foi possível alterar o estado do bloqueio" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Não foi possível alterar o estado do bloqueio" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudo cambiar el estado del bloqueo" } }
       }
     },
     "Data retention" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Data retention" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Retenção de dados" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Retenção de dados" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Conservación de datos" } }
       }
     },
     "Disconnecting" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Disconnecting" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Desconectando" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Desconectando" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Desconectando" } }
       }
     },
     "Information we collect" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Information we collect" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Informações que coletamos" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Informações que coletamos" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Información que recopilamos" } }
       }
     },
     "Invalid" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Invalid" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Inválido" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Inválido" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No válido" } }
       }
     },
     "On" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "On" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Ativado" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Ativado" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Activado" } }
       }
     },
     "Off" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Off" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Desativado" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Desativado" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Desactivado" } }
       }
     },
     "Purchases could not be restored" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Purchases could not be restored" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Não foi possível restaurar as compras" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Não foi possível restaurar as compras" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudieron restaurar las compras" } }
       }
     },
     "Reconnecting" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Reconnecting" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Reconectando" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Reconectando" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Reconectando" } }
       }
     },
     "Run the Adless scheme from Xcode to test purchases in the simulator." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Run the Adless scheme from Xcode to test purchases in the simulator." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Execute o esquema Adless pelo Xcode para testar compras no simulador." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Execute o esquema Adless pelo Xcode para testar compras no simulador." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Ejecuta el esquema de Adless desde Xcode para probar las compras en el simulador." } }
       }
     },
     "Subscriptions" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Subscriptions" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Assinaturas" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Assinaturas" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Suscripciones" } }
       }
     },
     "The purchase could not be completed" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "The purchase could not be completed" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Não foi possível concluir a compra" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Não foi possível concluir a compra" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudo completar la compra" } }
       }
     },
     "The purchase could not be verified" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "The purchase could not be verified" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Não foi possível verificar a compra" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Não foi possível verificar a compra" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudo verificar la compra" } }
       }
     },
     "The purchase is awaiting approval" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "The purchase is awaiting approval" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "A compra está aguardando aprovação" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "A compra está aguardando aprovação" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "La compra está pendiente de aprobación" } }
       }
     },
     "Unknown" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Unknown" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Desconhecido" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Desconhecido" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Desconocido" } }
       }
     },
     "Use of the service" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Use of the service" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Uso do serviço" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Uso do serviço" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Uso del servicio" } }
       }
     },
     "What Adless does" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "What Adless does" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O que o Adless faz" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O que o Adless faz" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Qué hace Adless" } }
       }
     },
     "Works quietly in the background" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Works quietly in the background" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Funciona discretamente em segundo plano" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Funciona discretamente em segundo plano" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Funciona discretamente en segundo plano" } }
       }
     },
     "These Terms of Use govern your use of Adless, an on-device DNS filtering application developed by Orbe Works." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "These Terms of Use govern your use of Adless, an on-device DNS filtering application developed by Orbe Works." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Estes Termos de Uso regem o uso do Adless, um aplicativo de filtragem de DNS no dispositivo desenvolvido pela Orbe Works." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Estes Termos de Uso regem o uso do Adless, um aplicativo de filtragem de DNS no dispositivo desenvolvido pela Orbe Works." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Estos Términos de uso rigen tu uso de Adless, una aplicación de filtrado DNS en el dispositivo desarrollada por Orbe Works." } }
       }
     },
     "For support, contact a_figueiredo@icloud.com." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "For support, contact a_figueiredo@icloud.com." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Para suporte, entre em contato pelo e-mail a_figueiredo@icloud.com." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Para suporte, entre em contato pelo e-mail a_figueiredo@icloud.com." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Para obtener asistencia, escribe a a_figueiredo@icloud.com." } }
       }
     },
     "Connecting" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Connecting" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Conectando" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Conectando" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Conectando" } }
       }
     },
     "Preparing your protection..." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Preparing your protection..." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Preparando sua proteção..." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Preparando sua proteção..." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Preparando tu protección..." } }
       }
     },
     "Subscribing to turn on blocking" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Subscribing to turn on blocking" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Assine para ativar o bloqueio" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Assine para ativar o bloqueio" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Suscríbete para activar el bloqueo" } }
       }
     },
     "Turns DNS blocking on or off" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Turns DNS blocking on or off" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Ativa ou desativa o bloqueio de DNS" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Ativa ou desativa o bloqueio de DNS" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Activa o desactiva el bloqueo de DNS" } }
       }
     },
     "Opens subscription options" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Opens subscription options" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Abre as opções de assinatura" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Abre as opções de assinatura" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Abre las opciones de suscripción" } }
       }
     },
     "Subscribe to turn on blocking" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Subscribe to turn on blocking" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Assine para ativar o bloqueio" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Assine para ativar o bloqueio" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Suscríbete para activar el bloqueo" } }
       }
     },
     "Adless" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Adless" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Adless" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless" } }
       }
     },
     "Adless. Preparing your protection." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless. Preparing your protection." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Adless. Preparando sua proteção." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Adless. Preparando sua proteção." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless. Preparando tu protección." } }
       }
     },
     "Adless is working quietly in the background." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless is working quietly in the background." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless funciona discretamente em segundo plano." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless funciona discretamente em segundo plano." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless funciona discretamente en segundo plano." } }
       }
     },
     "Adless keeps working even after you close the app." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless keeps working even after you close the app." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless continua funcionando mesmo depois que você fecha o app." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless continua funcionando mesmo depois que você fecha o app." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless sigue funcionando incluso después de cerrar la app." } }
       }
     },
     "Adless may be offered through monthly and annual auto-renewable subscriptions. A subscription includes the features shown in the app at the time of purchase. Any free trial, price, renewal date, and applicable taxes are displayed by Apple before purchase.\n\nPayment is charged to your Apple Account. Unless canceled through your Apple Account settings at least 24 hours before the end of the current period, a subscription renews automatically. Apple manages billing, refunds, and cancellation." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless may be offered through monthly and annual auto-renewable subscriptions. A subscription includes the features shown in the app at the time of purchase. Any free trial, price, renewal date, and applicable taxes are displayed by Apple before purchase.\n\nPayment is charged to your Apple Account. Unless canceled through your Apple Account settings at least 24 hours before the end of the current period, a subscription renews automatically. Apple manages billing, refunds, and cancellation." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless pode ser oferecido por meio de assinaturas mensais e anuais com renovação automática. A assinatura inclui os recursos exibidos no app no momento da compra. Qualquer período grátis, preço, data de renovação e impostos aplicáveis são mostrados pela Apple antes da compra.\n\nA cobrança é feita na sua Conta Apple. A menos que seja cancelada nos ajustes da sua Conta Apple pelo menos 24 horas antes do fim do período atual, a assinatura será renovada automaticamente. A Apple gerencia a cobrança, os reembolsos e o cancelamento." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless pode ser oferecido por meio de assinaturas mensais e anuais com renovação automática. A assinatura inclui os recursos exibidos no app no momento da compra. Qualquer período grátis, preço, data de renovação e impostos aplicáveis são mostrados pela Apple antes da compra.\n\nA cobrança é feita na sua Conta Apple. A menos que seja cancelada nos ajustes da sua Conta Apple pelo menos 24 horas antes do fim do período atual, a assinatura será renovada automaticamente. A Apple gerencia a cobrança, os reembolsos e o cancelamento." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless puede ofrecerse mediante suscripciones mensuales y anuales con renovación automática. Una suscripción incluye las funciones que se muestran en la app en el momento de la compra. Apple muestra antes de la compra cualquier prueba gratuita, precio, fecha de renovación e impuesto aplicable.\n\nEl cargo se realiza en tu Cuenta de Apple. A menos que canceles la suscripción en los ajustes de tu Cuenta de Apple al menos 24 horas antes de que finalice el periodo actual, se renovará automáticamente. Apple gestiona la facturación, los reembolsos y la cancelación." } }
       }
     },
     "Adless provides local DNS-based blocking of domains identified by its blocklist. No filtering system can identify every ad, tracker, or domain, and blocking a domain can occasionally affect a website or app. You are responsible for deciding whether to keep the protection enabled." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless provides local DNS-based blocking of domains identified by its blocklist. No filtering system can identify every ad, tracker, or domain, and blocking a domain can occasionally affect a website or app. You are responsible for deciding whether to keep the protection enabled." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless faz o bloqueio local, baseado em DNS, dos domínios identificados pela lista de bloqueio. Nenhum sistema de filtragem consegue identificar todos os anúncios, rastreadores ou domínios, e bloquear um domínio pode ocasionalmente afetar um site ou app. Cabe a você decidir se deseja manter a proteção ativada." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless faz o bloqueio local, baseado em DNS, dos domínios identificados pela lista de bloqueio. Nenhum sistema de filtragem consegue identificar todos os anúncios, rastreadores ou domínios, e bloquear um domínio pode ocasionalmente afetar um site ou app. Cabe a você decidir se deseja manter a proteção ativada." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless bloquea localmente mediante DNS los dominios identificados por su lista de bloqueo. Ningún sistema de filtrado puede identificar todos los anuncios, rastreadores o dominios, y bloquear un dominio puede afectar ocasionalmente a un sitio web o una app. Tú decides si mantienes activada la protección." } }
       }
     },
     "Adless uses Apple’s Network Extension DNS Proxy to process DNS queries on your device and block domains included in the active blocklist. Blocked names are answered locally. Permitted DNS queries are sent as encrypted DNS-over-HTTPS wire messages to Cloudflare DNS or Quad9 so they can be resolved. Adless does not operate a server or a remote VPN service." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless uses Apple’s Network Extension DNS Proxy to process DNS queries on your device and block domains included in the active blocklist. Blocked names are answered locally. Permitted DNS queries are sent as encrypted DNS-over-HTTPS wire messages to Cloudflare DNS or Quad9 so they can be resolved. Adless does not operate a server or a remote VPN service." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless usa o DNS Proxy da Network Extension da Apple para processar consultas DNS no seu dispositivo e bloquear domínios incluídos na lista ativa. Os nomes bloqueados recebem respostas locais. As consultas DNS permitidas são enviadas como mensagens DNS-over-HTTPS criptografadas para o Cloudflare DNS ou o Quad9 para serem resolvidas. O Adless não opera um servidor nem um serviço de VPN remoto." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless usa o DNS Proxy da Network Extension da Apple para processar consultas DNS no seu dispositivo e bloquear domínios incluídos na lista ativa. Os nomes bloqueados recebem respostas locais. As consultas DNS permitidas são enviadas como mensagens DNS-over-HTTPS criptografadas para o Cloudflare DNS ou o Quad9 para serem resolvidas. O Adless não opera um servidor nem um serviço de VPN remoto." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless utiliza el DNS Proxy de Network Extension de Apple para procesar las consultas DNS en tu dispositivo y bloquear los dominios incluidos en la lista de bloqueo activa. Los nombres bloqueados reciben respuestas locales. Las consultas DNS permitidas se envían como mensajes DNS-over-HTTPS cifrados a Cloudflare DNS o Quad9 para resolverlas. Adless no opera un servidor ni un servicio de VPN remoto." } }
       }
     },
     "Adless is developed by Orbe Works. This Privacy Policy explains what happens when you use the Adless iOS app and website." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless is developed by Orbe Works. This Privacy Policy explains what happens when you use the Adless iOS app and website." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless é desenvolvido pela Orbe Works. Esta Política de Privacidade explica o que acontece quando você usa o app iOS e o site do Adless." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless é desenvolvido pela Orbe Works. Esta Política de Privacidade explica o que acontece quando você usa o app iOS e o site do Adless." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless está desarrollado por Orbe Works. Esta Política de privacidad explica qué ocurre cuando utilizas la app iOS y el sitio web de Adless." } }
       }
     },
     "Adless may update the blocklist, app, or service to improve reliability and security. The app keeps a valid local list and can continue using it when the network is unavailable, but uninterrupted operation cannot be guaranteed." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless may update the blocklist, app, or service to improve reliability and security. The app keeps a valid local list and can continue using it when the network is unavailable, but uninterrupted operation cannot be guaranteed." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless pode atualizar a lista de bloqueio, o app ou o serviço para melhorar a confiabilidade e a segurança. O app mantém uma lista local válida e pode continuar usando-a quando a rede estiver indisponível, mas não é possível garantir o funcionamento ininterrupto." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless pode atualizar a lista de bloqueio, o app ou o serviço para melhorar a confiabilidade e a segurança. O app mantém uma lista local válida e pode continuar usando-a quando a rede estiver indisponível, mas não é possível garantir o funcionamento ininterrupto." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless puede actualizar la lista de bloqueo, la app o el servicio para mejorar la fiabilidad y la seguridad. La app conserva una lista local válida y puede seguir utilizándola cuando la red no esté disponible, pero no se puede garantizar un funcionamiento ininterrumpido." } }
       }
     },
     "Adless does not maintain a user account or server-side user record. Local blocklists, subscription state, and blocking statistics can be removed by deleting the app. Apple manages purchase records and subscription history." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless does not maintain a user account or server-side user record. Local blocklists, subscription state, and blocking statistics can be removed by deleting the app. Apple manages purchase records and subscription history." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless não mantém uma conta de usuário nem um registro no servidor. As listas de bloqueio locais, o estado da assinatura e as estatísticas de bloqueio podem ser removidos ao apagar o app. A Apple gerencia os registros de compra e o histórico de assinaturas." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless não mantém uma conta de usuário nem um registro no servidor. As listas de bloqueio locais, o estado da assinatura e as estatísticas de bloqueio podem ser removidos ao apagar o app. A Apple gerencia os registros de compra e o histórico de assinaturas." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless no mantiene una cuenta de usuario ni un registro de usuario en el servidor. Las listas de bloqueo locales, el estado de la suscripción y las estadísticas de bloqueo pueden eliminarse al borrar la app. Apple gestiona los registros de compras y el historial de suscripciones." } }
       }
     },
     "Any free trial, price, renewal date, and applicable taxes are displayed by Apple before purchase." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Any free trial, price, renewal date, and applicable taxes are displayed by Apple before purchase." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Qualquer período grátis, preço, data de renovação e impostos aplicáveis são mostrados pela Apple antes da compra." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Qualquer período grátis, preço, data de renovação e impostos aplicáveis são mostrados pela Apple antes da compra." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Apple muestra antes de la compra cualquier prueba gratuita, precio, fecha de renovación e impuesto aplicable." } }
       }
     },
     "Annual" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Annual" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Anual" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Anual" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Anual" } }
       }
     },
     "Best Value · Save %d%%" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Best Value · Save %d%%" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Melhor escolha · Economize %d%%" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Melhor escolha · Economize %d%%" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Mejor opción · Ahorra %d%%" } }
       }
     },
     "Block ads and trackers across your iPhone." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Block ads and trackers across your iPhone." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Bloqueie anúncios e rastreadores em todo o iPhone." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Bloqueie anúncios e rastreadores em todo o iPhone." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Bloquea anuncios y rastreadores en todo tu iPhone." } }
       }
     },
     "Block ads and trackers with one tap." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Block ads and trackers with one tap." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Bloqueie anúncios e rastreadores com um toque." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Bloqueie anúncios e rastreadores com um toque." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Bloquea anuncios y rastreadores con un toque." } }
       }
     },
     "Browse cleaner with Adless" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Browse cleaner with Adless" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Navegue melhor com o Adless" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Navegue melhor com o Adless" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Navega mejor con Adless" } }
       }
     },
     "Browse cleaner. Stay private." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Browse cleaner. Stay private." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Navegue melhor. Preserve sua privacidade." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Navegue melhor. Preserve sua privacidade." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Navega mejor. Mantén tu privacidad." } }
       }
     },
     "Cancel anytime." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel anytime." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Cancele quando quiser." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Cancele quando quiser." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Cancela cuando quieras." } }
       }
     },
     "Cleaner, distraction-free browsing" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Cleaner, distraction-free browsing" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Navegação mais limpa e sem distrações" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Navegação mais limpa e sem distrações" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Navegación más limpia y sin distracciones" } }
       }
     },
     "Contact" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Contact" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Contato" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Contato" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Contacto" } }
       }
     },
     "Fewer tracking requests" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Fewer tracking requests" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Menos solicitações de rastreamento" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Menos solicitações de rastreamento" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Menos solicitudes de seguimiento" } }
       }
     },
     "Last updated: August 20, 2026" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Last updated: August 20, 2026" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Última atualização: 20 de agosto de 2026" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Última atualização: 20 de agosto de 2026" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Última actualización: 20 de agosto de 2026" } }
       }
     },
     "Monthly" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Monthly" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Mensal" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Mensal" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Mensual" } }
       }
     },
     "No account required" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "No account required" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Não é necessário ter uma conta" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Não é necessário ter uma conta" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No necesitas una cuenta" } }
       }
     },
     "Payment will be charged after the 7-day free trial. The subscription renews automatically unless canceled at least 24 hours before the end of the current period." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Payment will be charged after the 7-day free trial. The subscription renews automatically unless canceled at least 24 hours before the end of the current period." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "A cobrança será feita após o período grátis de 7 dias. A assinatura será renovada automaticamente, a menos que seja cancelada pelo menos 24 horas antes do fim do período atual." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "A cobrança será feita após o período grátis de 7 dias. A assinatura será renovada automaticamente, a menos que seja cancelada pelo menos 24 horas antes do fim do período atual." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Se realizará el cargo después de la prueba gratuita de 7 días. La suscripción se renovará automáticamente a menos que la canceles al menos 24 horas antes de que finalice el periodo actual." } }
       }
     },
     "Premium access required" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Premium access required" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Acesso premium necessário" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Acesso premium necessário" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Se requiere acceso premium" } }
       }
     },
     "Privacy Policy" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Privacy Policy" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Política de privacidade" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Política de privacidade" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Política de privacidad" } }
       }
     },
     "Protection Active" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Protection Active" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Proteção ativa" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Proteção ativa" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Protección activa" } }
       }
     },
     "Protection Off" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Protection Off" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Proteção desativada" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Proteção desativada" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Protección desactivada" } }
       }
     },
     "Restore Purchase" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Restore Purchase" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Restaurar compra" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Restaurar compra" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Restaurar compra" } }
       }
     },
     "Start 7-Day Free Trial" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Start 7-Day Free Trial" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Iniciar período grátis de 7 dias" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Iniciar período grátis de 7 dias" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Iniciar prueba gratuita de 7 días" } }
       }
     },
     "Start your free trial to turn on protection." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Start your free trial to turn on protection." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Comece seu período grátis para ativar a proteção." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Comece seu período grátis para ativar a proteção." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Inicia tu prueba gratuita para activar la protección." } }
       }
     },
     "Subscription" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Subscription" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Assinatura" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Assinatura" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Suscripción" } }
       }
     },
     "Subscription options will be available soon." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Subscription options will be available soon." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "As opções de assinatura estarão disponíveis em breve." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "As opções de assinatura estarão disponíveis em breve." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Las opciones de suscripción estarán disponibles próximamente." } }
       }
     },
     "Terms of Use" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Terms of Use" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Termos de uso" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Termos de uso" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Términos de uso" } }
       }
     },
     "Then %@ per %@." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Then %@ per %@." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Depois, %@ por %@." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Depois, %@ por %@." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Después, %@ por %@." } }
       }
     },
     "Turn Adless back on to keep blocking." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Turn Adless back on to keep blocking." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Reative o Adless para continuar bloqueando." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Reative o Adless para continuar bloqueando." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Vuelve a activar Adless para seguir bloqueando." } }
       }
     },
     "Turn off blocking" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Turn off blocking" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Desativar bloqueio" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Desativar bloqueio" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Desactivar bloqueo" } }
       }
     },
     "Turn on blocking" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Turn on blocking" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Ativar bloqueio" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Ativar bloqueio" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Activar bloqueo" } }
       }
     },
     "Your blocking history is saved while protection is paused." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Your blocking history is saved while protection is paused." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Seu histórico de bloqueios é salvo enquanto a proteção está pausada." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Seu histórico de bloqueios é salvo enquanto a proteção está pausada." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Tu historial de bloqueos se guarda mientras la protección está en pausa." } }
       }
     },
     "Your protection is paused." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Your protection is paused." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Sua proteção está pausada." } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Sua proteção está pausada." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Tu protección está en pausa." } }
       }
     },
     "ad & tracker requests blocked today" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "ad & tracker requests blocked today" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "solicitações de anúncios e rastreadores bloqueadas hoje" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "solicitações de anúncios e rastreadores bloqueadas hoje" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "solicitudes de anuncios y rastreadores bloqueadas hoy" } }
       }
     },
     "all-time blocks" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "all-time blocks" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "bloqueios desde o início" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "bloqueios desde o início" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "bloqueos acumulados" } }
       }
     },
     "annual_monthly_price_format" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "%@/mo" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "%@/mês" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "%@/mês" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "%@/mes" } }
       }
     },
     "day" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "day" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "dia" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "dia" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "día" } }
       }
     },
     "days" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "days" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "dias" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "dias" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "días" } }
       }
     },
     "display_price_format" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ / %@" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "%@ / %@" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "%@ / %@" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "%@ / %@" } }
       }
     },
     "free_trial_format" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "%d %@ free" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "%d %@ grátis" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "%d %@ grátis" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "%d %@ gratis" } }
       }
     },
     "free_trial_new_subscriber_format" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "%d %@ free for new subscribers" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "%d %@ grátis para novos assinantes" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "%d %@ grátis para novos assinantes" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "%d %@ gratis para nuevos suscriptores" } }
       }
     },
     "month" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "month" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "mês" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "mês" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "mes" } }
       }
     },
     "months" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "months" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "meses" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "meses" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "meses" } }
       }
     },
     "period" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "period" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "período" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "período" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "periodo" } }
       }
     },
     "periods" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "periods" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "períodos" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "períodos" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "periodos" } }
       }
     },
     "week" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "week" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "semana" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "semana" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "semana" } }
       }
     },
     "weeks" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "weeks" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "semanas" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "semanas" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "semanas" } }
       }
     },
     "year" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "year" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "ano" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "ano" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "año" } }
       }
     },
     "years" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "years" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "anos" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "anos" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "años" } }
       }
     }
   },

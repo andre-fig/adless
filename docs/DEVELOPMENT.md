@@ -190,7 +190,7 @@ precisam estar configurados externamente.
 ## Localização do iOS
 
 As traduções do app ficam em `apps/ios/Adless/Resources/Localizable.xcstrings`.
-O inglês é o idioma-base e `pt-BR` é a primeira tradução. O iOS escolhe
+O inglês é o idioma-base e `pt-BR` e `es` estão disponíveis como traduções. O iOS escolhe
 automaticamente o primeiro idioma compatível na lista de preferências do
 dispositivo e usa inglês como fallback.
 

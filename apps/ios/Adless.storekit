@@ -66,6 +66,11 @@
               "description" : "Plano mensal do Adless Pro.",
               "displayName" : "Adless Mensal",
               "locale" : "pt_BR"
+            },
+            {
+              "description" : "Plan mensual de Adless Pro.",
+              "displayName" : "Adless Mensual",
+              "locale" : "es_ES"
             }
           ],
           "productID" : "com.orbeworks.adless.pro.monthly",
@@ -105,6 +110,11 @@
               "description" : "Plano anual do Adless Pro.",
               "displayName" : "Adless Anual",
               "locale" : "pt_BR"
+            },
+            {
+              "description" : "Plan anual de Adless Pro.",
+              "displayName" : "Adless Anual",
+              "locale" : "es_ES"
             }
           ],
           "productID" : "com.orbeworks.adless.pro.yearly",

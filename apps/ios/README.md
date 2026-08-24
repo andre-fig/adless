@@ -139,7 +139,8 @@ Connect configuration and cannot be completed from this repository alone.
 
 The app uses the String Catalog at
 `Adless/Resources/Localizable.xcstrings`. English (`en`) is the source
-language and Brazilian Portuguese (`pt-BR`) is currently included. iOS selects
+language, Brazilian Portuguese (`pt-BR`), and Spanish (`es`) are currently
+included. iOS selects
 the first supported language in the user’s preferred language list and falls
 back to English when no translation is available.
 
