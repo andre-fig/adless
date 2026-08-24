@@ -24,6 +24,7 @@ Outros comandos úteis:
 ```sh
 npm run build:landing
 npm run lint
+npm run typecheck
 npm run preview:landing
 npm run setup:hooks
 ```
@@ -33,8 +34,9 @@ npm run setup:hooks
 manualmente. O
 `pre-commit` executa somente verificações rápidas nos arquivos staged. O
 `pre-push` roda apenas os testes relacionados aos caminhos que serão enviados:
-blocklist, landing ou XCTest do iOS. Isso antecipa falhas antes de consumir um
-runner do GitHub; os workflows continuam sendo a validação final.
+blocklist, lint/typecheck/build da landing ou XCTest do iOS. Isso antecipa
+falhas antes de consumir um runner do GitHub; os workflows continuam sendo a
+validação final.
 
 ## Aplicativo iOS
 
@@ -46,6 +48,20 @@ Network Extension (DNS Proxy) no App ID correspondente.
 A cobrança é feita exclusivamente pela App Store com StoreKit 2, sem backend,
 login ou banco próprio. O app oferece assinaturas mensal e anual com trial de
 7 dias configurado no App Store Connect.
+
+### DNS criptografado
+
+O bloqueio continua local: consultas bloqueadas recebem uma resposta local e
+não saem do aparelho. Consultas permitidas são encaminhadas pela extensão por
+DNS-over-HTTPS (DoH), usando HTTPS/TLS válido, para o Cloudflare DNS como
+principal (`https://cloudflare-dns.com/dns-query`) e Quad9 como fallback
+(`https://dns.quad9.net/dns-query`). O app não possui servidor próprio, não
+envia métricas ou logs e nunca faz fallback silencioso para DNS UDP em texto
+puro. Uma única sessão HTTPS é reutilizada durante a vida do provider; após
+falhas consecutivas do primário, um circuit breaker usa temporariamente o
+fallback e é resetado quando a rede muda. A política e os testes estão detalhados em
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) e
+[`docs/TESTING.md`](docs/TESTING.md).
 
 ## Blocklist
 
@@ -72,12 +88,15 @@ python3 tools/blocklists/validate_blocklist.py
 Detalhes operacionais estão em
 [`tools/blocklists/README.md`](tools/blocklists/README.md).
 
-O workflow `deploy-pages.yml` publica a build da landing no GitHub Pages. É
+O workflow `deploy-pages.yml` publica a build da landing no GitHub Pages após
+alterações relevantes da landing ou dos artefatos públicos da blocklist. É
 necessário selecionar `GitHub Actions` como fonte de publicação em Settings →
-Pages no repositório.
+Pages no repositório. Cada workflow usa `concurrency` e cancela a execução
+anterior do mesmo grupo quando uma nova é disparada.
 
-O desenvolvimento acontece na branch `develop`; PRs e commits nela executam os
-testes do iOS. Um merge para `main` inicia o workflow de release quando há
+O desenvolvimento acontece na branch `develop`; o `pre-push` local executa os
+testes do iOS antes do envio e o workflow roda novamente no PR. Um merge para
+`main` inicia o workflow de release quando há
 alteração de produção no app. Se a versão correspondente estiver preparada no
 App Store Connect, o workflow `release-ios.yml` também testa, cria o build,
 envia o IPA e submete a versão para revisão automaticamente. Ele não cria

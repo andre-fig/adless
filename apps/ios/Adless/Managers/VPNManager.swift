@@ -59,11 +59,7 @@ final class VPNManager {
         if manager.providerProtocol == nil {
             let proto = NEDNSProxyProviderProtocol()
             proto.providerBundleIdentifier = providerBundleIdentifier
-            proto.providerConfiguration = [
-                "upstreamPrimary": "1.1.1.1",
-                "upstreamSecondary": "8.8.8.8",
-                "appGroup": appGroup
-            ]
+            proto.providerConfiguration = ["appGroup": appGroup]
             proto.serverAddress = "127.0.0.1"
             manager.localizedDescription = "Adless DNS"
             manager.providerProtocol = proto

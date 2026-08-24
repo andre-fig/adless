@@ -21,23 +21,31 @@ enum SubscriptionConfiguration {
     static let simulatorOptions = [
         SubscriptionOption(
             id: yearlyProductID,
-            name: "Annual",
+            name: String(localized: "Annual"),
             price: Decimal(string: "29.90")!,
-            displayPrice: "R$ 29.90 / year",
-            description: "7 days free · R$ 2.49/mo",
-            renewalText: "Then R$ 29.90 per year.",
+            displayPrice: String(format: String(localized: "display_price_format", defaultValue: "%@ / %@"), simulatorPrice(Decimal(string: "29.90")!), String(localized: "year")),
+            description: String(format: String(localized: "free_trial_format", defaultValue: "%d %@ free"), 7, String(localized: "days")) + " · " + String(format: String(localized: "annual_monthly_price_format", defaultValue: "%@/mo"), simulatorPrice(Decimal(string: "2.49")!)),
+            renewalText: String(format: String(localized: "Then %@ per %@.", defaultValue: "Then %@ per %@."), simulatorPrice(Decimal(string: "29.90")!), String(localized: "year")),
             product: nil
         ),
         SubscriptionOption(
             id: monthlyProductID,
-            name: "Monthly",
+            name: String(localized: "Monthly"),
             price: Decimal(string: "4.90")!,
-            displayPrice: "R$ 4.90 / month",
-            description: "7 days free",
-            renewalText: "Then R$ 4.90 per month.",
+            displayPrice: String(format: String(localized: "display_price_format", defaultValue: "%@ / %@"), simulatorPrice(Decimal(string: "4.90")!), String(localized: "month")),
+            description: String(format: String(localized: "free_trial_format", defaultValue: "%d %@ free"), 7, String(localized: "days")),
+            renewalText: String(format: String(localized: "Then %@ per %@.", defaultValue: "Then %@ per %@."), simulatorPrice(Decimal(string: "4.90")!), String(localized: "month")),
             product: nil
         )
     ]
+
+    private static func simulatorPrice(_ value: Decimal) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = "BRL"
+        formatter.locale = Locale(identifier: "pt_BR")
+        return formatter.string(from: value as NSDecimalNumber) ?? "R$ 0,00"
+    }
 #endif
 }
 
@@ -64,18 +72,22 @@ enum SubscriptionOfferFormatter {
         let unitName: String
         switch unit {
         case .day:
-            unitName = value == 1 ? "day" : "days"
+            unitName = String(localized: value == 1 ? "day" : "days")
         case .week:
-            unitName = value == 1 ? "week" : "weeks"
+            unitName = String(localized: value == 1 ? "week" : "weeks")
         case .month:
-            unitName = value == 1 ? "month" : "months"
+            unitName = String(localized: value == 1 ? "month" : "months")
         case .year:
-            unitName = value == 1 ? "year" : "years"
+            unitName = String(localized: value == 1 ? "year" : "years")
         @unknown default:
-            unitName = value == 1 ? "period" : "periods"
+            unitName = String(localized: value == 1 ? "period" : "periods")
         }
 
-        return "\(value) \(unitName) free"
+        return String(
+            format: String(localized: "free_trial_format", defaultValue: "%d %@ free"),
+            value,
+            unitName
+        )
     }
 
     static func freeTrialText(for offer: Product.SubscriptionOffer) -> String? {
@@ -90,18 +102,22 @@ enum SubscriptionOfferFormatter {
         let unitName: String
         switch unit {
         case .day:
-            unitName = value == 1 ? "day" : "days"
+            unitName = String(localized: value == 1 ? "day" : "days")
         case .week:
-            unitName = value == 1 ? "week" : "weeks"
+            unitName = String(localized: value == 1 ? "week" : "weeks")
         case .month:
-            unitName = value == 1 ? "month" : "months"
+            unitName = String(localized: value == 1 ? "month" : "months")
         case .year:
-            unitName = value == 1 ? "year" : "years"
+            unitName = String(localized: value == 1 ? "year" : "years")
         @unknown default:
-            unitName = value == 1 ? "period" : "periods"
+            unitName = String(localized: value == 1 ? "period" : "periods")
         }
 
-        return "\(value) \(unitName) free for new subscribers"
+        return String(
+            format: String(localized: "free_trial_new_subscriber_format", defaultValue: "%d %@ free for new subscribers"),
+            value,
+            unitName
+        )
     }
 }
 

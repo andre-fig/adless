@@ -21,7 +21,7 @@ on:
 
 concurrency:
   group: adless-ios-release
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -30,6 +30,9 @@ env:
   ASC_APP_ID: "6803552143"
   ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
   ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+  SENTRY_ORG: portside-xz
+  SENTRY_PROJECT: adless
   IOS_PROJECT: apps/ios/Adless.xcodeproj
   IOS_SCHEME: Adless
 
@@ -97,19 +100,12 @@ jobs:
           echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
           echo "Selected build number $build_number"
 
-      - name: Run iOS tests
-        if: steps.preflight.outputs.should_release == 'true'
+      - name: Install Sentry CLI
+        if: steps.preflight.outputs.should_release == 'true' && env.SENTRY_AUTH_TOKEN != ''
         run: |
           set -euo pipefail
-          simulator_id="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ {gsub(/[[:space:]]/, "", $2); print $2; exit}')"
-          test -n "$simulator_id"
-          xcodebuild \
-            -project "$IOS_PROJECT" \
-            -scheme AdlessTests \
-            -destination "platform=iOS Simulator,id=$simulator_id" \
-            -derivedDataPath "$RUNNER_TEMP/adless-ios-derived-data" \
-            CODE_SIGNING_ALLOWED=NO \
-            test
+          brew install getsentry/tools/sentry-cli
+          sentry-cli --version
 
       - name: Archive signed iOS app
         if: steps.preflight.outputs.should_release == 'true'

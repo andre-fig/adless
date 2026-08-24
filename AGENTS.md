@@ -37,6 +37,7 @@ Requer Node.js 20 ou superior e npm.
 npm ci
 npm run dev:landing
 npm run lint
+npm run typecheck
 npm run build:landing
 npm run preview:landing
 ```
@@ -145,9 +146,21 @@ Connect. O trial gratuito de 7 dias precisa ser configurado como Introductory
 Offer no App Store Connect; não basta alterar uma constante no código.
 
 O app considera `subscribed` e `inGracePeriod` como acesso válido, persiste um
-snapshot verificado no App Group e a extensão recusa iniciar ou processar DNS
-quando o snapshot está ausente ou expirado. Compras são restauradas com
+snapshot verificado no App Group e a extensão mantém o modo pass-through quando
+o snapshot está ausente ou expirado, sem bloquear DNS. Compras são restauradas com
 `AppStore.sync()` e atualizações são observadas por `Transaction.updates`.
+
+Consultas permitidas usam DNS-over-HTTPS pela extensão, com Cloudflare como
+principal e Quad9 como fallback. Consultas bloqueadas recebem resposta local.
+O transporte usa uma `URLSession` efêmera, com TLS/hostname validados pelo
+sistema e negociação HTTP/2 quando oferecida pelo provedor. A extensão responde
+localmente às consultas A/AAAA dos dois hostnames DoH caso elas sejam observadas
+no proxy, evitando recursão sem depender de DNS em texto puro. Não existe
+fallback para DNS UDP tradicional. A mesma sessão HTTP é compartilhada pelos
+dois provedores durante a vida da instância do provider; após três falhas
+consecutivas do primário, o circuit breaker usa o fallback por 15 segundos e é
+resetado quando a rede muda. Consulte `docs/ARCHITECTURE.md` e
+`docs/TESTING.md` antes de alterar esse caminho.
 
 Não coloque uma flag manual permanente como `isSubscribed = true`. O acesso
 deve derivar da transação verificada pela Apple e da data de validade. Para
@@ -157,13 +170,14 @@ testes reais, configure os produtos e uma conta Sandbox no App Store Connect.
 
 `.github/workflows/update-blocklist.yml` executa diariamente e também pode ser
 executado manualmente em Ubuntu. Ele baixa, normaliza, valida e publica somente
-os artefatos permitidos. Se houver mudança real, ele despacha o deploy da
-landing; quando não houver mudança, não cria commit nem deploy. Mudanças
-inesperadas devem fazer o workflow falhar.
+os artefatos permitidos. Se houver mudança real, o push dos artefatos dispara o
+deploy da landing; quando não houver mudança, não cria commit nem deploy.
+Uma nova execução cancela a anterior do mesmo workflow. Mudanças inesperadas
+devem fazer o workflow falhar.
 
 `.github/workflows/deploy-pages.yml` constrói a landing e publica o diretório
-`apps/landing-page/dist` após alterações relevantes da landing na `main`, após o
-dispatch do workflow de blocklist ou execução manual. Ele não usa mais
+`apps/landing-page/dist` após alterações relevantes da landing ou dos artefatos
+públicos da blocklist na `main`, ou execução manual. Ele não usa mais
 `workflow_run`, evitando deploy duplicado e checkout de um commit antigo. O
 workflow usa as versões atuais das actions e não deve receber segredos
 desnecessários.
@@ -171,12 +185,16 @@ desnecessários.
 `.github/workflows/release-ios.yml` executa no `main` quando há alteração no
 projeto de produção do iOS e roda testes, archive, validação, upload e
 submissão no App Store Connect. O workflow de testes separado roda em PRs e na
-`develop`; assim o mesmo teste não é executado duas vezes no `main`. Ele usa
+o `pre-push` local executa os testes antes do envio; assim o mesmo teste não é
+executado em cada push da `develop` nem duas vezes no `main`. O workflow usa
 somente os secrets `ASC_KEY_ID`, `ASC_ISSUER_ID` e
 `ASC_PRIVATE_KEY`; a chave é materializada apenas no diretório temporário do
 runner. Versões já em revisão são ignoradas sem erro para evitar submissões
 duplicadas. O fluxo de desenvolvimento é `develop` → pull request → `main`.
 Consulte `docs/ios-release.md` antes de alterar esse processo.
+
+Todos os workflows usam `concurrency`; quando uma nova execução do mesmo grupo
+é disparada, a execução anterior é cancelada para evitar trabalho duplicado.
 
 Ao alterar workflows:
 
@@ -212,6 +230,7 @@ Ao alterar workflows:
 git diff --check
 python3 -m unittest discover -s tools/blocklists/tests -v
 npm run lint
+npm run typecheck
 npm run build:landing
 git status --short --branch
 ```

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLanguage } from '@/i18n/LanguageContext';
-import { Language } from '@/i18n/translations';
+import type { Language } from '@/i18n/translations';
 
 const languages: { code: Language; flag: string; name: string }[] = [
   { code: 'en', flag: '🇺🇸', name: 'English' },

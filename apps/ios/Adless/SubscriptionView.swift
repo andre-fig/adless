@@ -15,13 +15,16 @@ struct SubscriptionView: View {
     @Environment(\.colorScheme) private var colorScheme
     var onContentHeightChange: (CGFloat) -> Void = { _ in }
     @State private var selectedProductID: String?
+    @State private var presentedLegalDocument: AdlessLegalDocument?
 
-    private let benefits = [
-        "Cleaner, distraction-free browsing",
-        "Fewer tracking requests",
-        "Works quietly in the background",
-        "No account required"
-    ]
+    private var benefits: [String] {
+        [
+            String(localized: "Cleaner, distraction-free browsing"),
+            String(localized: "Fewer tracking requests"),
+            String(localized: "Works quietly in the background"),
+            String(localized: "No account required")
+        ]
+    }
 
     private let adlessBlue = Color(red: 0.0, green: 0.32, blue: 0.78)
     private var mutedTextColor: Color {
@@ -155,7 +158,12 @@ struct SubscriptionView: View {
                                     .overlay(alignment: .topTrailing) {
                                         if option.id == SubscriptionConfiguration.yearlyProductID,
                                            let annualSavingsPercent {
-                                            Text("Best Value · Save \(annualSavingsPercent)%")
+                                            Text(
+                                                String(
+                                                    format: String(localized: "Best Value · Save %d%%", defaultValue: "Best Value · Save %d%%"),
+                                                    annualSavingsPercent
+                                                )
+                                            )
                                                 .font(.caption2.weight(.bold))
                                                 .foregroundStyle(.white)
                                                 .padding(.horizontal, 10)
@@ -218,13 +226,17 @@ struct SubscriptionView: View {
                             .disabled(manager.isProcessing)
                             .foregroundStyle(adlessBlue)
 
-                            Link("Terms of Use", destination: AdlessLegalLinks.terms)
+                            Button("Terms of Use") {
+                                presentedLegalDocument = .terms
+                            }
                                 .font(.footnote.weight(.semibold))
                                 .foregroundStyle(adlessBlue)
                         }
                         .frame(maxWidth: .infinity, alignment: .center)
 
-                        Link("Privacy Policy", destination: AdlessLegalLinks.privacy)
+                        Button("Privacy Policy") {
+                            presentedLegalDocument = .privacy
+                        }
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(adlessBlue)
                     }
@@ -258,8 +270,18 @@ struct SubscriptionView: View {
             } message: {
                 Text(manager.message ?? "")
             }
+            }
+            .background(AdlessTheme.subscriptionDrawerBackground)
+        .overlay {
+            if let presentedLegalDocument {
+                NavigationStack {
+                    AdlessLegalDocumentView(document: presentedLegalDocument) {
+                        self.presentedLegalDocument = nil
+                    }
+                }
+                .background(AdlessTheme.subscriptionDrawerBackground)
+            }
         }
-        .background(AdlessTheme.subscriptionDrawerBackground)
     }
 
     private func planSortIndex(for productID: String) -> Int {
@@ -282,7 +304,153 @@ private struct SubscriptionContentHeightKey: PreferenceKey {
     }
 }
 
-private enum AdlessLegalLinks {
-    static let terms = URL(string: "https://andre-fig.github.io/adless/terms")!
-    static let privacy = URL(string: "https://andre-fig.github.io/adless/privacy")!
+private enum AdlessLegalDocument: Hashable {
+    case terms
+    case privacy
+
+    var title: String {
+        switch self {
+        case .terms:
+            return String(localized: "Terms of Use")
+        case .privacy:
+            return String(localized: "Privacy Policy")
+        }
+    }
+
+    var lastUpdated: String {
+        String(localized: "Last updated: August 20, 2026")
+    }
+
+    var introduction: String {
+        switch self {
+        case .terms:
+            return String(localized: "These Terms of Use govern your use of Adless, an on-device DNS filtering application developed by Orbe Works.")
+        case .privacy:
+            return String(localized: "Adless is developed by Orbe Works. This Privacy Policy explains what happens when you use the Adless iOS app and website.")
+        }
+    }
+
+    var sections: [AdlessLegalSection] {
+        switch self {
+        case .terms:
+            return [
+                AdlessLegalSection(
+                    id: "subscriptions",
+                    title: String(localized: "Subscriptions"),
+                    body: String(localized: "Adless may be offered through monthly and annual auto-renewable subscriptions. A subscription includes the features shown in the app at the time of purchase. Any free trial, price, renewal date, and applicable taxes are displayed by Apple before purchase.\n\nPayment is charged to your Apple Account. Unless canceled through your Apple Account settings at least 24 hours before the end of the current period, a subscription renews automatically. Apple manages billing, refunds, and cancellation.")
+                ),
+                AdlessLegalSection(
+                    id: "use_of_service",
+                    title: String(localized: "Use of the service"),
+                    body: String(localized: "Adless provides local DNS-based blocking of domains identified by its blocklist. No filtering system can identify every ad, tracker, or domain, and blocking a domain can occasionally affect a website or app. You are responsible for deciding whether to keep the protection enabled.")
+                ),
+                AdlessLegalSection(
+                    id: "availability",
+                    title: String(localized: "Availability"),
+                    body: String(localized: "Adless may update the blocklist, app, or service to improve reliability and security. The app keeps a valid local list and can continue using it when the network is unavailable, but uninterrupted operation cannot be guaranteed.")
+                )
+            ]
+        case .privacy:
+            return [
+                AdlessLegalSection(
+                    id: "what_adless_does",
+                    title: String(localized: "What Adless does"),
+                    body: String(localized: "Adless uses Apple’s Network Extension DNS Proxy to process DNS queries on your device and block domains included in the active blocklist. Blocked names are answered locally. Permitted DNS queries are sent as encrypted DNS-over-HTTPS wire messages to Cloudflare DNS or Quad9 so they can be resolved. Adless does not operate a server or a remote VPN service.")
+                ),
+                AdlessLegalSection(
+                    id: "information_we_collect",
+                    title: String(localized: "Information we collect"),
+                    body: String(localized: "Orbe Works does not collect or retain account information, browsing history, DNS query history, advertising identifiers, or payment information through Adless. The app has no account, login, or custom backend. Blocking statistics are stored locally in the app’s protected storage. Permitted DNS queries are transmitted to the configured third-party DNS providers only to obtain DNS answers; their handling is governed by their own privacy policies. Adless uses Sentry for crash and performance diagnostics. Sentry receives technical diagnostic data such as app version, operating system, device model, stack traces, and timing data. Adless does not send DNS queries, domain names, browsing history, or a user identity to Sentry.")
+                ),
+                AdlessLegalSection(
+                    id: "third_parties",
+                    title: String(localized: "Third parties"),
+                    body: String(localized: "Apple processes App Store purchases and subscriptions under Apple’s own terms and privacy policy. Cloudflare DNS and Quad9 process permitted DNS-over-HTTPS queries to return DNS answers under their respective service and privacy policies. Sentry, operated by Functional Software, Inc., processes crash and performance diagnostics for reliability purposes under its privacy policy. Adless downloads public, static blocklist files from GitHub Pages. Those requests can include standard technical connection information handled by the hosting provider, such as an IP address.")
+                ),
+                AdlessLegalSection(
+                    id: "data_retention",
+                    title: String(localized: "Data retention"),
+                    body: String(localized: "Adless does not maintain a user account or server-side user record. Local blocklists, subscription state, and blocking statistics can be removed by deleting the app. Apple manages purchase records and subscription history.")
+                ),
+                AdlessLegalSection(
+                    id: "children",
+                    title: String(localized: "Children"),
+                    body: String(localized: "Adless is not directed at children and does not knowingly collect personal information from children.")
+                )
+            ]
+        }
+    }
+
+    var contactText: String {
+        String(localized: "For support, contact a_figueiredo@icloud.com.")
+    }
+}
+
+private struct AdlessLegalSection: Identifiable {
+    let id: String
+    let title: String
+    let body: String
+}
+
+private struct AdlessLegalDocumentView: View {
+    let document: AdlessLegalDocument
+    let onBack: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var mutedTextColor: Color {
+        colorScheme == .dark
+            ? Color(red: 0.66, green: 0.68, blue: 0.73)
+            : Color(red: 0.40, green: 0.41, blue: 0.44)
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                Text(document.lastUpdated)
+                    .font(.caption)
+                    .foregroundStyle(mutedTextColor)
+
+                Text(document.introduction)
+                    .font(.body)
+
+                ForEach(document.sections) { section in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(section.title)
+                            .font(.headline)
+
+                        Text(section.body)
+                            .font(.body)
+                            .foregroundStyle(mutedTextColor)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Contact")
+                        .font(.headline)
+
+                    Text(document.contactText)
+                        .font(.body)
+                        .foregroundStyle(mutedTextColor)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
+            .padding(.top, 6)
+            .padding(.bottom, 24)
+        }
+        .background(AdlessTheme.subscriptionDrawerBackground)
+        .navigationTitle(document.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    onBack()
+                } label: {
+                    Label("Back", systemImage: "chevron.left")
+                }
+                .foregroundStyle(Color(red: 0.0, green: 0.32, blue: 0.78))
+            }
+        }
+    }
 }

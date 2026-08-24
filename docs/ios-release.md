@@ -9,20 +9,29 @@ develop  ->  pull request  ->  main  ->  test, archive, upload, submit
 Every push to `main` that changes production iOS code/resources, the App Store
 Connect release helper, or the export options starts
 `.github/workflows/release-ios.yml`. A blocklist-only commit does not start an
-iOS binary release. The workflow keeps only one release in flight and never
-cancels an active upload.
+iOS binary release. The workflow keeps only one release in flight: a newer run
+cancels the previous run in the same concurrency group. If Apple has already
+accepted an upload before cancellation, the next preflight still checks the
+App Store state and avoids submitting a duplicate version.
 
 ## GitHub secrets
 
-The private repository must contain these three Actions secrets:
+The private repository must contain these three Apple Actions secrets:
 
 - `ASC_KEY_ID`: App Store Connect API key ID;
 - `ASC_ISSUER_ID`: App Store Connect issuer ID;
-- `ASC_PRIVATE_KEY`: the complete contents of the `.p8` key.
+- `ASC_PRIVATE_KEY`: the complete contents of the `.p8` key;
+
+`SENTRY_AUTH_TOKEN` is an optional fourth secret: when present, it must be a
+Sentry token allowed to upload debug symbols for the `portside-xz/adless`
+project.
 
 The key is written only to the runner's temporary directory with mode `600`.
 It is never committed, logged, or included in the IPA. The workflow uses the
 same key for the App Store Connect API and for Xcode automatic provisioning.
+When `SENTRY_AUTH_TOKEN` is present, the release runner installs `sentry-cli`
+and the Xcode archive phase uploads dSYMs to Sentry. If it is absent, the app
+still builds, but Sentry issues from that build will not have uploaded symbols.
 
 The Apple Developer team must allow automatic signing for the app and the DNS
 Proxy extension. If Apple requires a distribution certificate or profile to be

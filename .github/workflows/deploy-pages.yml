@@ -14,6 +14,10 @@ on:
       - "apps/landing-page/public/favicon.ico"
       - "apps/landing-page/public/placeholder.svg"
       - "apps/landing-page/public/robots.txt"
+      - "apps/landing-page/public/blocklists/manifest.json"
+      - "apps/landing-page/public/blocklists/blocklist.txt"
+      - "apps/landing-page/public/blocklists/blocklist.txt.gz"
+      - "apps/landing-page/public/blocklists/blocklist.sha256"
       - "package-lock.json"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:

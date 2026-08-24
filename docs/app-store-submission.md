@@ -106,7 +106,7 @@ Suggested review notes:
 - [ ] Confirm Paid Apps Agreement, banking, and tax information
 - [x] Submit the app version for review
 
-The current App Store Connect API specification does not expose the App Privacy questionnaire. It was completed and published in the App Store Connect web interface. Based on the checked-in binary, the answer is: Adless does not collect data; it has no account, analytics SDK, advertising SDK, tracking, user-generated content, or browsing-history collection. The app makes HTTPS requests to the static GitHub Pages blocklist only to retrieve a manifest/list, and does not associate those requests with an identity.
+The current App Store Connect API specification does not expose the App Privacy questionnaire. It was completed and published in the App Store Connect web interface. The app uses Sentry only for crash and performance diagnostics; it does not have an account, advertising SDK, tracking, user-generated content, or Orbe Works-side browsing-history retention. Permitted DNS queries are sent over HTTPS to Cloudflare DNS or Quad9 for resolution and are not sent to Sentry or an Adless backend. Recheck the App Privacy questionnaire and the provider disclosures after every networking or SDK change.
 
 Official instructions: [Manage app privacy](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/).
 

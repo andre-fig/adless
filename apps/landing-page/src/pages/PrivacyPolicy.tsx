@@ -10,25 +10,36 @@ const PrivacyPolicy = () => (
     <h2>What Adless does</h2>
     <p>
       Adless uses Apple&apos;s Network Extension DNS Proxy to process DNS queries on
-      your device and block domains included in the active blocklist. DNS queries
-      are handled locally by the app and are not sent to an Orbe Works server or a
-      remote VPN service.
+      your device and block domains included in the active blocklist. Blocked
+      names are answered locally. Permitted DNS queries are sent as encrypted
+      DNS-over-HTTPS wire messages to Cloudflare DNS or Quad9 so they can be
+      resolved. Adless does not operate a server or a remote VPN service.
     </p>
 
     <h2>Information we collect</h2>
     <p>
-      Orbe Works does not collect account information, browsing history, DNS query
-      history, device identifiers, advertising identifiers, analytics, or payment
-      information through Adless. The app has no account, login, or custom backend.
-      Blocking statistics are stored locally in the app&apos;s protected storage.
+      Orbe Works does not collect or retain account information, browsing history,
+      DNS query history, advertising identifiers, or payment information through
+      Adless. The app has no account, login, or custom backend. Blocking statistics
+      are stored locally in the app&apos;s protected storage. Permitted DNS queries
+      are transmitted to the configured third-party DNS providers only to obtain
+      DNS answers; their handling is governed by their own privacy policies.
+      Adless does use Sentry for crash and performance diagnostics; it receives
+      technical diagnostic data such as app version, operating system, device
+      model, stack traces, and timing data. Adless does not send DNS queries,
+      domain names, browsing history, or a user identity to Sentry.
     </p>
 
     <h2>Third-party services</h2>
     <p>
       Apple processes App Store purchases and subscriptions under Apple&apos;s own
-      terms and privacy policy. Adless downloads public, static blocklist files
-      from GitHub Pages. Those requests can include standard technical connection
-      information handled by the hosting provider, such as an IP address.
+      terms and privacy policy. Cloudflare DNS and Quad9 process permitted
+      DNS-over-HTTPS queries to return DNS answers under their respective service
+      and privacy policies. Sentry, operated by Functional Software, Inc.,
+      processes crash and performance diagnostics for reliability purposes under its
+      privacy policy. Adless downloads public, static blocklist files from GitHub
+      Pages. Those requests can include standard technical connection information
+      handled by the hosting provider, such as an IP address.
     </p>
 
     <h2>Data retention and deletion</h2>
