@@ -15,8 +15,10 @@ configuration, the App Store Connect helper, or the export options starts
 
 The workflow creates a Release archive, exports an App Store distribution IPA,
 validates it with Apple's tooling, uploads it to App Store Connect, and waits
-for the build to reach `VALID`. It does not attach the build to an App Store
-version or submit anything for review. The archive uses the production
+for the build to reach `VALID`. It then adds the build to the internal
+`Adless Internal Testers` group so it is available to the configured internal
+testers. It does not attach the build to an App Store version or submit
+anything for review. The archive uses the production
 StoreKit code path; the local `Adless.storekit` configuration is not supplied
 to the archive or export commands.
 
