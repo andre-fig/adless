@@ -31,6 +31,7 @@ env:
   SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
   SENTRY_ORG: portside-xz
   SENTRY_PROJECT: adless
+  ASC_INTERNAL_BETA_GROUP_ID: "7582fab8-73d9-41ec-b544-0392c7cfa4b0"
   IOS_PROJECT: apps/ios/Adless.xcodeproj
   IOS_SCHEME: Adless
 
@@ -106,6 +107,8 @@ jobs:
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
 
       - name: Validate package with Apple
+        env:
+          API_PRIVATE_KEYS_DIR: ${{ runner.temp }}
         run: |
           set -euo pipefail
           xcrun altool --validate-app \
@@ -115,6 +118,8 @@ jobs:
             --apiIssuer "$ASC_ISSUER_ID"
 
       - name: Upload package to TestFlight
+        env:
+          API_PRIVATE_KEYS_DIR: ${{ runner.temp }}
         run: |
           set -euo pipefail
           xcrun altool --upload-app \
@@ -124,6 +129,7 @@ jobs:
             --apiIssuer "$ASC_ISSUER_ID"
 
       - name: Wait for Apple processing
+        id: processed-build
         run: |
           set -euo pipefail
           python3 tools/appstore/appstore_connect.py \
@@ -133,6 +139,17 @@ jobs:
             wait-build \
             --app-id "$ASC_APP_ID" \
             --build-number "${{ steps.build.outputs.build_number }}"
+
+      - name: Add build to internal TestFlight group
+        run: |
+          set -euo pipefail
+          python3 tools/appstore/appstore_connect.py \
+            --key-id "$ASC_KEY_ID" \
+            --issuer-id "$ASC_ISSUER_ID" \
+            --key-path "${{ steps.credentials.outputs.key_path }}" \
+            add-beta-build \
+            --group-id "$ASC_INTERNAL_BETA_GROUP_ID" \
+            --build-id "${{ steps.processed-build.outputs.build_id }}"
 
       - name: Publish summary
         env:

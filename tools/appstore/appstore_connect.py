@@ -250,6 +250,21 @@ def command_wait_build(client: Client, args: argparse.Namespace) -> None:
     raise RuntimeError(f"Timed out waiting for build {args.build_number} to become VALID")
 
 
+def command_add_beta_build(client: Client, args: argparse.Namespace) -> None:
+    group_path = f"/v1/betaGroups/{urllib.parse.quote(args.group_id)}/builds?limit=200"
+    assigned_builds = client.all_resources(group_path)
+    if any(resource.get("id") == args.build_id for resource in assigned_builds):
+        print(f"Build {args.build_id} is already assigned to beta group {args.group_id}")
+        return
+
+    client.request(
+        "POST",
+        f"/v1/betaGroups/{urllib.parse.quote(args.group_id)}/relationships/builds",
+        {"data": [{"type": "builds", "id": args.build_id}]},
+    )
+    print(f"Assigned build {args.build_id} to beta group {args.group_id}")
+
+
 def _review_submission(client: Client, app_id: str) -> dict[str, Any]:
     body = {
         "data": {
@@ -332,6 +347,10 @@ def build_parser() -> argparse.ArgumentParser:
     wait_build.add_argument("--app-id", required=True)
     wait_build.add_argument("--build-number", required=True)
 
+    add_beta_build = subparsers.add_parser("add-beta-build")
+    add_beta_build.add_argument("--group-id", required=True)
+    add_beta_build.add_argument("--build-id", required=True)
+
     attach = subparsers.add_parser("attach-submit")
     attach.add_argument("--app-id", required=True)
     attach.add_argument("--version", required=True)
@@ -349,6 +368,8 @@ def main() -> int:
             command_next_build(client, args)
         elif args.command == "wait-build":
             command_wait_build(client, args)
+        elif args.command == "add-beta-build":
+            command_add_beta_build(client, args)
         elif args.command == "attach-submit":
             command_attach_submit(client, args)
         else:
