@@ -124,6 +124,9 @@ develop -> pull request -> main
 
 Current workflow responsibilities are:
 
+- `testflight-ios.yml`: on relevant `develop` changes, creates a signed Release
+  archive, validates and uploads it to TestFlight, then waits for Apple
+  processing. It does not submit an App Store version for review.
 - `ios-tests.yml`: iOS tests on PRs and manual dispatch. It does not run for
   every push to `develop`.
 - `release-ios.yml`: on relevant `main` changes, performs App Store Connect

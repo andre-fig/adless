@@ -3,8 +3,29 @@
 The repository uses a two-branch flow:
 
 ```text
-develop  ->  pull request  ->  main  ->  test, archive, upload, submit
+develop  ->  TestFlight  ->  pull request  ->  main  ->  test, archive, upload, submit
 ```
+
+## Automatic TestFlight builds
+
+Every push to `develop` that changes production iOS code, resources, project
+configuration, the App Store Connect helper, or the export options starts
+`.github/workflows/testflight-ios.yml`. A manual run is also available from
+**Actions → Upload Adless to TestFlight → Run workflow**.
+
+The workflow creates a Release archive, exports an App Store distribution IPA,
+validates it with Apple's tooling, uploads it to App Store Connect, and waits
+for the build to reach `VALID`. It then adds the build to the internal
+`Adless Internal Testers` group so it is available to the configured internal
+testers. It does not attach the build to an App Store version or submit
+anything for review. The archive uses the production
+StoreKit code path; the local `Adless.storekit` configuration is not supplied
+to the archive or export commands.
+
+The workflow shares the same App Store Connect secrets and automatic signing
+setup as the production release workflow. A newer `develop` run cancels an
+older one, so only the newest development build is kept in flight. A build
+number is selected above the highest build already known by App Store Connect.
 
 Every push to `main` that changes production iOS code/resources, the App Store
 Connect release helper, or the export options starts

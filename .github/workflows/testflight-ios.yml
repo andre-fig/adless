@@ -1,0 +1,163 @@
+name: Upload Adless to TestFlight
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - "apps/ios/Adless/*.swift"
+      - "apps/ios/Adless/Managers/**"
+      - "apps/ios/Adless/Services/**"
+      - "apps/ios/Adless/Resources/**"
+      - "apps/ios/AdlessDNSProxy/**"
+      - "apps/ios/Adless.xcodeproj/**"
+      - "apps/ios/Adless.storekit"
+      - "docs/app-store/ExportOptions.plist"
+      - "tools/appstore/**"
+      - ".github/workflows/testflight-ios.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: adless-ios-testflight
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  ASC_APP_ID: "6803552143"
+  ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+  ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+  SENTRY_ORG: portside-xz
+  SENTRY_PROJECT: adless
+  ASC_INTERNAL_BETA_GROUP_ID: "7582fab8-73d9-41ec-b544-0392c7cfa4b0"
+  IOS_PROJECT: apps/ios/Adless.xcodeproj
+  IOS_SCHEME: Adless
+
+jobs:
+  upload:
+    runs-on: macos-latest
+    timeout-minutes: 75
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Prepare App Store Connect API key
+        id: credentials
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$ASC_KEY_ID" || { echo "ASC_KEY_ID secret is missing" >&2; exit 1; }
+          test -n "$ASC_ISSUER_ID" || { echo "ASC_ISSUER_ID secret is missing" >&2; exit 1; }
+          test -n "$ASC_PRIVATE_KEY" || { echo "ASC_PRIVATE_KEY secret is missing" >&2; exit 1; }
+          key_path="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
+          printf '%s' "$ASC_PRIVATE_KEY" > "$key_path"
+          chmod 600 "$key_path"
+          echo "key_path=$key_path" >> "$GITHUB_OUTPUT"
+
+      - name: Select next build number
+        id: build
+        run: |
+          set -euo pipefail
+          minimum_build="$((GITHUB_RUN_NUMBER + 1))"
+          build_number="$(python3 tools/appstore/appstore_connect.py \
+            --key-id "$ASC_KEY_ID" \
+            --issuer-id "$ASC_ISSUER_ID" \
+            --key-path "${{ steps.credentials.outputs.key_path }}" \
+            next-build \
+            --app-id "$ASC_APP_ID" \
+            --minimum "$minimum_build")"
+          echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
+          echo "Selected TestFlight build $build_number"
+
+      - name: Install Sentry CLI
+        if: env.SENTRY_AUTH_TOKEN != ''
+        run: |
+          set -euo pipefail
+          brew install getsentry/tools/sentry-cli
+          sentry-cli --version
+
+      - name: Archive signed iOS app
+        run: |
+          set -euo pipefail
+          xcodebuild archive \
+            -project "$IOS_PROJECT" \
+            -scheme "$IOS_SCHEME" \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Adless.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "${{ steps.credentials.outputs.key_path }}" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            CURRENT_PROJECT_VERSION="${{ steps.build.outputs.build_number }}"
+
+      - name: Export App Store package
+        run: |
+          set -euo pipefail
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Adless.xcarchive" \
+            -exportOptionsPlist docs/app-store/ExportOptions.plist \
+            -exportPath "$RUNNER_TEMP/Adless-export" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "${{ steps.credentials.outputs.key_path }}" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      - name: Validate package with Apple
+        env:
+          API_PRIVATE_KEYS_DIR: ${{ runner.temp }}
+        run: |
+          set -euo pipefail
+          xcrun altool --validate-app \
+            "$RUNNER_TEMP/Adless-export/Adless.ipa" \
+            --type ios \
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "$ASC_ISSUER_ID"
+
+      - name: Upload package to TestFlight
+        env:
+          API_PRIVATE_KEYS_DIR: ${{ runner.temp }}
+        run: |
+          set -euo pipefail
+          xcrun altool --upload-app \
+            -f "$RUNNER_TEMP/Adless-export/Adless.ipa" \
+            --type ios \
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "$ASC_ISSUER_ID"
+
+      - name: Wait for Apple processing
+        id: processed-build
+        run: |
+          set -euo pipefail
+          python3 tools/appstore/appstore_connect.py \
+            --key-id "$ASC_KEY_ID" \
+            --issuer-id "$ASC_ISSUER_ID" \
+            --key-path "${{ steps.credentials.outputs.key_path }}" \
+            wait-build \
+            --app-id "$ASC_APP_ID" \
+            --build-number "${{ steps.build.outputs.build_number }}"
+
+      - name: Add build to internal TestFlight group
+        run: |
+          set -euo pipefail
+          python3 tools/appstore/appstore_connect.py \
+            --key-id "$ASC_KEY_ID" \
+            --issuer-id "$ASC_ISSUER_ID" \
+            --key-path "${{ steps.credentials.outputs.key_path }}" \
+            add-beta-build \
+            --group-id "$ASC_INTERNAL_BETA_GROUP_ID" \
+            --build-id "${{ steps.processed-build.outputs.build_id }}"
+
+      - name: Publish summary
+        env:
+          BUILD_NUMBER: ${{ steps.build.outputs.build_number }}
+        run: |
+          {
+            echo "## TestFlight upload"
+            echo ""
+            echo "Build **$BUILD_NUMBER** was uploaded and processed by App Store Connect."
+            echo "The build is available in TestFlight after Apple's processing completes."
+          } >> "$GITHUB_STEP_SUMMARY"

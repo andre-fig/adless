@@ -182,6 +182,9 @@ públicos da blocklist na `main`, ou execução manual. Ele não usa mais
 workflow usa as versões atuais das actions e não deve receber segredos
 desnecessários.
 
+`.github/workflows/testflight-ios.yml` executa na `develop` quando há alteração
+no projeto de produção do iOS e faz archive, validação, upload e espera pelo
+processamento no TestFlight, sem submeter uma versão para revisão.
 `.github/workflows/release-ios.yml` executa no `main` quando há alteração no
 projeto de produção do iOS e roda testes, archive, validação, upload e
 submissão no App Store Connect. O workflow de testes separado roda em PRs e na

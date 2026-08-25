@@ -8,3 +8,5 @@
 - [ ] Ajustar telas de Privacy Policy, Terms e Support da Landing Page
 - [x] Adicionar traduções em espanhol e português
 - [ ] Ajustar valores do app em euro, real e dolar
+- [ ] Trocar logo
+- [ ] Adicionar plano de fundo brilhando quanto está ativo

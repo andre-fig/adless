@@ -170,7 +170,7 @@ struct SubscriptionView: View {
                                                 .padding(.vertical, 5)
                                                 .background(adlessBlue)
                                                 .clipShape(Capsule())
-                                                .offset(x: -16, y: -18)
+                                                .offset(x: -16, y: -12)
                                         }
                                     }
                                 }
