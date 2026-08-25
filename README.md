@@ -94,9 +94,12 @@ necessário selecionar `GitHub Actions` como fonte de publicação em Settings �
 Pages no repositório. Cada workflow usa `concurrency` e cancela a execução
 anterior do mesmo grupo quando uma nova é disparada.
 
-O desenvolvimento acontece na branch `develop`; o `pre-push` local executa os
-testes do iOS antes do envio e o workflow roda novamente no PR. Um merge para
-`main` inicia o workflow de release quando há
+O desenvolvimento acontece na branch `develop`; cada alteração de produção do
+iOS enviada para `develop` gera automaticamente um build Release no TestFlight
+por meio de `.github/workflows/testflight-ios.yml`. Esse workflow usa os
+produtos reais do App Store Connect/Sandbox e não usa o arquivo local
+`.storekit`. O `pre-push` local executa os testes do iOS antes do envio e o
+workflow roda novamente no PR. Um merge para `main` inicia o workflow de release quando há
 alteração de produção no app. Se a versão correspondente estiver preparada no
 App Store Connect, o workflow `release-ios.yml` também testa, cria o build,
 envia o IPA e submete a versão para revisão automaticamente. Ele não cria
