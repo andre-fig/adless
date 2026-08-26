@@ -54,9 +54,14 @@ project.
 The key is written only to the runner's temporary directory with mode `600`.
 It is never committed, logged, or included in the IPA. The workflow uses the
 same key for the App Store Connect API and for Xcode automatic provisioning.
-When `SENTRY_AUTH_TOKEN` is present, the release runner installs `sentry-cli`
-and the Xcode archive phase uploads dSYMs to Sentry. If it is absent, the app
-still builds, but Sentry issues from that build will not have uploaded symbols.
+Release configurations explicitly generate DWARF with dSYM for both
+`Adless.app` and `AdlessDNSProxy.appex`. After the archive is complete, the
+workflow verifies both symbol bundles and, when `SENTRY_AUTH_TOKEN` is
+present, uploads the exact archive dSYMs with
+`tools/sentry/upload-dsyms.sh`. Upload errors fail the workflow instead of
+silently publishing an unsymbolicated build. If the optional secret is absent,
+the app still builds, but Sentry issues from that build will not have uploaded
+symbols.
 
 The Apple Developer team must allow automatic signing for the app and the DNS
 Proxy extension. If Apple requires a distribution certificate or profile to be

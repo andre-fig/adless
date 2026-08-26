@@ -14,6 +14,7 @@ on:
       - "apps/ios/Adless.storekit"
       - "docs/app-store/ExportOptions.plist"
       - "tools/appstore/**"
+      - "tools/sentry/**"
       - ".github/workflows/testflight-ios.yml"
   workflow_dispatch:
 
@@ -105,6 +106,21 @@ jobs:
             -authenticationKeyPath "${{ steps.credentials.outputs.key_path }}" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
+
+      - name: Verify archive dSYMs
+        run: |
+          set -euo pipefail
+          dsyms_path="$RUNNER_TEMP/Adless.xcarchive/dSYMs"
+          test -d "$dsyms_path"
+          test -d "$dsyms_path/Adless.app.dSYM"
+          test -d "$dsyms_path/AdlessDNSProxy.appex.dSYM"
+          echo "Verified app and DNS Proxy dSYMs in the archive."
+
+      - name: Upload archive dSYMs to Sentry
+        if: env.SENTRY_AUTH_TOKEN != ''
+        run: |
+          set -euo pipefail
+          sh tools/sentry/upload-dsyms.sh "$RUNNER_TEMP/Adless.xcarchive/dSYMs"
 
       - name: Validate package with Apple
         env:

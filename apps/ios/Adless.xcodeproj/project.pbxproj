@@ -189,7 +189,6 @@
 				A432D6DB2EF4DE1800F87DE0 /* Resources */,
 				B10000000000000000000015 /* Validate embedded blocklist */,
 				B10000000000000000000007 /* Embed Foundation Extensions */,
-				DA5CE2B12386405DA6E8C1C8 /* Upload Debug Symbols to Sentry */,
 			);
 			buildRules = (
 			);
@@ -341,22 +340,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "python3 \"${SRCROOT}/../../tools/blocklists/validate_blocklist.py\" --seed \"${SRCROOT}/Adless/Resources/SeedBlocklist.txt\"\ntouch \"${DERIVED_FILE_DIR}/blocklist-validation.stamp\"\n";
-		};
-		DA5CE2B12386405DA6E8C1C8 /* Upload Debug Symbols to Sentry */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${TARGET_NAME}",
-			);
-			name = "Upload Debug Symbols to Sentry";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script is responsible for uploading debug symbols and source context for Sentry.\nif [ \"$CONFIGURATION\" != \"Release\" ]; then\n  exit 0\nfi\n\nif [[ \"$(uname -m)\" == arm64 ]]; then\n  export PATH=\"/opt/homebrew/bin:$PATH\"\nfi\n\nif which sentry-cli >/dev/null; then\n  export SENTRY_ORG=portside-xz\n  export SENTRY_PROJECT=adless\n  ERROR=$(sentry-cli debug-files upload --include-sources \"$DWARF_DSYM_FOLDER_PATH\" 2>&1 >/dev/null)\n  if [ ! $? -eq 0 ]; then\n    echo \"warning: sentry-cli - $ERROR\"\n  fi\nelse\n  echo \"warning: sentry-cli not installed, download from https://github.com/getsentry/sentry-cli/releases\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -743,6 +726,7 @@
 				CODE_SIGN_ENTITLEMENTS = AdlessDNSProxy/DNSProxy.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = J728Z86KY5;
 				INFOPLIST_FILE = AdlessDNSProxy/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
@@ -783,6 +767,7 @@
 				CODE_SIGN_ENTITLEMENTS = AdlessDNSProxy/DNSProxy.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = J728Z86KY5;
 				INFOPLIST_FILE = AdlessDNSProxy/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
