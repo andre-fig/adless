@@ -66,7 +66,7 @@ struct SubscriptionView: View {
         guard monthlyAnnualPrice > 0, annual.price < monthlyAnnualPrice else { return nil }
 
         let savings = (monthlyAnnualPrice - annual.price) / monthlyAnnualPrice * Decimal(100)
-        return max(0, Int(NSDecimalNumber(decimal: savings).doubleValue.rounded()))
+        return max(0, Int(NSDecimalNumber(decimal: savings).doubleValue.rounded(.down)))
     }
 
     var body: some View {
