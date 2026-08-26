@@ -3,7 +3,10 @@ import Network
 import NetworkExtension
 import os
 
-private let dnsFlowLogger = Logger(subsystem: "com.orbeworks.adless", category: "dns-flow")
+private let dnsFlowLogger = Logger(
+    subsystem: Bundle.main.bundleIdentifier ?? "AdlessDNSProxy",
+    category: "dns-flow"
+)
 
 protocol DNSProxyFlowHandling: AnyObject {
     func start()
@@ -31,7 +34,10 @@ final class DNSUDPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable {
     private let flow: NEAppProxyUDPFlow
     private let blocklist: Set<String>
     private let resolver: DNSUpstreamResolver
-    private let queue = DispatchQueue(label: "com.orbeworks.adless.dns-udp", qos: .userInitiated)
+    private let queue = DispatchQueue(
+        label: "\(Bundle.main.bundleIdentifier ?? "AdlessDNSProxy").dns-udp",
+        qos: .userInitiated
+    )
     private let onClose: () -> Void
     private let onBlocked: () -> Void
 
@@ -205,7 +211,10 @@ final class DNSTCPFlowHandler: DNSProxyFlowHandling, @unchecked Sendable {
     private let flow: NEAppProxyTCPFlow
     private let blocklist: Set<String>
     private let resolver: DNSUpstreamResolver
-    private let queue = DispatchQueue(label: "com.orbeworks.adless.dns-tcp", qos: .userInitiated)
+    private let queue = DispatchQueue(
+        label: "\(Bundle.main.bundleIdentifier ?? "AdlessDNSProxy").dns-tcp",
+        qos: .userInitiated
+    )
     private let onClose: () -> Void
     private let onBlocked: () -> Void
     private let maximumPendingBytes = 256 * 1024

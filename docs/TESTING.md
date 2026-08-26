@@ -220,8 +220,9 @@ diretórios temporários. Eles não acessam GitHub Pages.
 Antes de testar DNS real:
 
 1. selecione um Team válido no Xcode;
-2. confirme o App Group `group.com.orbeworks.adless` nos targets `Adless` e
-   `AdlessDNSProxy`;
+2. confirme o App Group correspondente ao scheme nos targets `Adless` e
+   `AdlessDNSProxy` (`group.com.orbeworks.adless.dev` para `Adless Dev` ou
+   `group.com.orbeworks.adless` para `Adless`);
 3. instale o app em um iPhone físico;
 4. confirme que a assinatura de desenvolvimento ou Sandbox está ativa;
 5. desative outros perfis VPN/DNS que possam interferir no resultado.

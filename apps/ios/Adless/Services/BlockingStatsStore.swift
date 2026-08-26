@@ -66,7 +66,7 @@ struct BlockingStatsStore {
     private var rootURL: URL {
         if let baseDirectory { return baseDirectory }
         if let group = fileManager.containerURL(
-            forSecurityApplicationGroupIdentifier: "group.com.orbeworks.adless"
+            forSecurityApplicationGroupIdentifier: BuildEnvironment.appGroupIdentifier
         ) {
             return group
                 .appendingPathComponent("Library", isDirectory: true)

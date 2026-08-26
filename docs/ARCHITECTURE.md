@@ -46,6 +46,26 @@ docs/                        Operational and App Store documentation
 
 ## iOS runtime
 
+### Build environments
+
+The app and its DNS Proxy extension share targets but not runtime state. The
+`Adless` scheme uses the official production/TestFlight values; `Adless Dev`
+uses a separate bundle identifier and App Group so both installations can
+coexist on one iPhone.
+
+| Environment | App ID | DNS Proxy ID | App Group | Display name |
+| --- | --- | --- | --- | --- |
+| Production / TestFlight | `com.orbeworks.adless` | `com.orbeworks.adless.dnsproxy` | `group.com.orbeworks.adless` | Adless |
+| Development | `com.orbeworks.adless.dev` | `com.orbeworks.adless.dev.dnsproxy` | `group.com.orbeworks.adless.dev` | Adless Dev |
+
+`Configurations/Production.xcconfig` and
+`Configurations/Development.xcconfig` are the single build-settings source
+for these values. `Shared/BuildEnvironment.swift` reads the generated
+Info.plist values at runtime. Both targets use the environment-specific App
+Group in their entitlements, and `VPNManager` obtains the matching provider
+identifier from the same configuration. This isolates blocklists, counters,
+subscription snapshots, and DNS proxy state without duplicating targets.
+
 ### Application
 
 The `Adless` target is a SwiftUI application. `AppViewModel` coordinates the
@@ -73,7 +93,9 @@ capability. The app configures it with:
 
 - primary DoH endpoint: `https://cloudflare-dns.com/dns-query`;
 - fallback DoH endpoint: `https://dns.quad9.net/dns-query`;
-- App Group: `group.com.orbeworks.adless`.
+- environment-specific App Group from `BuildEnvironment`:
+  `group.com.orbeworks.adless` in production or
+  `group.com.orbeworks.adless.dev` in development.
 
 The extension:
 
@@ -142,7 +164,8 @@ and does not send them to Sentry.
 
 ### Shared App Group data
 
-The app and extension use the existing App Group rather than `Documents`:
+The app and extension use their environment-specific App Group rather than
+`Documents`:
 
 ```text
 group.com.orbeworks.adless/

@@ -105,7 +105,7 @@ actor DNSCircuitBreaker {
 /// Resets the primary circuit when the device changes network path.
 final class DNSNetworkPathMonitor: @unchecked Sendable {
     private let monitor = NWPathMonitor()
-    private let queue = DispatchQueue(label: "com.orbeworks.adless.dns-path")
+    private let queue = DispatchQueue(label: "\(BuildEnvironment.bundleIdentifier).dns-path")
     private let onChange: @Sendable () -> Void
     private var lastSignature: String?
 

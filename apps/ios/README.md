@@ -11,12 +11,33 @@ Adless is a system-wide DNS sinkhole for iOS built with SwiftUI and a NetworkExt
 ## Build & Run
 
 1. From the monorepo root, open `apps/ios/Adless.xcodeproj` in Xcode.
-2. Set a valid Team and the existing App Group identifier
-   `group.com.orbeworks.adless` for both `Adless` and `AdlessDNSProxy`.
-3. Ensure the App ID has App Groups and Network Extensions (DNS Proxy)
-   enabled. The project does not create or manage Apple Developer accounts.
-4. Select the `Adless` scheme and run on a compatible device. The simulator
-   can build the code, but full DNS interception requires a real device.
+2. Select `Adless Dev` for local development. It uses `Debug Dev` by default
+   and installs as a separate app named **Adless Dev**.
+3. Select `Adless` for the official app. Its `Debug` and `Release`
+   configurations always use the App Store/TestFlight identifiers.
+4. Set a valid Team and configure the matching App Group and Network
+   Extensions (DNS Proxy) identifiers in the Apple Developer portal.
+5. Run on a compatible device. The simulator can build the code, but full DNS
+   interception requires a real device.
+
+### Build environments
+
+The values are centralized in `Configurations/Production.xcconfig` and
+`Configurations/Development.xcconfig`; the Swift runtime reads the generated
+Info.plist values through `Shared/BuildEnvironment.swift`.
+
+| Scheme | Configuration | App ID | DNS Proxy ID | App Group | Display name |
+| --- | --- | --- | --- | --- | --- |
+| `Adless Dev` | `Debug Dev` / `Release Dev` | `com.orbeworks.adless.dev` | `com.orbeworks.adless.dev.dnsproxy` | `group.com.orbeworks.adless.dev` | Adless Dev |
+| `Adless` | `Debug` / `Release` | `com.orbeworks.adless` | `com.orbeworks.adless.dnsproxy` | `group.com.orbeworks.adless` | Adless |
+
+Both the app and extension use the same environment-specific App Group. This
+keeps blocklists, subscription snapshots, counters, DNS proxy state, and
+other persisted data separate. No source file should hardcode an App Group or
+provider identifier.
+
+For an official archive, select the `Adless` scheme and archive the `Release`
+configuration. Never archive `Adless Dev` for TestFlight or the App Store.
 
 ## Blocklist update behavior
 

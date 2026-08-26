@@ -40,9 +40,12 @@ validação final.
 
 ## Aplicativo iOS
 
-Abra `apps/ios/Adless.xcodeproj` no Xcode, configure o Team e o App Group
-`group.com.orbeworks.adless` para os targets `Adless` e `AdlessDNSProxy`, e
-execute o scheme `Adless`. O target `AdlessDNSProxy` precisa da capability
+Abra `apps/ios/Adless.xcodeproj` no Xcode. Para desenvolvimento local, execute
+o scheme `Adless Dev`, que usa os IDs e o App Group de desenvolvimento e pode
+coexistir com o app oficial. Para TestFlight/App Store, execute o scheme
+`Adless`, que usa exclusivamente o App Group
+`group.com.orbeworks.adless` para os targets `Adless` e `AdlessDNSProxy`. O
+target `AdlessDNSProxy` precisa da capability
 Network Extension (DNS Proxy) no App ID correspondente.
 
 A cobrança é feita exclusivamente pela App Store com StoreKit 2, sem backend,

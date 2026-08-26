@@ -22,6 +22,10 @@ anything for review. The archive uses the production
 StoreKit code path; the local `Adless.storekit` configuration is not supplied
 to the archive or export commands.
 
+The archive always uses the shared `Adless` scheme with the `Release`
+configuration. The `Adless Dev` scheme and its `Release Dev` configuration are
+never used for TestFlight or App Store distribution.
+
 The workflow shares the same App Store Connect secrets and automatic signing
 setup as the production release workflow. A newer `develop` run cancels an
 older one, so only the newest development build is kept in flight. A build

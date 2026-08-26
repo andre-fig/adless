@@ -3,10 +3,13 @@ import Network
 import NetworkExtension
 import os
 
-private let dnsLogger = Logger(subsystem: "com.orbeworks.adless", category: "dns-proxy")
+private let dnsLogger = Logger(
+    subsystem: Bundle.main.bundleIdentifier ?? "AdlessDNSProxy",
+    category: "dns-proxy"
+)
 
 final class DNSProxyProvider: NEDNSProxyProvider {
-    private let appGroupIdentifier = "group.com.orbeworks.adless"
+    private let appGroupIdentifier = BuildEnvironment.appGroupIdentifier
     private let subscriptionStatePath = "Library/Application Support/Subscription/subscription-state.json"
     private let flowLock = NSLock()
     private let upstreamResolver = DNSUpstreamResolver.production()

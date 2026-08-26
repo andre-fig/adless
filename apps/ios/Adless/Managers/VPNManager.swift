@@ -2,8 +2,8 @@ import Foundation
 @preconcurrency import NetworkExtension
 
 final class VPNManager {
-    private let providerBundleIdentifier = "com.orbeworks.adless.dnsproxy"
-    private let appGroup = "group.com.orbeworks.adless"
+    private let providerBundleIdentifier = BuildEnvironment.dnsProxyBundleIdentifier
+    private let appGroup = BuildEnvironment.appGroupIdentifier
     private let simulatorFlagKey = "sim.vpn.enabled"
 
     func start() async throws {
