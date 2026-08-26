@@ -221,7 +221,7 @@ Antes de testar DNS real:
 
 1. selecione um Team válido no Xcode;
 2. confirme o App Group correspondente ao scheme nos targets `Adless` e
-   `AdlessDNSProxy` (`group.com.orbeworks.adless.dev` para `Adless Dev` ou
+   `PacketTunnel` (`group.com.orbeworks.adless.dev` para `Adless Dev` ou
    `group.com.orbeworks.adless` para `Adless`);
 3. instale o app em um iPhone físico;
 4. confirme que a assinatura de desenvolvimento ou Sandbox está ativa;
@@ -237,12 +237,12 @@ Teste cada cenário com proteção desligada e ligada quando aplicável:
 
 | Cenário | Resultado esperado |
 | --- | --- |
-| Ativar com assinatura válida | botão muda imediatamente e DNS Proxy conecta |
-| Desativar | DNS Proxy é desligado e o tráfego volta ao DNS do sistema |
+| Ativar com assinatura válida | botão muda imediatamente e Packet Tunnel conecta |
+| Desativar | Packet Tunnel é desligado e o tráfego volta ao DNS do sistema |
 | Fechar e reabrir com proteção ativa | app abre diretamente como ativo |
 | Sem internet ao ativar | lista local funciona; ativação não depende do download |
 | Manifesto indisponível | lista anterior ou seed continua ativa |
-| Assinatura expirada com a extensão ativa | DNS Proxy permanece em pass-through, sem bloquear domínios; a internet continua funcionando |
+| Assinatura expirada com a extensão ativa | Packet Tunnel permanece em pass-through, sem bloquear domínios; a internet continua funcionando |
 | Assinatura expirada ao abrir o app | app mostra Premium access required e não ativa uma nova sessão de bloqueio |
 | Compra concluída | drawer fecha e o app tenta ativar a proteção |
 | Atualização válida da lista | nova lista é instalada sem arquivo parcial |
@@ -274,7 +274,7 @@ adnxs1.com
 
 Esses domínios de publicidade são alvos DNS, não necessariamente páginas
 visualizáveis no navegador. Para um resultado confiável, verifique o log do
-DNS Proxy e o comportamento de uma consulta DNS, além de tentar o carregamento
+Packet Tunnel e o comportamento de uma consulta DNS, além de tentar o carregamento
 em um app que use o domínio.
 
 ### Correspondência de nomes
@@ -308,11 +308,13 @@ Valide manualmente:
 5. resposta rápida `SERVFAIL` quando os dois provedores DoH não respondem;
 6. encerramento do app ou da rede sem flow preso;
 7. retomada após alternar entre Wi-Fi e rede celular.
+8. modo avião e retorno da rede;
+9. reinício do iPhone e reabertura do app com o estado reconstruído.
 
 O app não deve deixar páginas permitidas aguardando silenciosamente. Também
 não deve enviar HTTP, HTTPS ou conteúdo de aplicativos aos resolvedores; somente
 o pacote DNS permitido é encaminhado, dentro de HTTPS. Não deve existir
-conexão do proxy para UDP/TCP port 53.
+conexão do tunnel para UDP/TCP port 53.
 
 ### Diagnóstico sem expor domínios
 
@@ -337,7 +339,7 @@ log stream --style compact --level debug \
 ```
 
 Os logs úteis normalmente aparecem nos processos `Adless` e
-`AdlessDNSProxy`. Mensagens do `nesessionmanager` e `neagent` ajudam a
+`PacketTunnel`. Mensagens do `nesessionmanager` e `neagent` ajudam a
 diagnosticar instalação, conexão e encerramento da Network Extension.
 
 ## StoreKit manual
@@ -355,7 +357,7 @@ No scheme `Adless`, mantenha o arquivo `Adless.storekit` selecionado. Use
 
 Após uma compra válida, confirme que o drawer fecha e que o app tenta ativar a
 proteção. Sem entitlement, o botão deve abrir o drawer em vez de iniciar o
-DNS Proxy.
+Packet Tunnel.
 
 ### Sandbox e produção
 
@@ -383,8 +385,7 @@ logs.
 - workflows: `actionlint`.
 
 O workflow `ios-tests.yml` roda em pull requests e manualmente. O workflow de
-release não repete o XCTest: o teste local e o PR devem passar antes do
-archive. `update-blocklist.yml` roda semanalmente e `deploy-pages.yml` publica
+release também executa o XCTest antes do archive assinado. `update-blocklist.yml` roda semanalmente e `deploy-pages.yml` publica
 a landing e os artefatos estáticos na `main`.
 
 Quando um workflow falhar, primeiro reproduza o comando localmente. Depois

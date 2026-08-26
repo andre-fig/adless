@@ -18,6 +18,7 @@ struct AdlessApp: App {
     }
 }
 
+@MainActor
 final class AppViewModel: ObservableObject {
     @Published var isOn: Bool = false
     @Published var statusText: String = String(localized: "Off")
@@ -31,6 +32,7 @@ final class AppViewModel: ObservableObject {
     private let blockingStatsStore = BlockingStatsStore()
     private let vpnManager = VPNManager()
     let subscriptionManager = SubscriptionManager()
+    private var vpnStatusObserver: NSObjectProtocol?
 
     init() {
         subscriptionManager.onEntitlementChanged = { [weak self] hasAccess in
@@ -49,6 +51,15 @@ final class AppViewModel: ObservableObject {
                 await self?.activateBlocking()
             }
         }
+        vpnStatusObserver = NotificationCenter.default.addObserver(
+            forName: .NEVPNStatusDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                await self?.refreshStatus()
+            }
+        }
         beginPreparation()
 
 #if DEBUG && os(iOS) && targetEnvironment(simulator)
@@ -59,6 +70,12 @@ final class AppViewModel: ObservableObject {
             }
         }
 #endif
+    }
+
+    deinit {
+        if let vpnStatusObserver {
+            NotificationCenter.default.removeObserver(vpnStatusObserver)
+        }
     }
 
     var blockedCount: Int {
@@ -121,7 +138,7 @@ final class AppViewModel: ObservableObject {
     @MainActor
     func refreshStatus() async {
         let state = await vpnManager.currentStatus()
-        isOn = hasSubscription && (state == .connected || state == .connecting)
+        isOn = hasSubscription && isProtectionActive(state)
         if !hasSubscription {
             statusText = String(localized: "Premium access required")
             return
@@ -183,7 +200,7 @@ final class AppViewModel: ObservableObject {
         hasSubscription = subscriptionManager.hasActiveEntitlement
 
         let state = await vpnManager.currentStatus()
-        let wasAlreadyActive = state == .connected || state == .connecting
+        let wasAlreadyActive = isProtectionActive(state)
         isOn = hasSubscription && wasAlreadyActive
         statusText = isOn ? String(localized: "On") : String(localized: "Off")
 
@@ -195,9 +212,13 @@ final class AppViewModel: ObservableObject {
     private func disableIfSubscriptionExpired() async {
         guard !hasSubscription else { return }
         let state = await vpnManager.currentStatus()
-        guard state == .connected || state == .connecting else { return }
+        guard isProtectionActive(state) else { return }
         try? await vpnManager.stop()
         isOn = false
         statusText = String(localized: "Premium access required")
+    }
+
+    private func isProtectionActive(_ state: NEVPNStatus) -> Bool {
+        state == .connected || state == .connecting || state == .reasserting
     }
 }

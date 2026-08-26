@@ -8,7 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		3EB23F76CFD2401E89E6E97D /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 16D53242EC7B41E58FC5AB0B /* Sentry */; };
-		B10000000000000000000008 /* AdlessDNSProxy.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* AdlessDNSProxy.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F10000000000000000000001 /* Sentry in Packet Tunnel Frameworks */ = {isa = PBXBuildFile; productRef = 16D53242EC7B41E58FC5AB0B /* Sentry */; };
+		B10000000000000000000008 /* PacketTunnel.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B10000000000000000000001 /* PacketTunnel.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		F10000000000000000000002 /* Adless/Services/DNSMessage.swift in Packet Tunnel Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000003 /* Adless/Services/DNSMessage.swift */; };
+		F10000000000000000000004 /* Adless/Services/DNSPacket.swift in Packet Tunnel Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000005 /* Adless/Services/DNSPacket.swift */; };
 		C10000000000000000000003 /* Adless/Services/BlockingStatsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10000000000000000000002 /* Adless/Services/BlockingStatsStore.swift */; };
 		D10000000000000000000003 /* Adless/Services/DNSDoHTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000002 /* Adless/Services/DNSDoHTransport.swift */; };
 		E10000000000000000000052 /* Shared/BuildEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000050 /* Shared/BuildEnvironment.swift */; };
@@ -21,7 +24,7 @@
 			containerPortal = A432D6D52EF4DE1800F87DE0 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = B10000000000000000000003;
-			remoteInfo = AdlessDNSProxy;
+			remoteInfo = PacketTunnel;
 		};
 		B10000000000000000000022 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -39,7 +42,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				B10000000000000000000008 /* AdlessDNSProxy.appex in Embed Foundation Extensions */,
+				B10000000000000000000008 /* PacketTunnel.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -48,7 +51,9 @@
 
 /* Begin PBXFileReference section */
 		A432D6DD2EF4DE1800F87DE0 /* Adless.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Adless.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		B10000000000000000000001 /* AdlessDNSProxy.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AdlessDNSProxy.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000001 /* PacketTunnel.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PacketTunnel.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F10000000000000000000003 /* Adless/Services/DNSMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Adless/Services/DNSMessage.swift; sourceTree = "<group>"; };
+		F10000000000000000000005 /* Adless/Services/DNSPacket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Adless/Services/DNSPacket.swift; sourceTree = "<group>"; };
 		B10000000000000000000016 /* AdlessTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AdlessTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C10000000000000000000001 /* Adless.storekit */ = {isa = PBXFileReference; lastKnownFileType = com.apple.dt.storekit; path = Adless.storekit; sourceTree = "<group>"; };
 		C10000000000000000000002 /* Adless/Services/BlockingStatsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Adless/Services/BlockingStatsStore.swift; sourceTree = "<group>"; };
@@ -66,12 +71,12 @@
 			);
 			target = A432D6DC2EF4DE1800F87DE0 /* Adless */;
 		};
-		B10000000000000000000011 /* Exceptions for "AdlessDNSProxy" folder in "AdlessDNSProxy" target */ = {
+		B10000000000000000000011 /* Exceptions for "AdlessPacketTunnel" folder in "PacketTunnel" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = B10000000000000000000003 /* AdlessDNSProxy */;
+			target = B10000000000000000000003 /* PacketTunnel */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -84,12 +89,12 @@
 			path = Adless;
 			sourceTree = "<group>";
 		};
-		B10000000000000000000002 /* AdlessDNSProxy */ = {
+		B10000000000000000000002 /* AdlessPacketTunnel */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				B10000000000000000000011 /* Exceptions for "AdlessDNSProxy" folder in "AdlessDNSProxy" target */,
+				B10000000000000000000011 /* Exceptions for "AdlessPacketTunnel" folder in "PacketTunnel" target */,
 			);
-			path = AdlessDNSProxy;
+			path = AdlessPacketTunnel;
 			sourceTree = "<group>";
 		};
 		B10000000000000000000017 /* AdlessTests */ = {
@@ -112,6 +117,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F10000000000000000000001 /* Sentry in Packet Tunnel Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -156,7 +162,7 @@
 			isa = PBXGroup;
 			children = (
 				A432D6DF2EF4DE1800F87DE0 /* Adless */,
-				B10000000000000000000002 /* AdlessDNSProxy */,
+				B10000000000000000000002 /* AdlessPacketTunnel */,
 				B10000000000000000000017 /* AdlessTests */,
 				C10000000000000000000001 /* Adless.storekit */,
 				C10000000000000000000002 /* Adless/Services/BlockingStatsStore.swift */,
@@ -171,7 +177,7 @@
 			isa = PBXGroup;
 			children = (
 				A432D6DD2EF4DE1800F87DE0 /* Adless.app */,
-				B10000000000000000000001 /* AdlessDNSProxy.appex */,
+				B10000000000000000000001 /* PacketTunnel.appex */,
 				B10000000000000000000016 /* AdlessTests.xctest */,
 			);
 			name = Products;
@@ -206,9 +212,9 @@
 			productReference = A432D6DD2EF4DE1800F87DE0 /* Adless.app */;
 			productType = "com.apple.product-type.application";
 		};
-		B10000000000000000000003 /* AdlessDNSProxy */ = {
+		B10000000000000000000003 /* PacketTunnel */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B10000000000000000000012 /* Build configuration list for PBXNativeTarget "AdlessDNSProxy" */;
+			buildConfigurationList = B10000000000000000000012 /* Build configuration list for PBXNativeTarget "PacketTunnel" */;
 			buildPhases = (
 				B10000000000000000000004 /* Sources */,
 				B10000000000000000000005 /* Frameworks */,
@@ -219,13 +225,14 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				B10000000000000000000002 /* AdlessDNSProxy */,
+				B10000000000000000000002 /* AdlessPacketTunnel */,
 			);
-			name = AdlessDNSProxy;
+			name = PacketTunnel;
 			packageProductDependencies = (
+				16D53242EC7B41E58FC5AB0B /* Sentry */,
 			);
-			productName = AdlessDNSProxy;
-			productReference = B10000000000000000000001 /* AdlessDNSProxy.appex */;
+			productName = PacketTunnel;
+			productReference = B10000000000000000000001 /* PacketTunnel.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 		B10000000000000000000018 /* AdlessTests */ = {
@@ -293,7 +300,7 @@
 			projectRoot = "";
 			targets = (
 				A432D6DC2EF4DE1800F87DE0 /* Adless */,
-				B10000000000000000000003 /* AdlessDNSProxy */,
+				B10000000000000000000003 /* PacketTunnel */,
 				B10000000000000000000018 /* AdlessTests */,
 			);
 		};
@@ -356,6 +363,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F10000000000000000000002 /* Adless/Services/DNSMessage.swift in Packet Tunnel Sources */,
+				F10000000000000000000004 /* Adless/Services/DNSPacket.swift in Packet Tunnel Sources */,
 				C10000000000000000000003 /* Adless/Services/BlockingStatsStore.swift in Sources */,
 				D10000000000000000000003 /* Adless/Services/DNSDoHTransport.swift in Sources */,
 				E10000000000000000000053 /* Shared/BuildEnvironment.swift in Sources */,
@@ -374,7 +383,7 @@
 /* Begin PBXTargetDependency section */
 		B10000000000000000000010 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = B10000000000000000000003 /* AdlessDNSProxy */;
+			target = B10000000000000000000003 /* PacketTunnel */;
 			targetProxy = B10000000000000000000009 /* PBXContainerItemProxy */;
 		};
 		B10000000000000000000023 /* PBXTargetDependency */ = {
@@ -507,6 +516,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = E10000000000000000000002 /* Development.xcconfig */;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = J728Z86KY5;
 				ENABLE_TESTABILITY = YES;
@@ -524,6 +534,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = E10000000000000000000002 /* Development.xcconfig */;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = J728Z86KY5;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -703,15 +714,15 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_ENTITLEMENTS = AdlessDNSProxy/DNSProxy.entitlements;
+				CODE_SIGN_ENTITLEMENTS = AdlessPacketTunnel/PacketTunnel.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = J728Z86KY5;
-				INFOPLIST_FILE = AdlessDNSProxy/Info.plist;
+				INFOPLIST_FILE = AdlessPacketTunnel/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "$(ADLESS_DNS_PROXY_BUNDLE_IDENTIFIER)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "$(ADLESS_PACKET_TUNNEL_BUNDLE_IDENTIFIER)";
+				PRODUCT_NAME = PacketTunnel;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_VERSION = 5.0;
@@ -723,16 +734,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_ENTITLEMENTS = AdlessDNSProxy/DNSProxy.entitlements;
+				CODE_SIGN_ENTITLEMENTS = AdlessPacketTunnel/PacketTunnel.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = J728Z86KY5;
-				INFOPLIST_FILE = AdlessDNSProxy/Info.plist;
+				INFOPLIST_FILE = AdlessPacketTunnel/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "$(ADLESS_DNS_PROXY_BUNDLE_IDENTIFIER)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "$(ADLESS_PACKET_TUNNEL_BUNDLE_IDENTIFIER)";
+				PRODUCT_NAME = PacketTunnel;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_VERSION = 5.0;
@@ -744,15 +755,15 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_ENTITLEMENTS = AdlessDNSProxy/DNSProxy.entitlements;
+				CODE_SIGN_ENTITLEMENTS = AdlessPacketTunnel/PacketTunnel.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = J728Z86KY5;
-				INFOPLIST_FILE = AdlessDNSProxy/Info.plist;
+				INFOPLIST_FILE = AdlessPacketTunnel/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "$(ADLESS_DNS_PROXY_BUNDLE_IDENTIFIER)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "$(ADLESS_PACKET_TUNNEL_BUNDLE_IDENTIFIER)";
+				PRODUCT_NAME = PacketTunnel;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_VERSION = 5.0;
@@ -764,16 +775,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_ENTITLEMENTS = AdlessDNSProxy/DNSProxy.entitlements;
+				CODE_SIGN_ENTITLEMENTS = AdlessPacketTunnel/PacketTunnel.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = J728Z86KY5;
-				INFOPLIST_FILE = AdlessDNSProxy/Info.plist;
+				INFOPLIST_FILE = AdlessPacketTunnel/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "$(ADLESS_DNS_PROXY_BUNDLE_IDENTIFIER)";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = "$(ADLESS_PACKET_TUNNEL_BUNDLE_IDENTIFIER)";
+				PRODUCT_NAME = PacketTunnel;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_VERSION = 5.0;
@@ -874,7 +885,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B10000000000000000000012 /* Build configuration list for PBXNativeTarget "AdlessDNSProxy" */ = {
+		B10000000000000000000012 /* Build configuration list for PBXNativeTarget "PacketTunnel" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B10000000000000000000013 /* Debug */,

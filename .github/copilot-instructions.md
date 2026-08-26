@@ -4,7 +4,7 @@
 
 Adless is a monorepo with two products and a tooling area:
 
-- `apps/ios/`: SwiftUI app, DNS Proxy Network Extension, and XCTest target.
+- `apps/ios/`: SwiftUI app, local Packet Tunnel Network Extension, and XCTest target.
 - `apps/landing-page/`: static React + Vite + TypeScript landing page.
 - `tools/blocklists/`: deterministic Python blocklist generator, validator,
   fixtures, and tests.
@@ -21,8 +21,8 @@ Preserve unrelated working-tree changes and keep changes limited to the task.
   admin panel, or subscription server.
 - Purchases are handled only by StoreKit 2 and App Store Connect. The app has
   no user account and no payment or personal identity database.
-- The iOS product is a local DNS sinkhole. It uses a DNS Proxy Network
-  Extension and does not route traffic through an external VPN server.
+- The iOS product is a local DNS sinkhole. It uses a Packet Tunnel Network
+  Extension only for DNS and does not route traffic through an external VPN server.
 - Prefer existing dependencies and the standard library. Do not add a heavy
   dependency for functionality already provided by the project or Apple SDKs.
 - Never add HTTP URLs, secrets, private keys, certificates, provisioning
@@ -33,7 +33,7 @@ Preserve unrelated working-tree changes and keep changes limited to the task.
 Targets in `apps/ios/Adless.xcodeproj` are:
 
 - `Adless`: the SwiftUI application;
-- `AdlessDNSProxy`: the DNS Proxy extension;
+- `PacketTunnel`: the local Packet Tunnel extension;
 - `AdlessTests`: XCTest.
 
 The existing App Group is `group.com.orbeworks.adless`. Verify both targets
@@ -130,9 +130,8 @@ Current workflow responsibilities are:
 - `ios-tests.yml`: iOS tests on PRs and manual dispatch. It does not run for
   every push to `develop`.
 - `release-ios.yml`: on relevant `main` changes, performs App Store Connect
-  preflight, archive, export, validation, upload, processing wait, and review
-  submission. It intentionally does not repeat the iOS test job; tests are
-  covered locally by `pre-push` and on the PR.
+  preflight, iOS tests, archive, export, validation, upload, processing wait,
+  and review submission.
 - `update-blocklist.yml`: weekly scheduled blocklist update and manual
   dispatch. It commits only explicit generated paths when content changes.
 - `deploy-pages.yml`: deploys the landing and public blocklist artifacts to

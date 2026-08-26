@@ -10,7 +10,7 @@ não fazem parte da arquitetura atual.
 apps/
 ├── ios/
 │   ├── Adless/          # app SwiftUI
-│   ├── AdlessDNSProxy/  # Network Extension DNS Proxy
+│   ├── AdlessPacketTunnel/ # Network Extension Packet Tunnel
 │   └── AdlessTests/     # testes XCTest
 └── landing-page/        # React + Vite
 
@@ -63,7 +63,7 @@ legítima acima do limite configurado.
 Abra `apps/ios/Adless.xcodeproj` no Xcode. Os targets são:
 
 - `Adless`: aplicativo SwiftUI;
-- `AdlessDNSProxy`: extensão Network Extension DNS Proxy;
+- `PacketTunnel`: extensão Network Extension Packet Tunnel;
 - `AdlessTests`: testes XCTest.
 
 Build sem assinatura para o simulador:
@@ -155,7 +155,7 @@ principal e Quad9 como fallback. Consultas bloqueadas recebem resposta local.
 O transporte usa uma `URLSession` efêmera, com TLS/hostname validados pelo
 sistema e negociação HTTP/2 quando oferecida pelo provedor. A extensão responde
 localmente às consultas A/AAAA dos dois hostnames DoH caso elas sejam observadas
-no proxy, evitando recursão sem depender de DNS em texto puro. Não existe
+na extensão, evitando recursão sem depender de DNS em texto puro. Não existe
 fallback para DNS UDP tradicional. A mesma sessão HTTP é compartilhada pelos
 dois provedores durante a vida da instância do provider; após três falhas
 consecutivas do primário, o circuit breaker usa o fallback por 15 segundos e é

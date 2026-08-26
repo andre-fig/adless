@@ -1,11 +1,11 @@
 # Adless iOS app
 
-Adless is a system-wide DNS sinkhole for iOS built with SwiftUI and a NetworkExtension DNS Proxy. It blocks ads and trackers locally without routing traffic through an external VPN server.
+Adless is a system-wide DNS sinkhole for iOS built with SwiftUI and a local Network Extension Packet Tunnel. It blocks ads and trackers locally without routing traffic through an external VPN server.
 
 ## Targets
 
 - `Adless` (iOS app, SwiftUI)
-- `AdlessDNSProxy` (DNS proxy extension)
+- `PacketTunnel` (local Packet Tunnel extension)
 - `AdlessTests` (XCTest para parser, gzip, fallback e atualização)
 
 ## Build & Run
@@ -16,7 +16,7 @@ Adless is a system-wide DNS sinkhole for iOS built with SwiftUI and a NetworkExt
 3. Select `Adless` for the official app. Its `Debug` and `Release`
    configurations always use the App Store/TestFlight identifiers.
 4. Set a valid Team and configure the matching App Group and Network
-   Extensions (DNS Proxy) identifiers in the Apple Developer portal.
+   Extensions (Packet Tunnel) identifiers in the Apple Developer portal.
 5. Run on a compatible device. The simulator can build the code, but full DNS
    interception requires a real device.
 
@@ -26,13 +26,13 @@ The values are centralized in `Configurations/Production.xcconfig` and
 `Configurations/Development.xcconfig`; the Swift runtime reads the generated
 Info.plist values through `Shared/BuildEnvironment.swift`.
 
-| Scheme | Configuration | App ID | DNS Proxy ID | App Group | Display name |
+| Scheme | Configuration | App ID | Packet Tunnel ID | App Group | Display name |
 | --- | --- | --- | --- | --- | --- |
-| `Adless Dev` | `Debug Dev` / `Release Dev` | `com.orbeworks.adless.dev` | `com.orbeworks.adless.dev.dnsproxy` | `group.com.orbeworks.adless.dev` | Adless Dev |
-| `Adless` | `Debug` / `Release` | `com.orbeworks.adless` | `com.orbeworks.adless.dnsproxy` | `group.com.orbeworks.adless` | Adless |
+| `Adless Dev` | `Debug Dev` / `Release Dev` | `com.orbeworks.adless.dev` | `com.orbeworks.adless.dev.tunnel` | `group.com.orbeworks.adless.dev` | Adless Dev |
+| `Adless` | `Debug` / `Release` | `com.orbeworks.adless` | `com.orbeworks.adless.tunnel` | `group.com.orbeworks.adless` | Adless |
 
 Both the app and extension use the same environment-specific App Group. This
-keeps blocklists, subscription snapshots, counters, DNS proxy state, and
+keeps blocklists, subscription snapshots, counters, and tunnel state,
 other persisted data separate. No source file should hardcode an App Group or
 provider identifier.
 
@@ -53,7 +53,7 @@ the app or returning to the foreground starts a background manifest check,
 subject to a 24-hour interval and exponential retry backoff. The activate
 button uses the local list immediately and never depends on the network. A
 download is only installed after HTTPS, size, gzip, SHA-256, syntax, and domain
-count checks pass; failures never disable an active proxy.
+count checks pass; failures never disable an active tunnel.
 
 The app group path used by the app and extension is
 `Library/Application Support/Blocklists/blocklist.txt`. The extension replaces
@@ -61,7 +61,7 @@ its active file only through atomic rename, so it cannot observe a partial
 write. The app group and Network Extension entitlement still require matching
 configuration in the Apple Developer portal before device distribution.
 
-The DNS proxy needs a real device for full interception; simulator limitations apply.
+The Packet Tunnel needs a real device for full interception; simulator limitations apply.
 
 ## Encrypted DNS forwarding
 
@@ -72,11 +72,11 @@ Permitted DNS wire packets are sent with an HTTPS `POST` using the
 1. Cloudflare DoH: `https://cloudflare-dns.com/dns-query`;
 2. Quad9 DoH: `https://dns.quad9.net/dns-query`.
 
-The Network Extension creates one ephemeral `URLSession` per DNS proxy
+The Network Extension creates one ephemeral `URLSession` per Packet Tunnel
 provider instance and shares it between Cloudflare and Quad9. The system
 validates the TLS certificate and hostname and negotiates HTTP/2 when the
 provider requires it; the app does not use certificate pinning or disable
-validation. If the proxy observes the URLSession resolving either DoH
+validation. If the tunnel observes the URLSession resolving either DoH
 hostname, it answers only that provider's A/AAAA bootstrap query locally.
 This explicit public-API guard prevents a recursive loop without relying on
 plaintext DNS or private Network Extension behavior.
@@ -127,7 +127,7 @@ The subscription manager checks `Transaction.currentEntitlements`, listens to
 `Transaction.updates`, and restores purchases with `AppStore.sync()`. Active
 and grace-period entitlements are persisted atomically in the existing App
 Group at `Library/Application Support/Subscription/subscription-state.json`.
-The DNS proxy reads that state and refuses to start or process DNS flows after
+The Packet Tunnel reads that state and switches to pass-through after
 the entitlement expires. No personal identity or payment data is stored by the
 app.
 

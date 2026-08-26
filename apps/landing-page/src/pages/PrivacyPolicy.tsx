@@ -9,7 +9,7 @@ const PrivacyPolicy = () => (
 
     <h2>What Adless does</h2>
     <p>
-      Adless uses Apple&apos;s Network Extension DNS Proxy to process DNS queries on
+      Adless uses Apple&apos;s Network Extension Packet Tunnel to process DNS queries on
       your device and block domains included in the active blocklist. Blocked
       names are answered locally. Permitted DNS queries are sent as encrypted
       DNS-over-HTTPS wire messages to Cloudflare DNS or Quad9 so they can be

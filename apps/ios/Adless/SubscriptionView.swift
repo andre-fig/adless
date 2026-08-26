@@ -355,7 +355,7 @@ private enum AdlessLegalDocument: Hashable {
                 AdlessLegalSection(
                     id: "what_adless_does",
                     title: String(localized: "What Adless does"),
-                    body: String(localized: "Adless uses Apple’s Network Extension DNS Proxy to process DNS queries on your device and block domains included in the active blocklist. Blocked names are answered locally. Permitted DNS queries are sent as encrypted DNS-over-HTTPS wire messages to Cloudflare DNS or Quad9 so they can be resolved. Adless does not operate a server or a remote VPN service.")
+                    body: String(localized: "Adless uses an Apple Network Extension Packet Tunnel locally to process DNS queries on your device and block domains included in the active blocklist. Blocked names are answered locally. Permitted DNS queries are sent as encrypted DNS-over-HTTPS wire messages to Cloudflare DNS or Quad9 so they can be resolved. Adless does not operate a server or a remote VPN service.")
                 ),
                 AdlessLegalSection(
                     id: "information_we_collect",

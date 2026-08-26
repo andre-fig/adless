@@ -12,7 +12,7 @@ monorepo e validar alterações antes de abrir um pull request.
 - iPhone físico e conta Apple Developer para testar a interceptação DNS real.
 
 O simulador é suficiente para a landing page, layout, build e testes unitários.
-O DNS Proxy não funciona como interceptação real no simulador.
+O Packet Tunnel não funciona como interceptação real no simulador.
 
 ## Primeiro setup
 
@@ -93,7 +93,7 @@ open apps/ios/Adless.xcodeproj
 Os targets são:
 
 - `Adless`: aplicativo SwiftUI;
-- `AdlessDNSProxy`: Network Extension do tipo DNS Proxy;
+- `PacketTunnel`: Network Extension do tipo Packet Tunnel;
 - `AdlessTests`: testes XCTest.
 
 ### Ambientes e schemes
@@ -102,14 +102,14 @@ O projeto tem dois ambientes sem duplicar targets:
 
 | Scheme | Configuração | App Bundle ID | Extension Bundle ID | App Group | Nome |
 | --- | --- | --- | --- | --- | --- |
-| `Adless Dev` | `Debug Dev` / `Release Dev` | `com.orbeworks.adless.dev` | `com.orbeworks.adless.dev.dnsproxy` | `group.com.orbeworks.adless.dev` | Adless Dev |
-| `Adless` | `Debug` / `Release` | `com.orbeworks.adless` | `com.orbeworks.adless.dnsproxy` | `group.com.orbeworks.adless` | Adless |
+| `Adless Dev` | `Debug Dev` / `Release Dev` | `com.orbeworks.adless.dev` | `com.orbeworks.adless.dev.tunnel` | `group.com.orbeworks.adless.dev` | Adless Dev |
+| `Adless` | `Debug` / `Release` | `com.orbeworks.adless` | `com.orbeworks.adless.tunnel` | `group.com.orbeworks.adless` | Adless |
 
 Os valores ficam em `apps/ios/Configurations/Development.xcconfig` e
 `apps/ios/Configurations/Production.xcconfig`. O código usa
 `apps/ios/Shared/BuildEnvironment.swift`, que lê os valores gerados no
 Info.plist. Assim, o App Group, a blocklist, os contadores, o snapshot de
-assinatura e o estado do DNS Proxy não são compartilhados entre instalações.
+assinatura e o estado do túnel não são compartilhados entre instalações.
 
 Para desenvolvimento local, selecione `Adless Dev`. Para TestFlight/App
 Store, selecione exclusivamente `Adless` e a configuração `Release`.
@@ -119,7 +119,7 @@ Antes de executar em um dispositivo, configure no Xcode e no Apple Developer:
 1. Team da organização Orbe Works;
 2. os dois App IDs do ambiente escolhido;
 3. o App Group correspondente associado aos dois App IDs;
-4. capability Network Extensions com `DNS Proxy` nos dois App IDs;
+4. capability Network Extensions com `Packet Tunnel` nos dois App IDs;
 5. capability App Groups nos dois App IDs;
 6. assinatura válida para o dispositivo.
 
@@ -127,13 +127,13 @@ O ambiente Dev exige estes novos identifiers no portal:
 
 ```text
 com.orbeworks.adless.dev
-com.orbeworks.adless.dev.dnsproxy
+com.orbeworks.adless.dev.tunnel
 group.com.orbeworks.adless.dev
 ```
 
 Não altere nem associe o App Group Dev aos identifiers oficiais. O ambiente
 oficial continua usando somente `com.orbeworks.adless`,
-`com.orbeworks.adless.dnsproxy` e `group.com.orbeworks.adless`.
+`com.orbeworks.adless.tunnel` e `group.com.orbeworks.adless`.
 
 Não altere entitlements ou capabilities sem verificar os dois targets. O
 projeto não cria certificados, perfis ou contas Apple automaticamente.

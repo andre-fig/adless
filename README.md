@@ -44,9 +44,9 @@ Abra `apps/ios/Adless.xcodeproj` no Xcode. Para desenvolvimento local, execute
 o scheme `Adless Dev`, que usa os IDs e o App Group de desenvolvimento e pode
 coexistir com o app oficial. Para TestFlight/App Store, execute o scheme
 `Adless`, que usa exclusivamente o App Group
-`group.com.orbeworks.adless` para os targets `Adless` e `AdlessDNSProxy`. O
-target `AdlessDNSProxy` precisa da capability
-Network Extension (DNS Proxy) no App ID correspondente.
+`group.com.orbeworks.adless` para os targets `Adless` e `PacketTunnel`. O
+target `PacketTunnel` precisa da capability Network Extension (Packet Tunnel)
+no App ID correspondente.
 
 A cobrança é feita exclusivamente pela App Store com StoreKit 2, sem backend,
 login ou banco próprio. O app oferece assinaturas mensal e anual com trial de

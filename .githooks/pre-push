@@ -42,7 +42,7 @@ while IFS= read -r path; do
     apps/landing-page/**|package.json|package-lock.json)
       needs_landing=true
       ;;
-    apps/ios/Adless/*.swift|apps/ios/Adless/Managers/**|apps/ios/Adless/Services/**|apps/ios/Adless/Resources/Assets.xcassets/**|apps/ios/Adless/Resources/Adless.entitlements|apps/ios/Adless/Resources/Info.plist|apps/ios/AdlessDNSProxy/**|apps/ios/AdlessTests/**|apps/ios/Adless.xcodeproj/**|apps/ios/Adless.storekit)
+    apps/ios/Adless/*.swift|apps/ios/Adless/Managers/**|apps/ios/Adless/Services/**|apps/ios/Adless/Resources/Assets.xcassets/**|apps/ios/Adless/Resources/Adless.entitlements|apps/ios/Adless/Resources/Info.plist|apps/ios/AdlessPacketTunnel/**|apps/ios/AdlessTests/**|apps/ios/Adless.xcodeproj/**|apps/ios/Adless.storekit)
       needs_ios=true
       ;;
   esac

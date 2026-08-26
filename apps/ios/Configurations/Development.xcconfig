@@ -2,7 +2,7 @@
 // the identifiers and shared container used by the official app.
 ADLESS_ENVIRONMENT = development
 ADLESS_APP_BUNDLE_IDENTIFIER = com.orbeworks.adless.dev
-ADLESS_DNS_PROXY_BUNDLE_IDENTIFIER = com.orbeworks.adless.dev.dnsproxy
+ADLESS_PACKET_TUNNEL_BUNDLE_IDENTIFIER = com.orbeworks.adless.dev.tunnel
 ADLESS_APP_GROUP_IDENTIFIER = group.com.orbeworks.adless.dev
 ADLESS_DISPLAY_NAME = Adless Dev
 ADLESS_TEST_BUNDLE_IDENTIFIER = com.orbeworks.adless.dev.tests

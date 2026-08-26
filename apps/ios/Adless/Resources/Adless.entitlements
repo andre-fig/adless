@@ -8,7 +8,7 @@
     </array>
     <key>com.apple.developer.networking.networkextension</key>
     <array>
-        <string>dns-proxy</string>
+        <string>packet-tunnel-provider</string>
     </array>
 </dict>
 </plist>

@@ -1,11 +1,11 @@
 import Foundation
 import Network
 
-/// The transport used by the DNS proxy for permitted DNS queries.
+/// The transport used by the local Packet Tunnel for permitted DNS queries.
 ///
-/// The production client uses an ephemeral URLSession. The flow handlers
-/// answer the two provider hostname bootstrap queries locally if the provider
-/// process's own URLSession resolution is observed by the DNS proxy. This
+/// The production client uses an ephemeral URLSession. The packet tunnel
+/// provider answers the two provider hostname bootstrap queries locally if the provider
+/// process's own URLSession resolution is observed by the tunnel. This
 /// prevents a recursive DoH lookup while retaining normal system TLS
 /// certificate and hostname validation.
 protocol DNSUpstreamTransport: Sendable {
@@ -157,7 +157,7 @@ struct DNSDoHEndpoint: Equatable, Sendable {
 
     /// Answers bootstrap A/AAAA lookups for the DoH hostnames locally.
     ///
-    /// This is a recursion guard for configurations where the DNS proxy also
+    /// This is a recursion guard for configurations where the tunnel also
     /// observes DNS resolution performed by its own URLSession. It does not
     /// affect user queries for other names and does not create a plaintext
     /// upstream path.
@@ -352,7 +352,7 @@ struct DNSUpstreamResolver: DNSUpstreamTransport, @unchecked Sendable {
     }
 
     /// Creates one resolver, one ephemeral URLSession shared by both providers,
-    /// and one circuit breaker for a single DNS proxy provider instance.
+    /// and one circuit breaker for a single Packet Tunnel provider instance.
     static func production() -> DNSUpstreamResolver {
         let diagnostics = DNSResolutionDiagnostics()
         let httpClient = URLSessionDNSDoHHTTPClient()
@@ -555,7 +555,7 @@ private enum DNSDoHWireMessage {
 
 private final class URLSessionDNSDoHHTTPClient: DNSDoHHTTPClient, @unchecked Sendable {
     private let timeout: TimeInterval = 1.5
-    private let maximumResponseSize = 64 * 1024
+    private let maximumResponseSize = UInt16.max
     private let session: URLSession
 
     init() {

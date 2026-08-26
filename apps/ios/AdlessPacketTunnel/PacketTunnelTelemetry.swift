@@ -1,11 +1,16 @@
 import Foundation
-@preconcurrency import NetworkExtension
+import NetworkExtension
 import Sentry
+import os
 
-enum AdlessSentry {
-    nonisolated private static let dsn = "https://2f1865aead67f3607d25bb035692fad2@o4511935178080256.ingest.us.sentry.io/4511957005697024"
+enum PacketTunnelTelemetry {
+    private static let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "AdlessPacketTunnel",
+        category: "tunnel"
+    )
+    private static let dsn = "https://2f1865aead67f3607d25bb035692fad2@o4511935178080256.ingest.us.sentry.io/4511957005697024"
 
-    nonisolated static func start() {
+    static func start() {
         SentrySDK.start { options in
             options.dsn = dsn
 #if DEBUG
@@ -14,7 +19,6 @@ enum AdlessSentry {
             options.environment = "production"
 #endif
             options.sendDefaultPii = false
-            options.tracesSampleRate = 0.1
             options.enableNetworkTracking = false
             options.enableNetworkBreadcrumbs = false
             options.enableCaptureFailedRequests = false
@@ -22,41 +26,45 @@ enum AdlessSentry {
             options.attachScreenshot = false
             options.attachViewHierarchy = false
             options.enableUserInteractionTracing = false
+            options.tracesSampleRate = 0.1
         }
     }
 
-    nonisolated static func event(_ operation: String, status: NEVPNStatus? = nil) {
+    static func event(_ operation: String, status: NEVPNStatus? = nil) {
+        let statusValue = status.map(statusName) ?? "unknown"
+        logger.debug("(operation, privacy: .public) status=(statusValue, privacy: .public)")
         guard SentrySDK.isEnabled else { return }
         SentrySDK.capture(message: operation) { scope in
             scope.setTag(value: operation, key: "operation")
-            scope.setTag(value: status.map(statusName) ?? "unknown", key: "vpn_status")
+            scope.setTag(value: statusValue, key: "vpn_status")
         }
     }
 
-    nonisolated static func capture(_ error: Error, operation: String, status: NEVPNStatus? = nil) {
-        guard SentrySDK.isEnabled else { return }
+    static func error(_ error: Error, operation: String, status: NEVPNStatus? = nil) {
         let nsError = error as NSError
         let description = sanitizedDescription(nsError.localizedDescription)
-        let sanitizedError = NSError(
+        let statusValue = status.map(statusName) ?? "unknown"
+        logger.error("(operation, privacy: .public) domain=(nsError.domain, privacy: .public) code=(nsError.code, privacy: .public) description=(description, privacy: .public) status=(statusValue, privacy: .public)")
+        guard SentrySDK.isEnabled else { return }
+
+        // Capture a sanitized event instead of the original NSError. URL
+        // loading errors can contain a provider URL, which must never leave
+        // the extension as diagnostic data.
+        let sanitized = NSError(
             domain: nsError.domain,
             code: nsError.code,
             userInfo: [NSLocalizedDescriptionKey: description]
         )
-        SentrySDK.capture(error: sanitizedError) { scope in
+        SentrySDK.capture(error: sanitized) { scope in
             scope.setTag(value: operation, key: "operation")
             scope.setTag(value: nsError.domain, key: "error_domain")
             scope.setTag(value: String(nsError.code), key: "error_code")
             scope.setTag(value: description, key: "error_description")
-            scope.setTag(value: status.map(statusName) ?? "unknown", key: "vpn_status")
+            scope.setTag(value: statusValue, key: "vpn_status")
         }
     }
 
-    nonisolated static func startTransaction(name: String, operation: String) -> Span? {
-        guard SentrySDK.isEnabled else { return nil }
-        return SentrySDK.startTransaction(name: name, operation: operation)
-    }
-
-    nonisolated private static func statusName(_ status: NEVPNStatus) -> String {
+    private static func statusName(_ status: NEVPNStatus) -> String {
         switch status {
         case .invalid: return "invalid"
         case .disconnected: return "disconnected"
@@ -68,7 +76,7 @@ enum AdlessSentry {
         }
     }
 
-    nonisolated private static func sanitizedDescription(_ value: String) -> String {
+    private static func sanitizedDescription(_ value: String) -> String {
         value
             .replacingOccurrences(
                 of: #"https?://[^\s\"<>]+"#,

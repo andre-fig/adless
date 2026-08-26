@@ -29,8 +29,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B10000000000000000000003"
-               BuildableName = "AdlessDNSProxy.appex"
-               BlueprintName = "AdlessDNSProxy"
+               BuildableName = "PacketTunnel.appex"
+               BlueprintName = "PacketTunnel"
                ReferencedContainer = "container:Adless.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>

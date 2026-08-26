@@ -25,7 +25,7 @@ relacionadas no mesmo commit ou pull request.
 - Não adicione backend, banco de dados, login, autenticação própria, Railway,
   painel administrativo ou servidor de assinatura.
 - Compras são feitas exclusivamente por StoreKit 2 e App Store Connect.
-- O app usa um DNS Proxy local; não o transforme em túnel de tráfego ou
+- O app usa um Packet Tunnel local apenas para DNS; não o transforme em túnel de tráfego ou
   servidor VPN externo sem uma decisão explícita do produto.
 - A blocklist é gerada pelo pipeline Python e distribuída como arquivo estático
   pelo GitHub Pages.
@@ -64,7 +64,7 @@ npm run setup:hooks
 O `npm ci` já ativa os hooks por meio do script `prepare`; o segundo comando é
 útil para reativação manual. Para desenvolvimento iOS, também é necessário
 Xcode, um Team configurado e, para DNS real, um iPhone físico com o App Group
-`group.com.orbeworks.adless` e a capability DNS Proxy configurados nos targets.
+`group.com.orbeworks.adless` e a capability Packet Tunnel configurados nos targets.
 
 ## Como organizar alterações
 
@@ -83,7 +83,7 @@ pode ser importada para o bundle JavaScript.
 
 ### iOS
 
-Verifique os targets `Adless`, `AdlessDNSProxy` e `AdlessTests` antes de alterar
+Verifique os targets `Adless`, `PacketTunnel` e `AdlessTests` antes de alterar
 entitlements, capabilities, App Group ou configurações do Xcode. Use o App
 Group para dados compartilhados e escritas atômicas para arquivos consumidos
 pela extensão.

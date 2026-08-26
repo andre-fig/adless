@@ -34,7 +34,7 @@ The English app information and version localization have been populated through
 - Marketing URL: the landing page above
 - Support URL: the support page above
 - Privacy policy and privacy choices URLs: the privacy page above
-- Description: describes on-device DNS Proxy protection, no account, no remote VPN server, local blocklist updates, and the two paid plans.
+- Description: describes on-device Packet Tunnel DNS protection, no account, no remote VPN server, local blocklist updates, and the two paid plans.
 
 The first version does not have a “What’s New” field. App Store Connect does not allow that field for the first version.
 
@@ -52,7 +52,7 @@ The plans are English-only, have review notes, availability in Brazil, and the i
 ## Build and signing
 
 - Build `2` is uploaded, processing state `VALID`, and linked to App Store version `1.0`.
-- The repository build number is now `2` for the app and DNS proxy extension.
+- The repository build number is now `2` for the app and Packet Tunnel extension.
 - The app uses the existing Network Extension and App Group entitlements.
 - `ITSAppUsesNonExemptEncryption` is set to `false` because the app uses standard system HTTPS and SHA-256 validation, not a custom encryption implementation. The same value was also declared on build `2` through the App Store Connect API.
 
@@ -77,11 +77,11 @@ The archive is already uploaded and build `2` is valid. A future build must use 
 
 The age-rating declaration has been filled for a utility app with no advertising, user-generated content, messaging, social features, gambling, sexual content, or unrestricted web access.
 
-The production app review detail is filled with the account holder’s contact information and states that no demo account is required. No login or test account exists. The review notes explain the subscription, Network Extension permission, on-device DNS proxy, and offline fallback flow.
+The production app review detail is filled with the account holder’s contact information and states that no demo account is required. No login or test account exists. The review notes explain the subscription, Network Extension permission, on-device local DNS tunnel, and offline fallback flow.
 
 Suggested review notes:
 
-> Adless is an on-device DNS Proxy that blocks matching ad and tracker domains. The app does not use an account or a remote VPN server. To test the main flow, install the app, open the subscription sheet, select either plan, complete the App Store sandbox purchase, then tap the central button. The button can also turn protection off. The app keeps a validated blocklist locally and falls back to it when the network is unavailable.
+> Adless is an on-device local DNS tunnel that blocks matching ad and tracker domains. The app does not use an account or a remote VPN server. To test the main flow, install the app, open the subscription sheet, select either plan, complete the App Store sandbox purchase, then tap the central button. The button can also turn protection off. The app keeps a validated blocklist locally and falls back to it when the network is unavailable.
 
 ## Final App Store Connect checklist
 

@@ -11,8 +11,8 @@ const Support = () => (
     <ul>
       <li>Make sure the subscription is active in your Apple Account.</li>
       <li>Open Adless and tap the main button to enable protection.</li>
-      <li>Check Settings → General → VPN &amp; Device Management for the Adless DNS profile.</li>
-      <li>If the network changes, turn protection off and on once to reload the local DNS proxy.</li>
+      <li>Check Settings → General → VPN &amp; Device Management for the Adless local VPN profile.</li>
+      <li>If the network changes, Adless reconnects its local DNS tunnel automatically.</li>
     </ul>
 
     <h2>Contact us</h2>

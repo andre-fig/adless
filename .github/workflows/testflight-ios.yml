@@ -9,11 +9,12 @@ on:
       - "apps/ios/Adless/Managers/**"
       - "apps/ios/Adless/Services/**"
       - "apps/ios/Adless/Resources/**"
-      - "apps/ios/AdlessDNSProxy/**"
+      - "apps/ios/AdlessPacketTunnel/**"
       - "apps/ios/Adless.xcodeproj/**"
       - "apps/ios/Adless.storekit"
       - "docs/app-store/ExportOptions.plist"
       - "tools/appstore/**"
+      - "tools/ios/**"
       - "tools/sentry/**"
       - ".github/workflows/testflight-ios.yml"
   workflow_dispatch:
@@ -107,14 +108,19 @@ jobs:
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
 
+      - name: Verify archive layout and signed entitlements
+        run: |
+          set -euo pipefail
+          sh tools/ios/verify_archive.sh "$RUNNER_TEMP/Adless.xcarchive"
+
       - name: Verify archive dSYMs
         run: |
           set -euo pipefail
           dsyms_path="$RUNNER_TEMP/Adless.xcarchive/dSYMs"
           test -d "$dsyms_path"
           test -d "$dsyms_path/Adless.app.dSYM"
-          test -d "$dsyms_path/AdlessDNSProxy.appex.dSYM"
-          echo "Verified app and DNS Proxy dSYMs in the archive."
+          test -d "$dsyms_path/PacketTunnel.appex.dSYM"
+          echo "Verified app and Packet Tunnel dSYMs in the archive."
 
       - name: Upload archive dSYMs to Sentry
         if: env.SENTRY_AUTH_TOKEN != ''
