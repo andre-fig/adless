@@ -7,6 +7,9 @@ preview_urls = false
 [observability]
 enabled = false
 
+[vars]
+DEPLOYMENT_ENV = "production"
+
 [[routes]]
 pattern = "dns.adless.app/*"
 zone_name = "adless.app"
@@ -23,9 +26,13 @@ new_sqlite_classes = ["StatsDurableObject"]
 name = "adless-dns-staging"
 workers_dev = true
 preview_urls = false
+routes = []
 
 [env.staging.observability]
 enabled = false
+
+[env.staging.vars]
+DEPLOYMENT_ENV = "staging"
 
 [[env.staging.durable_objects.bindings]]
 name = "STATS"

@@ -52,6 +52,21 @@ npx --yes wrangler@4 dev --config apps/dns-worker/wrangler.toml --env staging
 npx --yes wrangler@4 deploy --config apps/dns-worker/wrangler.toml --env staging
 ```
 
+Staging deve ser fechado antes do deploy. Gere um token descartável de 256 bits
+fora do repositório e grave-o somente como secret da Cloudflare:
+
+```sh
+openssl rand -base64 32 | tr '+/' '-_' | tr -d '=' \
+  | npx --yes wrangler@4 secret put STAGING_ALLOWED_DNS_TOKEN \
+      --env staging --config apps/dns-worker/wrangler.toml
+```
+
+O ambiente precisa ter `DEPLOYMENT_ENV=staging` e esse secret válido. O Worker
+rejeita tokens diferentes antes de rate limit, cache, Durable Object ou
+upstream; se o secret estiver ausente ou inválido, responde indisponível em vez
+de abrir o resolvedor. Essa allowlist é exclusiva para staging e não representa
+a autorização server-side de assinaturas da produção.
+
 Não use o token real em shell history ou issue. A validação deve enviar um
 query DNS conhecido, conferir `Content-Type: application/dns-message`, ID e
 rcode, e nunca imprimir o hostname consultado.

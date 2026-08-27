@@ -26,7 +26,7 @@ def query_wire(transaction_id: int = 0xA551) -> bytes:
 
 
 def request(url: str, *, method: str, body: bytes | None = None, token: str | None = None) -> tuple[int, dict[str, str], bytes]:
-    headers = {"Accept": "application/dns-message"}
+    headers = {"Accept": "application/dns-message", "User-Agent": "AdlessSmoke/1.0"}
     if body is not None:
         headers["Content-Type"] = "application/dns-message"
     if token is not None:
