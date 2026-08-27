@@ -1,8 +1,7 @@
 // Local Xcode development configuration. It is intentionally isolated from
-// the identifiers and shared container used by the official app.
+// the bundle identifier used by the official app.
 ADLESS_ENVIRONMENT = development
 ADLESS_APP_BUNDLE_IDENTIFIER = com.orbeworks.adless.dev
-ADLESS_PACKET_TUNNEL_BUNDLE_IDENTIFIER = com.orbeworks.adless.dev.tunnel
-ADLESS_APP_GROUP_IDENTIFIER = group.com.orbeworks.adless.dev
 ADLESS_DISPLAY_NAME = Adless Dev
 ADLESS_TEST_BUNDLE_IDENTIFIER = com.orbeworks.adless.dev.tests
+ADLESS_DNS_CLOUD_BASE_URL = https:/$()/dns.adless.app

@@ -9,28 +9,12 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless no está dirigido a niños y no recopila deliberadamente información personal de menores." } }
       }
     },
-    "Apple processes App Store purchases and subscriptions under Apple’s own terms and privacy policy. Cloudflare DNS and Quad9 process permitted DNS-over-HTTPS queries to return DNS answers under their respective service and privacy policies. Sentry, operated by Functional Software, Inc., processes crash and performance diagnostics for reliability purposes under its privacy policy. Adless downloads public, static blocklist files from GitHub Pages. Those requests can include standard technical connection information handled by the hosting provider, such as an IP address." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Apple processes App Store purchases and subscriptions under Apple’s own terms and privacy policy. Cloudflare DNS and Quad9 process permitted DNS-over-HTTPS queries to return DNS answers under their respective service and privacy policies. Sentry, operated by Functional Software, Inc., processes crash and performance diagnostics for reliability purposes under its privacy policy. Adless downloads public, static blocklist files from GitHub Pages. Those requests can include standard technical connection information handled by the hosting provider, such as an IP address." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "A Apple processa compras e assinaturas da App Store de acordo com seus próprios termos e política de privacidade. O Cloudflare DNS e o Quad9 processam consultas DNS-over-HTTPS permitidas para retornar respostas DNS, conforme suas respectivas políticas de serviço e privacidade. O Sentry, operado pela Functional Software, Inc., processa diagnósticos de falhas e desempenho para fins de confiabilidade, conforme sua política de privacidade. O Adless baixa arquivos públicos e estáticos da lista de bloqueio pelo GitHub Pages. Essas solicitações podem incluir informações técnicas padrão de conexão tratadas pelo provedor de hospedagem, como um endereço IP." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Apple procesa las compras y suscripciones de la App Store conforme a sus propios términos y política de privacidad. Cloudflare DNS y Quad9 procesan las consultas DNS-over-HTTPS permitidas para devolver respuestas DNS, de acuerdo con sus respectivas políticas de servicio y privacidad. Sentry, operado por Functional Software, Inc., procesa diagnósticos de fallos y rendimiento para fines de fiabilidad conforme a su política de privacidad. Adless descarga archivos públicos y estáticos de la lista de bloqueo desde GitHub Pages. Estas solicitudes pueden incluir información técnica estándar de conexión gestionada por el proveedor de alojamiento, como una dirección IP." } }
-      }
-    },
     "OK" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "OK" } },
         "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "OK" } },
         "es" : { "stringUnit" : { "state" : "translated", "value" : "OK" } }
-      }
-    },
-    "Orbe Works does not collect or retain account information, browsing history, DNS query history, advertising identifiers, or payment information through Adless. The app has no account, login, or custom backend. Blocking statistics are stored locally in the app’s protected storage. Permitted DNS queries are transmitted to the configured third-party DNS providers only to obtain DNS answers; their handling is governed by their own privacy policies. Adless uses Sentry for crash and performance diagnostics. Sentry receives technical diagnostic data such as app version, operating system, device model, stack traces, and timing data. Adless does not send DNS queries, domain names, browsing history, or a user identity to Sentry." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Orbe Works does not collect or retain account information, browsing history, DNS query history, advertising identifiers, or payment information through Adless. The app has no account, login, or custom backend. Blocking statistics are stored locally in the app’s protected storage. Permitted DNS queries are transmitted to the configured third-party DNS providers only to obtain DNS answers; their handling is governed by their own privacy policies. Adless uses Sentry for crash and performance diagnostics. Sentry receives technical diagnostic data such as app version, operating system, device model, stack traces, and timing data. Adless does not send DNS queries, domain names, browsing history, or a user identity to Sentry." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "A Orbe Works não coleta nem retém informações de conta, histórico de navegação, histórico de consultas DNS, identificadores de publicidade ou informações de pagamento por meio do Adless. O app não tem conta, login nem backend próprio. As estatísticas de bloqueio são armazenadas localmente no armazenamento protegido do app. As consultas DNS permitidas são transmitidas aos provedores DNS de terceiros configurados somente para obter respostas DNS; o tratamento delas é regido por suas próprias políticas de privacidade. O Adless usa o Sentry para diagnósticos de falhas e desempenho. O Sentry recebe dados técnicos de diagnóstico, como versão do app, sistema operacional, modelo do dispositivo, stack traces e dados de tempo. O Adless não envia consultas DNS, nomes de domínio, histórico de navegação ou identidade de usuário ao Sentry." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Orbe Works no recopila ni conserva información de cuentas, historial de navegación, historial de consultas DNS, identificadores publicitarios ni información de pago a través de Adless. La app no tiene cuenta, inicio de sesión ni backend propio. Las estadísticas de bloqueo se almacenan localmente en el almacenamiento protegido de la app. Las consultas DNS permitidas se transmiten a los proveedores DNS de terceros configurados únicamente para obtener respuestas DNS; su tratamiento se rige por sus propias políticas de privacidad. Adless utiliza Sentry para diagnósticos de fallos y rendimiento. Sentry recibe datos técnicos de diagnóstico, como la versión de la app, el sistema operativo, el modelo del dispositivo, los stack traces y datos de tiempo. Adless no envía consultas DNS, nombres de dominio, historial de navegación ni la identidad del usuario a Sentry." } }
       }
     },
     "Third parties" : {
@@ -209,12 +193,12 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Funciona discretamente en segundo plano" } }
       }
     },
-    "These Terms of Use govern your use of Adless, an on-device DNS filtering application developed by Orbe Works." : {
+    "These Terms of Use govern your use of Adless, a DNS filtering application developed by Orbe Works." : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "These Terms of Use govern your use of Adless, an on-device DNS filtering application developed by Orbe Works." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Estes Termos de Uso regem o uso do Adless, um aplicativo de filtragem de DNS no dispositivo desenvolvido pela Orbe Works." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Estos Términos de uso rigen tu uso de Adless, una aplicación de filtrado DNS en el dispositivo desarrollada por Orbe Works." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "These Terms of Use govern your use of Adless, a DNS filtering application developed by Orbe Works." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Estes Termos de Uso regem o uso do Adless, um aplicativo de filtragem de DNS desenvolvido pela Orbe Works." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Estos Términos de uso rigen tu uso de Adless, una aplicación de filtrado DNS desarrollada por Orbe Works." } }
       }
     },
     "For support, contact a_figueiredo@icloud.com." : {
@@ -313,20 +297,20 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless puede ofrecerse mediante suscripciones mensuales y anuales con renovación automática. Una suscripción incluye las funciones que se muestran en la app en el momento de la compra. Apple muestra antes de la compra cualquier prueba gratuita, precio, fecha de renovación e impuesto aplicable.\n\nEl cargo se realiza en tu Cuenta de Apple. A menos que canceles la suscripción en los ajustes de tu Cuenta de Apple al menos 24 horas antes de que finalice el periodo actual, se renovará automáticamente. Apple gestiona la facturación, los reembolsos y la cancelación." } }
       }
     },
-    "Adless provides local DNS-based blocking of domains identified by its blocklist. No filtering system can identify every ad, tracker, or domain, and blocking a domain can occasionally affect a website or app. You are responsible for deciding whether to keep the protection enabled." : {
+    "Adless provides DNS-based blocking of domains identified by its blocklist. No filtering system can identify every ad, tracker, or domain, and blocking a domain can occasionally affect a website or app. You are responsible for deciding whether to keep the protection enabled." : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless provides local DNS-based blocking of domains identified by its blocklist. No filtering system can identify every ad, tracker, or domain, and blocking a domain can occasionally affect a website or app. You are responsible for deciding whether to keep the protection enabled." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless faz o bloqueio local, baseado em DNS, dos domínios identificados pela lista de bloqueio. Nenhum sistema de filtragem consegue identificar todos os anúncios, rastreadores ou domínios, e bloquear um domínio pode ocasionalmente afetar um site ou app. Cabe a você decidir se deseja manter a proteção ativada." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless bloquea localmente mediante DNS los dominios identificados por su lista de bloqueo. Ningún sistema de filtrado puede identificar todos los anuncios, rastreadores o dominios, y bloquear un dominio puede afectar ocasionalmente a un sitio web o una app. Tú decides si mantienes activada la protección." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless provides DNS-based blocking of domains identified by its blocklist. No filtering system can identify every ad, tracker, or domain, and blocking a domain can occasionally affect a website or app. You are responsible for deciding whether to keep the protection enabled." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless faz bloqueio baseado em DNS dos domínios identificados pela lista de bloqueio. Nenhum sistema de filtragem consegue identificar todos os anúncios, rastreadores ou domínios, e bloquear um domínio pode ocasionalmente afetar um site ou app. Cabe a você decidir se deseja manter a proteção ativada." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless bloquea mediante DNS los dominios identificados por su lista de bloqueo. Ningún sistema de filtrado puede identificar todos los anuncios, rastreadores o dominios, y bloquear un dominio puede afectar ocasionalmente a un sitio web o una app. Tú decides si mantienes activada la protección." } }
       }
     },
-    "Adless uses an Apple Network Extension Packet Tunnel locally to process DNS queries on your device and block domains included in the active blocklist. Blocked names are answered locally. Permitted DNS queries are sent as encrypted DNS-over-HTTPS wire messages to Cloudflare DNS or Quad9 so they can be resolved. Adless does not operate a server or a remote VPN service." : {
+    "Adless configures Apple encrypted DNS settings. DNS queries go over HTTPS to the Adless DNS service, where the active blocklist is applied before permitted queries are resolved by Cloudflare DNS or Quad9. Web traffic does not pass through Adless, and no account is required." : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless uses an Apple Network Extension Packet Tunnel locally to process DNS queries on your device and block domains included in the active blocklist. Blocked names are answered locally. Permitted DNS queries are sent as encrypted DNS-over-HTTPS wire messages to Cloudflare DNS or Quad9 so they can be resolved. Adless does not operate a server or a remote VPN service." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless usa um Packet Tunnel local da Network Extension da Apple para processar consultas DNS no seu dispositivo e bloquear domínios incluídos na lista ativa. Os nomes bloqueados recebem respostas locais. As consultas DNS permitidas são enviadas como mensagens DNS-over-HTTPS criptografadas para o Cloudflare DNS ou o Quad9 para serem resolvidas. O Adless não opera um servidor nem um serviço de VPN remoto." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless utiliza un Packet Tunnel local de Network Extension de Apple para procesar las consultas DNS en tu dispositivo y bloquear los dominios incluidos en la lista de bloqueo activa. Los nombres bloqueados reciben respuestas locales. Las consultas DNS permitidas se envían como mensajes DNS-over-HTTPS cifrados a Cloudflare DNS o Quad9 para resolverlas. Adless no opera un servidor ni un servicio de VPN remoto." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless configures Apple encrypted DNS settings. DNS queries go over HTTPS to the Adless DNS service, where the active blocklist is applied before permitted queries are resolved by Cloudflare DNS or Quad9. Web traffic does not pass through Adless, and no account is required." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless configura o DNS criptografado da Apple. As consultas DNS passam por HTTPS pelo serviço DNS do Adless, que aplica a lista ativa antes que as consultas permitidas sejam resolvidas pelo Cloudflare DNS ou Quad9. O tráfego da web não passa pelo Adless e não é necessária uma conta." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless configura el DNS cifrado de Apple. Las consultas DNS pasan por HTTPS al servicio DNS de Adless, que aplica la lista activa antes de que Cloudflare DNS o Quad9 resuelvan las consultas permitidas. El tráfico web no pasa por Adless y no se necesita una cuenta." } }
       }
     },
     "Adless is developed by Orbe Works. This Privacy Policy explains what happens when you use the Adless iOS app and website." : {
@@ -337,20 +321,20 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless está desarrollado por Orbe Works. Esta Política de privacidad explica qué ocurre cuando utilizas la app iOS y el sitio web de Adless." } }
       }
     },
-    "Adless may update the blocklist, app, or service to improve reliability and security. The app keeps a valid local list and can continue using it when the network is unavailable, but uninterrupted operation cannot be guaranteed." : {
+    "Adless may update the blocklist, app, or service to improve reliability and security. DNS protection depends on the saved iOS configuration and network availability, but uninterrupted operation cannot be guaranteed." : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless may update the blocklist, app, or service to improve reliability and security. The app keeps a valid local list and can continue using it when the network is unavailable, but uninterrupted operation cannot be guaranteed." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless pode atualizar a lista de bloqueio, o app ou o serviço para melhorar a confiabilidade e a segurança. O app mantém uma lista local válida e pode continuar usando-a quando a rede estiver indisponível, mas não é possível garantir o funcionamento ininterrupto." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless puede actualizar la lista de bloqueo, la app o el servicio para mejorar la fiabilidad y la seguridad. La app conserva una lista local válida y puede seguir utilizándola cuando la red no esté disponible, pero no se puede garantizar un funcionamiento ininterrumpido." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless may update the blocklist, app, or service to improve reliability and security. DNS protection depends on the saved iOS configuration and network availability, but uninterrupted operation cannot be guaranteed." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless pode atualizar a lista de bloqueio, o app ou o serviço para melhorar a confiabilidade e a segurança. A proteção DNS depende da configuração salva no iOS e da disponibilidade da rede, mas não é possível garantir o funcionamento ininterrupto." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless puede actualizar la lista de bloqueo, la app o el servicio para mejorar la fiabilidad y la seguridad. La protección DNS depende de la configuración guardada en iOS y de la disponibilidad de la red, pero no se puede garantizar un funcionamiento ininterrumpido." } }
       }
     },
-    "Adless does not maintain a user account or server-side user record. Local blocklists, subscription state, and blocking statistics can be removed by deleting the app. Apple manages purchase records and subscription history." : {
+    "Adless does not maintain a user account or domain history. The app stores the last known aggregate counter locally; the service stores aggregate totals associated with an anonymous installation token and does not maintain query history. The device-bound Keychain token may remain in the Keychain after uninstall on the same device; it is not migrated to a new device. This version has no token-deletion endpoint. Apple manages purchase records and subscription history." : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless does not maintain a user account or server-side user record. Local blocklists, subscription state, and blocking statistics can be removed by deleting the app. Apple manages purchase records and subscription history." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless não mantém uma conta de usuário nem um registro no servidor. As listas de bloqueio locais, o estado da assinatura e as estatísticas de bloqueio podem ser removidos ao apagar o app. A Apple gerencia os registros de compra e o histórico de assinaturas." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless no mantiene una cuenta de usuario ni un registro de usuario en el servidor. Las listas de bloqueo locales, el estado de la suscripción y las estadísticas de bloqueo pueden eliminarse al borrar la app. Apple gestiona los registros de compras y el historial de suscripciones." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless does not maintain a user account or domain history. The app stores the last known aggregate counter locally; the service stores aggregate totals associated with an anonymous installation token and does not maintain query history. The device-bound Keychain token may remain in the Keychain after uninstall on the same device; it is not migrated to a new device. This version has no token-deletion endpoint. Apple manages purchase records and subscription history." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless não mantém conta de usuário nem histórico de domínios. O app armazena localmente o último contador agregado conhecido; o serviço guarda totais agregados associados a um token anônimo e não mantém histórico de consultas. O token do Keychain vinculado ao aparelho pode permanecer no Keychain após a desinstalação no mesmo aparelho; ele não é migrado para um novo aparelho. Esta versão não possui endpoint de exclusão do token. A Apple gerencia os registros de compra e o histórico de assinaturas." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless no mantiene una cuenta de usuario ni un historial de dominios. La app guarda localmente el último contador agregado conocido; el servicio almacena totales agregados asociados a un token anónimo y no conserva un historial de consultas. El token de Keychain vinculado al dispositivo puede permanecer en Keychain después de desinstalar la app en el mismo dispositivo; no se migra a un dispositivo nuevo. Esta versión no tiene un endpoint para eliminar el token. Apple gestiona los registros de compras y el historial de suscripciones." } }
       }
     },
     "Any free trial, price, renewal date, and applicable taxes are displayed by Apple before purchase." : {
@@ -441,12 +425,12 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Menos solicitudes de seguimiento" } }
       }
     },
-    "Last updated: August 20, 2026" : {
+    "Last updated: August 26, 2026" : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Last updated: August 20, 2026" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Última atualização: 20 de agosto de 2026" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Última actualización: 20 de agosto de 2026" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Last updated: August 26, 2026" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Última atualização: 26 de agosto de 2026" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Última actualización: 26 de agosto de 2026" } }
       }
     },
     "Monthly" : {
@@ -719,6 +703,38 @@
         "en" : { "stringUnit" : { "state" : "translated", "value" : "year" } },
         "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "ano" } },
         "es" : { "stringUnit" : { "state" : "translated", "value" : "año" } }
+      }
+    },
+    "Orbe Works does not collect or retain account information, browsing history, DNS query history, advertising identifiers, or payment information through Adless. The app has no account or login. The service stores only an aggregate blocked total associated with an anonymous installation token; it does not store domains, DNS packets, or an application-level history. Because a DoH GET can carry the DNS wire message in the URL and the installation token is part of the endpoint path, Cloudflare may process technical request metadata under its infrastructure and logging systems; Adless does not enable application-level request logging or send these values to Sentry. Permitted DNS queries are transmitted to Cloudflare DNS or Quad9 only to obtain DNS answers under their own policies. Adless uses Sentry for crash and performance diagnostics, but does not send DNS queries, domain names, browsing history, or the installation token to it." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Orbe Works does not collect or retain account information, browsing history, DNS query history, advertising identifiers, or payment information through Adless. The app has no account or login. The service stores only an aggregate blocked total associated with an anonymous installation token; it does not store domains, DNS packets, or an application-level history. Because a DoH GET can carry the DNS wire message in the URL and the installation token is part of the endpoint path, Cloudflare may process technical request metadata under its infrastructure and logging systems; Adless does not enable application-level request logging or send these values to Sentry. Permitted DNS queries are transmitted to Cloudflare DNS or Quad9 only to obtain DNS answers under their own policies. Adless uses Sentry for crash and performance diagnostics, but does not send DNS queries, domain names, browsing history, or the installation token to it." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "A Orbe Works não coleta nem retém informações de conta, histórico de navegação, histórico de consultas DNS, identificadores de publicidade ou informações de pagamento pelo Adless. O app não tem conta nem login. O serviço armazena somente um total agregado de bloqueios associado a um token anônimo; não armazena domínios, pacotes DNS ou histórico de consultas. Como um GET DoH pode transportar a mensagem DNS na URL e o token de instalação faz parte do caminho do endpoint, a Cloudflare pode processar metadados técnicos da requisição em seus sistemas de infraestrutura e logs; o Adless não habilita logs de requisições no nível da aplicação nem envia esses valores ao Sentry. As consultas DNS permitidas são enviadas ao Cloudflare DNS ou Quad9 apenas para obter respostas DNS, conforme as políticas próprias deles. O Adless usa o Sentry para diagnósticos de falhas e desempenho, mas não envia consultas DNS, nomes de domínio, histórico de navegação ou o token de instalação para ele." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Orbe Works no recopila ni conserva información de cuentas, historial de navegación, historial de consultas DNS, identificadores publicitarios ni información de pago a través de Adless. La app no tiene cuenta ni inicio de sesión. El servicio solo almacena un total agregado de bloqueos asociado a un token anónimo; no almacena dominios, paquetes DNS ni historial de consultas. Como un GET DoH puede transportar el mensaje DNS en la URL y el token de instalación forma parte de la ruta del endpoint, Cloudflare puede procesar metadatos técnicos de la solicitud en sus sistemas de infraestructura y registros; Adless no habilita registros de solicitudes a nivel de aplicación ni envía esos valores a Sentry. Las consultas DNS permitidas se envían a Cloudflare DNS o Quad9 solo para obtener respuestas DNS, según sus propias políticas. Adless usa Sentry para diagnósticos de fallos y rendimiento, pero no envía consultas DNS, nombres de dominio, historial de navegación ni el token de instalación." } }
+      }
+    },
+    "Apple processes App Store purchases and subscriptions under Apple’s own terms and privacy policy. Cloudflare provides infrastructure for the Adless edge service. Cloudflare DNS and Quad9 process permitted DNS-over-HTTPS queries to return DNS answers under their respective service and privacy policies. Sentry processes crash and performance diagnostics for reliability. Adless does not sell data or use DNS queries for advertising." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Apple processes App Store purchases and subscriptions under Apple’s own terms and privacy policy. Cloudflare provides infrastructure for the Adless edge service. Cloudflare DNS and Quad9 process permitted DNS-over-HTTPS queries to return DNS answers under their respective service and privacy policies. Sentry processes crash and performance diagnostics for reliability. Adless does not sell data or use DNS queries for advertising." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "A Apple processa compras e assinaturas da App Store conforme seus próprios termos e política de privacidade. A Cloudflare fornece a infraestrutura do serviço edge do Adless. O Cloudflare DNS e o Quad9 processam consultas DNS-over-HTTPS permitidas para retornar respostas DNS, de acordo com suas políticas de serviço e privacidade. O Sentry processa diagnósticos de falhas e desempenho para confiabilidade. O Adless não vende dados nem usa consultas DNS para publicidade." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Apple procesa las compras y suscripciones de la App Store según sus propios términos y política de privacidad. Cloudflare proporciona la infraestructura del servicio edge de Adless. Cloudflare DNS y Quad9 procesan consultas DNS-over-HTTPS permitidas para devolver respuestas DNS, según sus políticas de servicio y privacidad. Sentry procesa diagnósticos de fallos y rendimiento para fiabilidad. Adless no vende datos ni usa consultas DNS para publicidad." } }
+      }
+    },
+    "Enable DNS protection in Settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Enable DNS protection in Settings" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Ative a proteção DNS em Ajustes" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Activa la protección DNS en Ajustes" } }
+      }
+    },
+    "Open Settings → General → VPN & Network → DNS and enable Adless. Protection will appear here when it is active." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Settings → General → VPN & Network → DNS and enable Adless. Protection will appear here when it is active." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Abra Ajustes → Geral → VPN e Rede → DNS e ative o Adless. A proteção aparecerá aqui quando estiver ativa." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Abre Ajustes → General → VPN y red → DNS y activa Adless. La protección aparecerá aquí cuando esté activa." } }
       }
     },
     "years" : {

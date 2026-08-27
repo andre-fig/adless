@@ -1,246 +1,111 @@
 # Instruções do monorepo Adless
 
-Este arquivo orienta agentes e colaboradores que alteram o monorepo. Preserve
-alterações existentes, mantenha o escopo da tarefa e não introduza serviços que
-não fazem parte da arquitetura atual.
+Preserve alterações existentes, mantenha o escopo e não introduza serviços,
+contas, login ou banco fora da arquitetura descrita aqui. Antes de editar,
+execute `git status --short --branch`; nunca use comandos destrutivos e nunca
+faça commit ou push sem autorização explícita.
 
 ## Arquitetura
 
 ```text
 apps/
-├── ios/
-│   ├── Adless/          # app SwiftUI
-│   ├── AdlessPacketTunnel/ # Network Extension Packet Tunnel
-│   └── AdlessTests/     # testes XCTest
-└── landing-page/        # React + Vite
+├── ios/           # app SwiftUI com DNS nativo da Apple
+├── dns-worker/    # Cloudflare Worker RFC 8484 e Durable Object de métricas
+└── landing-page/  # React + Vite
 
-tools/blocklists/        # gerador, validador, fixtures e testes Python
-apps/landing-page/public/blocklists/
-                         # artefatos estáticos publicados
+tools/blocklists/  # fontes, gerador, validador, fixtures e testes Python
+tools/dns-worker/  # preparação determinística da lista para a edge
 ```
 
-O aplicativo não usa backend, login ou banco de dados próprio. A cobrança é
-feita exclusivamente pela App Store com StoreKit 2; o app oferece assinatura
-mensal e anual com trial de 7 dias configurado no App Store Connect. A landing
-page é estática e a blocklist é distribuída pelos arquivos públicos do GitHub
-Pages.
+O iOS usa somente `NEDNSSettingsManager` e
+`NEDNSOverHTTPSSettings`. O Xcode contém apenas `Adless` e `AdlessTests`; não
+há extensão, interface de rede, rota, App Group ou configuração gerida. O
+endpoint DoH é `https://dns.adless.app/<installation-token>/dns-query`.
+
+O Worker bloqueia na edge e envia nomes permitidos para Cloudflare DoH, com
+Quad9 como fallback sequencial. Somente DNS passa por essa infraestrutura;
+tráfego geral segue diretamente do iPhone.
 
 ## Comandos principais
 
-Execute os comandos a partir da raiz do monorepo.
-
-### Landing page
-
-Requer Node.js 20 ou superior e npm.
-
 ```sh
 npm ci
-npm run dev:landing
 npm run lint
 npm run typecheck
 npm run build:landing
-npm run preview:landing
-```
-
-### Blocklist
-
-O pipeline usa somente a biblioteca padrão do Python. Os testes unitários não
-devem baixar fontes reais da internet.
-
-```sh
+npm run build:dns-worker
+npm run test:dns-worker
 python3 -m unittest discover -s tools/blocklists/tests -v
-python3 tools/blocklists/generate_blocklist.py --sync-seed
+python3 tools/blocklists/generate_blocklist.py --sync-worker
+python3 tools/dns-worker/prepare_blocklist.py
 python3 tools/blocklists/validate_blocklist.py
-python3 tools/blocklists/validate_blocklist.py \
-  --seed apps/ios/Adless/Resources/SeedBlocklist.txt
 ```
 
-Use `--allow-large-change` somente após revisar e confirmar uma alteração
-legítima acima do limite configurado.
-
-### iOS
-
-Abra `apps/ios/Adless.xcodeproj` no Xcode. Os targets são:
-
-- `Adless`: aplicativo SwiftUI;
-- `PacketTunnel`: extensão Network Extension Packet Tunnel;
-- `AdlessTests`: testes XCTest.
-
-Build sem assinatura para o simulador:
+Build de simulador sem assinatura:
 
 ```sh
-xcodebuild \
-  -project apps/ios/Adless.xcodeproj \
-  -scheme Adless \
-  -sdk iphonesimulator \
-  -configuration Debug \
-  CODE_SIGNING_ALLOWED=NO \
-  build
+xcodebuild -project apps/ios/Adless.xcodeproj -scheme Adless \
+  -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build
 ```
 
-Para testar, use o scheme `AdlessTests` e um simulador iOS disponível. A
-interceptação DNS completa precisa de um dispositivo real; o simulador serve
-para build e testes unitários.
+A interceptação real do DNS deve ser validada em iPhone. O simulador serve para
+build, UI e testes unitários.
 
 ## Blocklist
 
-A fonte habilitada no MVP é a OISD Small, declarada em
-`tools/blocklists/sources.json`. Não coloque domínios manualmente no código do
-app ou da extensão.
+A fonte habilitada no MVP é OISD Small, declarada em
+`tools/blocklists/sources.json`. A allowlist é aplicada pelo gerador. Os
+artefatos públicos ficam em `apps/landing-page/public/blocklists/`; a cópia
+embutida no Worker fica em `apps/dns-worker/data/`. O gerador é a única fonte
+autorizada para atualizar esses arquivos.
 
-O gerador publica, de forma determinística, estes arquivos em
-`apps/landing-page/public/blocklists/`:
+O manifesto publicado é
+`https://andre-fig.github.io/adless/blocklists/manifest.json`. Rejeite lista
+vazia, inválida ou alteração acima do limite sem revisão explícita. Preserve a
+versão anterior para rollback e registre somente versão, contagem e checksum.
 
-- `manifest.json`;
-- `blocklist.txt.gz`;
-- `blocklist.txt`;
-- `blocklist.sha256`.
+## iOS, assinatura e privacidade
 
-O SHA-256 publicado corresponde ao arquivo compactado `blocklist.txt.gz`.
-`generatedAt` não deve provocar commits quando o conteúdo não mudou. A lista
-embutida em `apps/ios/Adless/Resources/SeedBlocklist.txt` é produzida pelo
-mesmo pipeline e serve apenas como fallback offline.
+O App ID de produção é `com.orbeworks.adless`; o de desenvolvimento é
+`com.orbeworks.adless.dev`. A capability necessária é
+`com.apple.developer.networking.networkextension = dns-settings`. Profiles de
+desenvolvimento/distribuição devem ser regenerados no Apple Developer portal.
 
-O manifesto público atual é:
+`isEnabled` é somente leitura: salvar a configuração não substitui a aprovação
+do usuário em Ajustes. O app lê o estado real ao voltar ao primeiro plano, trata
+remoção manual e desativa a configuração quando a assinatura StoreKit expira.
 
-```text
-https://andre-fig.github.io/adless/blocklists/manifest.json
-```
+O token por instalação tem 256 bits aleatórios, fica no Keychain
+`ThisDeviceOnly` e não é derivado de IDFA, IDFV, Apple Account ou hardware. Não
+registre token, QNAME, payload DNS, IP ou URL completa. Stats registram apenas
+incrementos numéricos por token no Durable Object; a UI mantém o último total
+conhecido quando a API falhar.
 
-Ao adicionar ou remover uma fonte, altere o arquivo declarativo, revise
-`THIRD_PARTY_BLOCKLISTS.md` e execute toda a validação. Não use URLs HTTP nem
-fontes não oficiais.
+## Workflows
 
-## Atualização no iOS
+Todos os workflows devem manter `concurrency`, timeout, permissões mínimas,
+actions atuais e secrets mínimos. O workflow de blocklist só publica arquivos
+gerados esperados. O deploy do Worker exige os secrets
+`CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID`. iOS usa apenas
+`ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY` e, opcionalmente, os secrets
+do Sentry já documentados. Nunca coloque secrets no app ou no repositório.
 
-O app consulta o manifesto em segundo plano ao abrir ou voltar ao primeiro
-plano, no máximo uma vez a cada 24 horas, com backoff para falhas repetidas.
-Ativar o bloqueio nunca depende da internet.
-
-Arquivos válidos são baixados para local temporário, validados por HTTPS,
-tamanho, gzip, SHA-256, sintaxe e quantidade de domínios, e instalados por
-substituição atômica. Falhas preservam a lista local anterior e nunca desligam
-o bloqueio.
-
-O app e a extensão compartilham a lista em:
-
-```text
-Library/Application Support/Blocklists/blocklist.txt
-```
-
-Esse caminho usa o App Group existente `group.com.orbeworks.adless`. Não use
-`Documents`, não exponha a lista ao usuário e não altere entitlements ou
-capabilities sem verificar os dois targets e documentar o motivo.
-
-## Assinatura
-
-O app usa StoreKit 2, sem backend ou conta própria. Os product IDs são:
-
-```text
-com.orbeworks.adless.pro.monthly
-com.orbeworks.adless.pro.yearly
-```
-
-Os dois produtos devem pertencer ao mesmo Subscription Group no App Store
-Connect. O trial gratuito de 7 dias precisa ser configurado como Introductory
-Offer no App Store Connect; não basta alterar uma constante no código.
-
-O app considera `subscribed` e `inGracePeriod` como acesso válido, persiste um
-snapshot verificado no App Group e a extensão mantém o modo pass-through quando
-o snapshot está ausente ou expirado, sem bloquear DNS. Compras são restauradas com
-`AppStore.sync()` e atualizações são observadas por `Transaction.updates`.
-
-Consultas permitidas usam DNS-over-HTTPS pela extensão, com Cloudflare como
-principal e Quad9 como fallback. Consultas bloqueadas recebem resposta local.
-O transporte usa uma `URLSession` efêmera, com TLS/hostname validados pelo
-sistema e negociação HTTP/2 quando oferecida pelo provedor. A extensão responde
-localmente às consultas A/AAAA dos dois hostnames DoH caso elas sejam observadas
-na extensão, evitando recursão sem depender de DNS em texto puro. Não existe
-fallback para DNS UDP tradicional. A mesma sessão HTTP é compartilhada pelos
-dois provedores durante a vida da instância do provider; após três falhas
-consecutivas do primário, o circuit breaker usa o fallback por 15 segundos e é
-resetado quando a rede muda. Consulte `docs/ARCHITECTURE.md` e
-`docs/TESTING.md` antes de alterar esse caminho.
-
-Não coloque uma flag manual permanente como `isSubscribed = true`. O acesso
-deve derivar da transação verificada pela Apple e da data de validade. Para
-testes reais, configure os produtos e uma conta Sandbox no App Store Connect.
-
-## GitHub Actions e publicação
-
-`.github/workflows/update-blocklist.yml` executa diariamente e também pode ser
-executado manualmente em Ubuntu. Ele baixa, normaliza, valida e publica somente
-os artefatos permitidos. Se houver mudança real, o push dos artefatos dispara o
-deploy da landing; quando não houver mudança, não cria commit nem deploy.
-Uma nova execução cancela a anterior do mesmo workflow. Mudanças inesperadas
-devem fazer o workflow falhar.
-
-`.github/workflows/deploy-pages.yml` constrói a landing e publica o diretório
-`apps/landing-page/dist` após alterações relevantes da landing ou dos artefatos
-públicos da blocklist na `main`, ou execução manual. Ele não usa mais
-`workflow_run`, evitando deploy duplicado e checkout de um commit antigo. O
-workflow usa as versões atuais das actions e não deve receber segredos
-desnecessários.
-
-`.github/workflows/testflight-ios.yml` executa na `develop` quando há alteração
-no projeto de produção do iOS e faz archive, validação, upload e espera pelo
-processamento no TestFlight, sem submeter uma versão para revisão.
-`.github/workflows/release-ios.yml` executa no `main` quando há alteração no
-projeto de produção do iOS e roda testes, archive, validação, upload e
-submissão no App Store Connect. O workflow de testes separado roda em PRs e na
-o `pre-push` local executa os testes antes do envio; assim o mesmo teste não é
-executado em cada push da `develop` nem duas vezes no `main`. O workflow usa
-somente os secrets `ASC_KEY_ID`, `ASC_ISSUER_ID` e
-`ASC_PRIVATE_KEY`; a chave é materializada apenas no diretório temporário do
-runner. Versões já em revisão são ignoradas sem erro para evitar submissões
-duplicadas. O fluxo de desenvolvimento é `develop` → pull request → `main`.
-Consulte `docs/ios-release.md` antes de alterar esse processo.
-
-Todos os workflows usam `concurrency`; quando uma nova execução do mesmo grupo
-é disparada, a execução anterior é cancelada para evitar trabalho duplicado.
-
-Ao alterar workflows:
-
-- use permissões mínimas;
-- mantenha `concurrency` e timeouts;
-- não use `git add .`, `git add -A` ou curingas para publicar artefatos;
-- não faça download ou execute código vindo de uma blocklist;
-- valide YAML e, quando disponível, execute `actionlint`;
-- verifique o run no GitHub após publicar alterações.
-
-## Regras de alteração
-
-- Preserve funcionalidades e mudanças existentes.
-- Não crie backend, Railway, autenticação, painel, banco ou dependência pesada
-  sem solicitação explícita.
-- Prefira dependências já presentes e soluções da biblioteca padrão quando
-  forem suficientes.
-- Não introduza URLs HTTP ou segredos no repositório.
-- Não edite arquivos gerados manualmente quando houver um gerador responsável.
-- Não inclua `apps/ios/build/` ou outros artefatos locais de build em commits.
-- Depois de clonar, ative os hooks locais com `npm run setup:hooks`. O
-  `pre-commit` deve permanecer rápido; o `pre-push` pode executar testes
-  direcionados ao conjunto de arquivos alterados. Hooks locais podem ser
-  ignorados com `--no-verify`, mas isso não deve ser usado para contornar uma
-  falha sem registrá-la no PR.
-- Antes de editar, confira `git status` e mantenha mudanças não relacionadas
-  intactas.
-- Faça commit e push somente quando o usuário autorizar explicitamente.
-
-## Checklist antes de entregar
+## Checklist de entrega
 
 ```sh
 git diff --check
 python3 -m unittest discover -s tools/blocklists/tests -v
+npm run test:dns-worker
 npm run lint
 npm run typecheck
 npm run build:landing
+npm run build:dns-worker
 git status --short --branch
 ```
 
-Para mudanças no iOS, acrescente o build e os testes do Xcode. Para mudanças na
-blocklist, valide também o seed embutido e confirme que o manifesto aponta para
-arquivos existentes.
-
-Consulte os detalhes específicos em `README.md`, `apps/ios/README.md`,
-`apps/landing-page/README.md` e `tools/blocklists/README.md`.
+Para iOS, acrescente XCTest, build/archive e
+`sh tools/ios/verify_archive.sh <archive>`. Após exportar, execute
+`sh tools/ios/verify_ipa.sh <ipa>` e confirme que há somente `Adless.app`, o
+entitlement `dns-settings` e nenhuma extensão embutida. Consulte
+`docs/ARCHITECTURE.md`, `docs/dns-cloud.md`, `docs/TESTING.md` e
+`docs/ios-release.md` antes de alterar o caminho de rede ou publicação.

@@ -1,123 +1,111 @@
-# Adless architecture
+# Arquitetura do Adless
 
-Adless is an on-device DNS filter. It has no account, backend, Adless DNS
-server, or remote VPN server. The iOS app embeds the blocklist fallback and
-uses a local `NEPacketTunnelProvider` only to receive DNS packets.
-
-## Runtime topology
+## Topologia
 
 ```text
-system DNS client
-      │ UDP/TCP 53 to synthetic DNS addresses
-      ▼
-PacketTunnelProvider
-      ├── local blocklist Set and suffix matcher
-      │       └── A/AAAA/NODATA response for blocked names
-      └── HTTPS DoH URLSession for permitted DNS wire messages
-              ├── Cloudflare DNS
-              └── Quad9 fallback
+iPhone
+  │ NEDNSSettingsManager + NEDNSOverHTTPSSettings
+  ▼
+https://dns.adless.app/<installation-token>/dns-query
+  │ Cloudflare Worker, blocklist em memória
+  ├─ bloqueado → resposta DNS sintetizada, sem upstream
+  └─ permitido → Cloudflare DoH
+                   └─ falha transitória → Quad9 DoH
 ```
 
-The Packet Tunnel has split routing: it includes only `10.255.255.2/32` and
-`fd00:ad1e:55::53/128`, the synthetic DNS endpoints configured in
-`NEDNSSettings`. It does not install `0.0.0.0/0` or `::/0`. Therefore ordinary
-application traffic and the extension’s HTTPS connection to the upstream
-providers use the underlying network path. Any unexpected non-DNS packet that
-reaches the flow is ignored without inspecting its payload.
+O iOS gerencia o DNS criptografado; o app não cria interface de rede, não
+instala rota e não encaminha HTTP, HTTPS, vídeo, mensagens ou downloads. A
+configuração usa o domínio completo (`matchDomains = [""]`) e o Worker é um
+endpoint RFC 8484, não um proxy HTTP genérico.
 
-## Targets and identifiers
+## iOS
 
-| Environment | App ID | Packet Tunnel ID | App Group | Display name |
-| --- | --- | --- | --- | --- |
-| Production / TestFlight | `com.orbeworks.adless` | `com.orbeworks.adless.tunnel` | `group.com.orbeworks.adless` | Adless |
-| Development | `com.orbeworks.adless.dev` | `com.orbeworks.adless.dev.tunnel` | `group.com.orbeworks.adless.dev` | Adless Dev |
+O projeto contém apenas os targets `Adless` e `AdlessTests`. O app usa a
+capability `com.apple.developer.networking.networkextension` com o valor
+`dns-settings`. Não há extensão, App Group, `.mobileconfig`, entitlement de
+tráfego ou API privada.
 
-The Xcode project contains only `Adless`, `PacketTunnel`, and `AdlessTests`.
-The app embeds only `PacketTunnel.appex`. The environment-specific App Group
-keeps configuration, blocklists, counters, and subscription snapshots apart
-when development and production are installed together.
+`DNSSettingsManager` sempre chama `loadFromPreferences` antes de ler ou
+alterar o estado. `saveToPreferences` cria/atualiza a configuração DoH e
+`removeFromPreferences` a remove; `isEnabled` é somente leitura porque a
+ativação final é autorizada pelo usuário em Ajustes. O app nunca usa um
+booleano persistido como fonte de verdade. A notificação de alteração, o
+primeiro plano e o estado real recarregado mantêm a UI coerente após reinício,
+troca de rede ou remoção manual.
 
-The app and extension both use the `packet-tunnel-provider` and App Groups
-entitlements. The extension’s `Info.plist` declares
-`com.apple.networkextension.packet-tunnel` and
-`PacketTunnelProvider` as its principal class.
+O endpoint é validado como origem HTTPS e recebe um token opaco de 32 bytes
+gerado com `SecRandomCopyBytes`. O token fica no Keychain com
+`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`; não deriva de identidade,
+IDFA, IDFV ou conta Apple.
 
-## Lifecycle and state
+## Serviço edge
 
-`VPNManager` is an actor. Activation loads or creates the matching
-`NETunnelProviderManager`, configures `NETunnelProviderProtocol`, saves it,
-reloads preferences, and starts `NETunnelProviderSession`. Deactivation calls
-`stopVPNTunnel()`. The UI reads `manager.connection.status`; it does not use a
-persisted boolean. Status notifications update the UI for connecting,
-connected, reasserting, disconnecting, disconnected, and invalid states.
+`apps/dns-worker/src/dns.ts` valida cabeçalho, exatamente uma pergunta, nomes
+com compressão segura, contagens, limites, EDNS0 e todos os tipos DNS sem
+lista restritiva. POST exige `application/dns-message`; GET usa `dns` em
+Base64URL. Erros estruturais retornam `FORMERR` quando há bytes suficientes.
+Falha dos dois resolvedores retorna `SERVFAIL` em uma mensagem DNS válida.
 
-The extension loads the atomically installed blocklist once at startup. The
-app sends a `reloadBlocklist` provider message after a validated update, so a
-running extension can refresh its in-memory `Set` without a restart. If the
-message is unavailable, the next tunnel lifecycle loads the latest complete
-file. Subscription access is read from the verified App Group snapshot; an
-expired or absent snapshot keeps the tunnel in encrypted pass-through mode.
+`blocklist.ts` carrega a lista canônica em um `Set` e testa o nome completo e
+cada sufixo de label. A comparação é lowercase, sem ponto final, com nomes
+ASCII/Punycode; assim `sub.ads.example.com` corresponde a
+`ads.example.com`, mas `notads.example.com` não corresponde.
 
-## DNS processing
+Respostas bloqueadas usam o transaction ID recebido, repetem a pergunta e
+TTL 60 segundos. A consulta não alcança upstream. A resposta A é `0.0.0.0`,
+AAAA é `::` e outros tipos recebem NODATA. EDNS0 é preservado quando presente.
 
-`DNSMessage` validates DNS headers, question names, compressed names, resource
-record framing, EDNS data, and length bounds without imposing a type whitelist.
-`DNSDomainMatcher` normalizes ASCII/Punycode names and checks the complete name
-and each parent suffix in a hash set. No file or `UserDefaults` access happens
-per query.
+Consultas permitidas são enviadas sequencialmente para
+`https://cloudflare-dns.com/dns-query` e, somente em timeout, falha TLS ou de
+transporte, HTTP não aceito, corpo vazio ou DNS inválido, para
+`https://dns.quad9.net/dns-query`. Uma resposta DNS válida, incluindo
+NXDOMAIN, não dispara fallback. Não há DNS UDP/TCP em texto puro. O Worker
+mantém um cache por instalação e wire query (ID zerado,
+flags/tipo/classe/EDNS preservados) somente até o menor TTL recebido; cache negativo usa TTL de autoridade quando
+presente. Um circuit breaker por isolate abre após três falhas primárias por
+15 segundos.
 
-`DNSPacket` safely parses IPv4 and IPv6 packets, including common IPv6 extension
-headers, UDP/53, and TCP/53. `DNSPacketWriter` swaps endpoints and calculates
-IPv4, UDP, IPv6, and TCP checksums for local replies. TCP/53 supports the DNS
-length prefix, multiple in-flight frames, bounded buffers, SYN/ACK/FIN/RST
-state, and ordered response writes. Fragmented packets are not processed by
-the small DNS path and are not forwarded as application traffic.
+## Blocklist
 
-Blocked queries are answered locally: A receives `0.0.0.0`, AAAA receives the
-zero IPv6 address, and other types receive valid NODATA. They never reach an
-upstream. Permitted queries are passed unchanged to the existing
-`DNSUpstreamResolver`, which uses one ephemeral URL session, Cloudflare as the
-primary provider, Quad9 as fallback, bounded timeouts, response validation,
-controlled retry, and a network-reset circuit breaker.
+A fonte atual é OISD Small e a allowlist é aplicada por
+`tools/blocklists/generate_blocklist.py`. A saída canônica é publicada na
+landing e copiada para `apps/dns-worker/data/` por
+`tools/dns-worker/prepare_blocklist.py`. O metadata inclui versão derivada do
+conteúdo, contagem, checksum do texto e checksum do artefato público. O Worker
+confere schema, versão, ordenação, contagem e checksum antes de resolver.
 
-The resolver answers A/AAAA bootstrap queries for the two DoH hostnames from
-the static endpoint address set. This is an explicit recursion guard. Because
-the DoH destination routes are not included in the Packet Tunnel, the HTTPS
-connection itself cannot loop back through Adless; the bootstrap answer also
-prevents the system resolver from needing an upstream plaintext DNS path.
+O workflow rejeita fonte vazia, lista inválida e variação acima do limite sem
+`--allow-large-change`. Ele gera em diretório candidato e substitui cada
+artefato validado atomically; uma versão anterior válida permanece disponível
+para rollback no histórico de deploy.
 
-## Shared data and privacy
+## Estatísticas
 
-```text
-Library/Application Support/
-├── Blocklists/blocklist.txt
-├── Blocklists/blocklist.txt.gz
-├── Blocklists/manifest.json
-├── Blocklists/update-state.json
-├── BlockingStats/blocking-stats.json
-└── Subscription/subscription-state.json
-```
+Quando bloqueia, o Worker agenda uma escrita best effort em
+`StatsDurableObject` com apenas `increment: 1`. O ID do Durable Object é
+derivado do token; seu armazenamento contém somente `blockedTotal` e
+`updatedAt`. QNAME, pacote DNS e IP não são dimensões nem valores persistidos.
 
-Blocklist and state writes are atomic and protected until first user
-authentication. Blocking counters are accumulated in memory and flushed in
-batches, on a moderate timer, and when the extension stops.
+`GET /v1/stats` exige `Authorization: Bearer <token>` com o mesmo formato do
+endpoint DoH e retorna `{ blockedTotal, updatedAt }`. O app lê em primeiro
+plano e após ativação, preserva o último valor offline e nunca reduz a UI.
+Rate limiting é mantido na edge por janela curta e IP/token apenas em memória;
+nenhum IP é gravado em armazenamento de aplicação.
 
-Sentry receives only lifecycle/error diagnostics. Event tags include operation,
-NSError domain/code, sanitized localized description, and VPN status. DNS
-queries, hostnames, URLs, accessed IP addresses, payloads, and browsing history
-are not sent or logged. Release archives generate dSYMs for both
-`Adless.app` and `PacketTunnel.appex`; CI uploads the archive symbol directory
-when `SENTRY_AUTH_TOKEN` is configured.
+O token compartilhado é um identificador anônimo e segredo de baixo privilégio,
+não uma barreira antifraude perfeita. Não há conta, login ou validação remota
+de compra.
 
-## Portal requirements
+## Privacidade e interferências
 
-Create or update these Apple Developer identifiers and capabilities:
+Todas as consultas DNS escolhidas pelo iOS para o Adless passam pelo endpoint
+HTTPS do serviço. Consultas bloqueadas não seguem para um resolvedor; as
+permitidas seguem para Cloudflare DNS ou Quad9. O serviço não vende dados, não
+usa consultas para publicidade e não mantém histórico de domínios. Cloudflare
+é provedor da edge e os resolvedores aplicam suas próprias políticas. Logs de
+aplicação não recebem QNAME, pacote DNS, token, IP ou URL completa.
 
-1. `com.orbeworks.adless` and `com.orbeworks.adless.dev` as App IDs with App
-   Groups and Network Extensions / Packet Tunnel enabled.
-2. `com.orbeworks.adless.tunnel` and
-   `com.orbeworks.adless.dev.tunnel` as extension App IDs with the same
-   corresponding App Group and Packet Tunnel provider capability.
-3. Keep the production and development App Groups separate as listed above.
-4. Regenerate development/distribution provisioning profiles after the
-   capability and identifier changes. No MDM or private entitlement is used.
+Isso não promete anonimato, ocultação de IP, ausência absoluta de logs de
+infraestrutura ou que o provedor de acesso não possa inferir destinos. Private
+Relay, “Limitar Rastreamento de Endereço IP”, outro perfil DNS, outra VPN,
+captive portal e políticas da rede podem substituir ou impedir o DNS salvo.

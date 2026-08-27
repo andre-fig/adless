@@ -1,113 +1,99 @@
 # Adless
 
-Monorepo do Adless, com o aplicativo iOS e sua landing page no mesmo repositório.
+Monorepo do Adless: aplicativo iOS em SwiftUI, serviço DNS Cloudflare Worker e
+landing page estática.
 
 ## Estrutura
 
 ```text
-apps/
-├── ios/            # Aplicativo iOS em SwiftUI + NetworkExtension
-└── landing-page/   # Landing page em React + Vite
+apps/ios/              # app SwiftUI e configuração DNS nativa do iOS
+apps/dns-worker/       # endpoint RFC 8484 e contadores Durable Object
+apps/landing-page/     # landing page React + Vite
+tools/blocklists/      # geração e validação determinística
 ```
 
-## Landing page
+O app usa `NEDNSSettingsManager` com `NEDNSOverHTTPSSettings`. Ao tocar em
+Ativar, ele salva a configuração para `https://dns.adless.app/<token>/dns-query`;
+o iOS pode exigir que o usuário habilite a configuração em Ajustes. Somente DNS
+passa pelo serviço Adless. Sites, vídeos, mensagens e downloads continuam indo
+diretamente aos destinos. Não há conta, login, backend de usuários ou proxy de
+tráfego.
 
-Requer Node.js 20+ e npm.
+A cobrança continua exclusivamente pela App Store com StoreKit 2. Os produtos
+são mensal e anual, com trial de sete dias configurado no App Store Connect.
+
+## Desenvolvimento
+
+Requer Node.js 20+, npm, Python 3 e Xcode.
 
 ```sh
-npm install
+npm ci
 npm run dev:landing
-```
-
-Outros comandos úteis:
-
-```sh
-npm run build:landing
 npm run lint
 npm run typecheck
-npm run preview:landing
-npm run setup:hooks
+npm run build:landing
+npm run build:dns-worker
+npm run test:dns-worker
+python3 -m unittest discover -s tools/blocklists/tests -v
 ```
 
-`npm install` e `npm ci` ativam automaticamente os hooks locais versionados em
-`.githooks/`; `npm run setup:hooks` continua disponível para reativá-los
-manualmente. O
-`pre-commit` executa somente verificações rápidas nos arquivos staged. O
-`pre-push` roda apenas os testes relacionados aos caminhos que serão enviados:
-blocklist, lint/typecheck/build da landing ou XCTest do iOS. Isso antecipa
-falhas antes de consumir um runner do GitHub; os workflows continuam sendo a
-validação final.
+Para o iOS, abra `apps/ios/Adless.xcodeproj`. Os schemes `Adless Dev` e
+`Adless` diferenciam somente o identificador e o nome exibido; o target de
+produção é `Adless`, acompanhado de `AdlessTests`.
 
-## Aplicativo iOS
+```sh
+xcodebuild -project apps/ios/Adless.xcodeproj -scheme Adless \
+  -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build
+```
 
-Abra `apps/ios/Adless.xcodeproj` no Xcode. Para desenvolvimento local, execute
-o scheme `Adless Dev`, que usa os IDs e o App Group de desenvolvimento e pode
-coexistir com o app oficial. Para TestFlight/App Store, execute o scheme
-`Adless`, que usa exclusivamente o App Group
-`group.com.orbeworks.adless` para os targets `Adless` e `PacketTunnel`. O
-target `PacketTunnel` precisa da capability Network Extension (Packet Tunnel)
-no App ID correspondente.
+## DNS Cloud
 
-A cobrança é feita exclusivamente pela App Store com StoreKit 2, sem backend,
-login ou banco próprio. O app oferece assinaturas mensal e anual com trial de
-7 dias configurado no App Store Connect.
+O endpoint de produção é:
 
-### DNS criptografado
+```text
+https://dns.adless.app/<installation-token>/dns-query
+```
 
-O bloqueio continua local: consultas bloqueadas recebem uma resposta local e
-não saem do aparelho. Consultas permitidas são encaminhadas pela extensão por
-DNS-over-HTTPS (DoH), usando HTTPS/TLS válido, para o Cloudflare DNS como
-principal (`https://cloudflare-dns.com/dns-query`) e Quad9 como fallback
-(`https://dns.quad9.net/dns-query`). O app não possui servidor próprio, não
-envia métricas ou logs e nunca faz fallback silencioso para DNS UDP em texto
-puro. Uma única sessão HTTPS é reutilizada durante a vida do provider; após
-falhas consecutivas do primário, um circuit breaker usa temporariamente o
-fallback e é resetado quando a rede muda. A política e os testes estão detalhados em
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) e
-[`docs/TESTING.md`](docs/TESTING.md).
+Ele aceita POST `application/dns-message` e GET RFC 8484 com `dns` em Base64URL.
+O Worker normaliza a lista em memória, bloqueia na edge e consulta
+`https://cloudflare-dns.com/dns-query` como principal e
+`https://dns.quad9.net/dns-query` como fallback sequencial. Nenhuma consulta é
+enviada em DNS sem criptografia.
+
+```sh
+npm --prefix apps/dns-worker run test
+npm --prefix apps/dns-worker run prepare:blocklist
+npx --yes wrangler@4 deploy --config apps/dns-worker/wrangler.toml
+```
+
+O deploy precisa de `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` no ambiente
+ou nos secrets do GitHub. O endpoint de estatísticas é `GET /v1/stats` com
+`Authorization: Bearer <installation-token>` e retorna somente o total agregado.
+Detalhes de DNS, blocklist, custos, secrets, rollback e incidentes estão em
+[`docs/dns-cloud.md`](docs/dns-cloud.md).
 
 ## Blocklist
 
-A blocklist é gerada sem backend pelo workflow diário
-`.github/workflows/update-blocklist.yml`. A fonte habilitada no MVP é somente a
-OISD Small; atribuição e licença estão em
-[THIRD_PARTY_BLOCKLISTS.md](THIRD_PARTY_BLOCKLISTS.md).
-
-Os artefatos públicos ficam em `apps/landing-page/public/blocklists/` e são
-servidos pela mesma build estática da landing. A URL esperada do manifesto é
-`https://andre-fig.github.io/adless/blocklists/manifest.json`. O app consulta o manifesto no
-máximo uma vez a cada 24 horas, valida uma nova versão em arquivo temporário e
-mantém a lista local anterior ou a lista embutida quando está offline ou quando
-uma atualização falha.
-
-Para gerar manualmente e atualizar também o fallback embutido:
+A fonte habilitada no MVP é a OISD Small. Os artefatos públicos continuam em
+`apps/landing-page/public/blocklists/`, e a cópia gerada para o Worker fica em
+`apps/dns-worker/data/`. O workflow semanal baixa, normaliza, aplica a allowlist,
+valida, gera o pacote edge e só publica uma alteração válida. Uma lista vazia,
+inválida ou com variação inesperada não substitui a versão anterior.
 
 ```sh
-python3 -m unittest discover -s tools/blocklists/tests -v
-python3 tools/blocklists/generate_blocklist.py --sync-seed
+python3 tools/blocklists/generate_blocklist.py --sync-worker
+python3 tools/dns-worker/prepare_blocklist.py
 python3 tools/blocklists/validate_blocklist.py
 ```
 
-Detalhes operacionais estão em
-[`tools/blocklists/README.md`](tools/blocklists/README.md).
+O checksum é derivado do conteúdo e `generatedAt` permanece estável quando não
+há mudança real. A atribuição está em
+[`THIRD_PARTY_BLOCKLISTS.md`](THIRD_PARTY_BLOCKLISTS.md).
 
-O workflow `deploy-pages.yml` publica a build da landing no GitHub Pages após
-alterações relevantes da landing ou dos artefatos públicos da blocklist. É
-necessário selecionar `GitHub Actions` como fonte de publicação em Settings →
-Pages no repositório. Cada workflow usa `concurrency` e cancela a execução
-anterior do mesmo grupo quando uma nova é disparada.
+## Publicação
 
-O desenvolvimento acontece na branch `develop`; cada alteração de produção do
-iOS enviada para `develop` gera automaticamente um build Release no TestFlight
-por meio de `.github/workflows/testflight-ios.yml`. Esse workflow usa os
-produtos reais do App Store Connect/Sandbox e não usa o arquivo local
-`.storekit`. O `pre-push` local executa os testes do iOS antes do envio e o
-workflow roda novamente no PR. Um merge para `main` inicia o workflow de release quando há
-alteração de produção no app. Se a versão correspondente estiver preparada no
-App Store Connect, o workflow `release-ios.yml` também testa, cria o build,
-envia o IPA e submete a versão para revisão automaticamente. Ele não cria
-metadata ou preços e ignora com sucesso versões que já estão em revisão. Os
-secrets necessários e o procedimento estão em
-[`docs/ios-release.md`](docs/ios-release.md).
-
-Consulte os READMEs de [apps/ios](apps/ios/README.md) e [apps/landing-page](apps/landing-page/README.md) para detalhes específicos de cada projeto.
+`deploy-pages.yml` publica a landing page. `deploy-dns-worker.yml` publica o
+Worker quando os secrets Cloudflare estão configurados. `testflight-ios.yml` e
+`release-ios.yml` usam os secrets do App Store Connect documentados em
+[`docs/ios-release.md`](docs/ios-release.md). Nenhum workflow faz push para
+branches sem a finalidade específica de atualizar artefatos.

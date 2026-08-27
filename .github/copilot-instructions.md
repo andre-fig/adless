@@ -2,171 +2,84 @@
 
 ## Repository shape
 
-Adless is a monorepo with two products and a tooling area:
+- `apps/ios/`: SwiftUI app and XCTest target;
+- `apps/dns-worker/`: Cloudflare Worker RFC 8484 and Durable Object stats;
+- `apps/landing-page/`: static React + Vite + TypeScript site;
+- `tools/blocklists/`: deterministic Python generator, validator, fixtures and tests;
+- `tools/dns-worker/`: generated edge bundle preparation.
 
-- `apps/ios/`: SwiftUI app, local Packet Tunnel Network Extension, and XCTest target.
-- `apps/landing-page/`: static React + Vite + TypeScript landing page.
-- `tools/blocklists/`: deterministic Python blocklist generator, validator,
-  fixtures, and tests.
-- `apps/landing-page/public/blocklists/`: generated files published through
-  GitHub Pages.
-
-Read the repository instruction file (`AGENT.md` or `AGENTS.md`) and the README
-for the area being changed before editing.
-Preserve unrelated working-tree changes and keep changes limited to the task.
+Read `AGENTS.md` and the README for the area being changed before editing.
+Preserve unrelated working-tree changes and keep the task scoped.
 
 ## Architectural boundaries
 
-- Do not introduce a backend, database, login, custom authentication, Railway,
-  admin panel, or subscription server.
-- Purchases are handled only by StoreKit 2 and App Store Connect. The app has
-  no user account and no payment or personal identity database.
-- The iOS product is a local DNS sinkhole. It uses a Packet Tunnel Network
-  Extension only for DNS and does not route traffic through an external VPN server.
-- Prefer existing dependencies and the standard library. Do not add a heavy
-  dependency for functionality already provided by the project or Apple SDKs.
-- Never add HTTP URLs, secrets, private keys, certificates, provisioning
-  profiles, or generated build products to the repository.
+The iOS app configures Apple encrypted DNS with
+`NEDNSSettingsManager`/`NEDNSOverHTTPSSettings`. The Worker applies the
+blocklist at the edge and forwards only allowed DNS wire messages to Cloudflare
+DoH then Quad9 on transient failure. It is not a general traffic proxy.
+
+Do not add accounts, login, a payment backend, remote receipt validation, DNS
+UDP, plaintext fallback, a network interface, traffic routes or private APIs.
+Purchases remain StoreKit 2/App Store Connect. Prefer existing dependencies and
+the standard library. Never commit secrets, keys, profiles, certificates or
+build products.
 
 ## iOS rules
 
-Targets in `apps/ios/Adless.xcodeproj` are:
+Targets in `apps/ios/Adless.xcodeproj` are `Adless` and `AdlessTests`. The only
+Network Extension capability is `dns-settings`. `isEnabled` is read-only; save
+the configuration, reload preferences, and reflect the actual system state.
+Handle foreground, restart, network changes, manual removal and expired
+subscription without a persisted fake protection flag.
 
-- `Adless`: the SwiftUI application;
-- `PacketTunnel`: the local Packet Tunnel extension;
-- `AdlessTests`: XCTest.
+The installation token is 32 random bytes in Keychain
+`AfterFirstUnlockThisDeviceOnly`; it is not derived from IDFA, IDFV, Apple
+Account or hardware. Never log it. Do not store a DNS list in the app bundle or
+an App Group; the edge artifact is the source of filtering.
 
-The existing App Group is `group.com.orbeworks.adless`. Verify both targets
-before changing entitlements, capabilities, or shared-file paths. The active
-blocklist is shared through:
+## Worker rules
 
-```text
-Library/Application Support/Blocklists/blocklist.txt
-```
+Keep RFC 8484 wire transport (`application/dns-message`), strict size/method/
+header validation, transaction ID and EDNS preservation, exact plus suffix
+matching, and a finite in-memory cache bounded by received TTL. Valid DNS
+errors such as NXDOMAIN are final responses and do not trigger fallback.
+Fallback is sequential and HTTPS-only. Do not log QNAME, DNS payload, token or
+IP. Stats store only a numeric increment and aggregate total.
 
-The app must work offline using
-`apps/ios/Adless/Resources/SeedBlocklist.txt`. Downloaded lists must be
-validated in a temporary file and installed by atomic replacement. A failed
-update must preserve the last valid list and must never disable protection.
-Do not use `Documents` or modify the read-only app bundle at runtime.
-
-The app uses StoreKit 2 with these product identifiers:
-
-```text
-com.orbeworks.adless.pro.monthly
-com.orbeworks.adless.pro.yearly
-```
-
-Entitlement state must come from verified Apple transactions and their expiry
-or grace-period state. Use `Transaction.currentEntitlements`,
-`Transaction.updates`, and `AppStore.sync()` as appropriate. Never implement a
-permanent hard-coded subscription flag. The seven-day trial is configured in
-App Store Connect or the local `.storekit` configuration, not by inventing a
-separate server-side trial system.
-
-The simulator is suitable for builds, UI work, and unit tests. Full DNS
-interception must be tested on a physical iPhone.
+Worker tests must use mocks and cover malformed messages, all relevant query
+types, blocked/allowed names, allowlist, cache, concurrency, rate limit,
+fallback, SERVFAIL and blocklist integrity.
 
 ## Blocklist rules
 
-The enabled MVP source is declared in `tools/blocklists/sources.json` and is
-the official OISD Small source. Do not hard-code domains in Swift or in the
-DNS extension. Generated artifacts must be produced by the Python pipeline:
+The enabled source is the official OISD Small source in
+`tools/blocklists/sources.json`; allowlist handling remains declarative. The
+generator creates the public landing artifacts and the Worker copy. Do not
+edit generated files manually or execute downloaded content.
 
-- `apps/landing-page/public/blocklists/manifest.json`;
-- `apps/landing-page/public/blocklists/blocklist.txt`;
-- `apps/landing-page/public/blocklists/blocklist.txt.gz`;
-- `apps/landing-page/public/blocklists/blocklist.sha256`;
-- `apps/ios/Adless/Resources/SeedBlocklist.txt` when the seed is synchronized.
+```sh
+python3 -m unittest discover -s tools/blocklists/tests -v
+python3 tools/blocklists/generate_blocklist.py --sync-worker
+python3 tools/dns-worker/prepare_blocklist.py
+python3 tools/blocklists/validate_blocklist.py
+```
 
-The published SHA-256 is for `blocklist.txt.gz`. The canonical text output is
-deterministic; `generatedAt` must not create a commit when the content is
-unchanged. Generated files must not be edited manually.
-
-The generator must keep HTTPS-only downloads, bounded size and timeouts,
-syntax validation, duplicate removal, allowlist handling, minimum and maximum
-domain limits, abnormal-change protection, deterministic ordering, and atomic
-artifact replacement. Never execute content downloaded from a blocklist.
-Update `THIRD_PARTY_BLOCKLISTS.md` when sources or licensing information
-change.
-
-Run blocklist tests with fixtures; unit tests must not depend on live internet
-downloads.
-
-## Landing page rules
-
-The landing page uses React, Vite, TypeScript, Tailwind CSS, and shadcn/ui.
-Its public directory is `apps/landing-page/public/`. Blocklist files must stay
-outside the JavaScript bundle and remain directly addressable under
-`/blocklists/`.
-
-Use strict TypeScript and the existing ESLint flat configuration. Avoid
-`any`, floating promises, unused variables, and untyped public APIs. Keep
-React component and hook conventions consistent with the existing code.
-
-From the repository root, use:
+## Commands and automation
 
 ```sh
 npm ci
 npm run lint
 npm run typecheck
 npm run build:landing
-npm run dev:landing
+npm run build:dns-worker
+npm run test:dns-worker
 ```
 
-## GitHub Actions rules
+Keep workflow concurrency, timeouts, least-privilege permissions and explicit
+generated paths. The Worker deployment uses only
+`CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`; iOS distribution uses the
+documented App Store Connect secrets. Run `actionlint` when available.
 
-The development flow is:
-
-```text
-develop -> pull request -> main
-```
-
-Current workflow responsibilities are:
-
-- `testflight-ios.yml`: on relevant `develop` changes, creates a signed Release
-  archive, validates and uploads it to TestFlight, then waits for Apple
-  processing. It does not submit an App Store version for review.
-- `ios-tests.yml`: iOS tests on PRs and manual dispatch. It does not run for
-  every push to `develop`.
-- `release-ios.yml`: on relevant `main` changes, performs App Store Connect
-  preflight, iOS tests, archive, export, validation, upload, processing wait,
-  and review submission.
-- `update-blocklist.yml`: weekly scheduled blocklist update and manual
-  dispatch. It commits only explicit generated paths when content changes.
-- `deploy-pages.yml`: deploys the landing and public blocklist artifacts to
-  GitHub Pages after relevant `main` changes or manual dispatch.
-
-When changing workflows:
-
-- keep `concurrency` with `cancel-in-progress: true`;
-- keep explicit timeouts and least-privilege permissions;
-- avoid duplicate triggers and duplicate test/build jobs;
-- never use `git add .` or `git add -A` in automation;
-- add only the expected generated paths;
-- run `actionlint` when available;
-- do not add secrets to logs or workflow outputs;
-- check the resulting GitHub run after publishing workflow changes.
-
-## Local validation and delivery
-
-`npm install` and `npm ci` activate the versioned hooks through the root
-`prepare` script. The pre-commit hook should remain quick. The pre-push hook
-runs targeted checks based on changed paths, including iOS XCTest for iOS
-changes.
-
-Before finishing a change, run the smallest relevant checks and report exactly
-what ran and whether it passed. For broad changes, use:
-
-```sh
-git diff --check
-python3 -m unittest discover -s tools/blocklists/tests -v
-npm run lint
-npm run typecheck
-npm run build:landing
-```
-
-For iOS changes, also run the appropriate `xcodebuild` build or XCTest target.
-For workflow changes, run `actionlint`. Check `git status --short --branch`
-before delivery and do not claim a build, test, deployment, or App Store
-submission succeeded unless it was actually observed.
+Before delivery, run `git diff --check`, relevant tests, iOS build/XCTest, and
+the archive/IPA checks in `tools/ios/`. Do not claim deployment or distribution
+success without observing it.

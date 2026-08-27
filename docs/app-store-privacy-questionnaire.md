@@ -6,26 +6,32 @@ Official Apple instructions: [Manage app privacy](https://developer.apple.com/he
 
 ## Recommended answers for the current binary
 
-- Data collection: **Yes — diagnostics only.**
+- Data collection: **Yes — diagnostics and aggregate app-usage statistics.**
 - Diagnostics: crash data, performance data, and other technical diagnostics sent to Sentry to improve reliability.
+- App usage statistics: an aggregate blocked total associated with a random installation token; no domains, DNS packets, IP addresses, or query history.
 - Tracking: **No**.
 - Data linked to the user: **Not linked to the user**; Adless does not create an account, set a Sentry user identity, or send custom identifiers.
 - Account creation or login: **None**.
 - Advertising or analytics SDK: **None**. Sentry is used only for crash and performance diagnostics.
-- Browsing history and DNS queries: **Not collected or retained by Orbe Works
-  or sent to Sentry**. Permitted DNS queries are sent to the configured
-  third-party DoH providers solely to obtain DNS answers.
+- Browsing history and DNS queries: **Not collected or retained as application
+  history by Orbe Works or sent to Sentry**. All DNS selected for Adless passes
+  through the Adless HTTPS service; blocked names are not sent to an upstream,
+  and permitted queries are sent to Cloudflare DNS or Quad9 solely to obtain DNS
+  answers.
 - Purchases: StoreKit presents the App Store subscription purchase flow; payment and subscription management are handled by Apple, not by an Adless account or backend.
 
 Adless makes HTTPS requests to the public GitHub Pages blocklist to retrieve a
-manifest and a static list. It also sends permitted DNS wire queries over
-DNS-over-HTTPS to Cloudflare DNS or Quad9 to obtain answers. These requests are
-not associated with an Adless account, are not used for tracking, and Adless
-does not retain or send browsing history or DNS query data to Orbe Works or
-Sentry. Sentry is configured with default PII collection disabled, network
-tracking disabled, and no screenshots or view hierarchy attachments. Recheck
-the App Store privacy answers against the final binary and the providers'
-current privacy terms before submitting a release.
+manifest and a static list. It also sends DNS wire queries over HTTPS to the
+Adless DNS service, which applies the blocklist and forwards permitted queries
+to Cloudflare DNS or Quad9. The service stores only aggregate blocked totals by
+anonymous installation token, not domains or query history. These requests are
+not associated with an account and are not used for tracking. Cloudflare may
+process technical request metadata under its infrastructure/logging systems;
+the Adless application does not enable request logs or send DNS wire data,
+domains, URLs, IP addresses, or the installation token to Sentry. Sentry is
+configured with default PII collection disabled, network tracking disabled, and
+no screenshots or view hierarchy attachments. Recheck these answers against
+the final binary and the providers' current privacy terms before submitting.
 
 ## Privacy policy
 

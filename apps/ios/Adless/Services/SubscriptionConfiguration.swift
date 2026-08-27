@@ -10,7 +10,6 @@ enum SubscriptionConfiguration {
         yearlyProductID
     ]
 
-    static let appGroupIdentifier = BlocklistConfiguration.appGroupIdentifier
     static let subscriptionDirectoryName = "Subscription"
     static let subscriptionStateFileName = "subscription-state.json"
 

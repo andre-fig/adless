@@ -1,7 +1,7 @@
 import LegalLayout from "./LegalLayout";
 
 const PrivacyPolicy = () => (
-  <LegalLayout title="Privacy Policy" updatedAt="August 20, 2026">
+  <LegalLayout title="Privacy Policy" updatedAt="August 26, 2026">
     <p>
       Adless is developed by Orbe Works. This Privacy Policy explains what happens
       when you use the Adless iOS app and website.
@@ -9,44 +9,64 @@ const PrivacyPolicy = () => (
 
     <h2>What Adless does</h2>
     <p>
-      Adless uses Apple&apos;s Network Extension Packet Tunnel to process DNS queries on
-      your device and block domains included in the active blocklist. Blocked
-      names are answered locally. Permitted DNS queries are sent as encrypted
-      DNS-over-HTTPS wire messages to Cloudflare DNS or Quad9 so they can be
-      resolved. Adless does not operate a server or a remote VPN service.
+      All DNS queries selected by iOS for Adless are sent over HTTPS to the
+      Adless DNS service. The edge checks the active blocklist: blocked names are
+      answered there and are not sent to a resolver; permitted names are sent as
+      encrypted DNS-over-HTTPS messages to Cloudflare DNS first, with Quad9 as a
+      fallback. Only DNS uses Adless infrastructure. Websites, videos, messages,
+      and downloads go directly from your device to their destinations.
     </p>
 
     <h2>Information we collect</h2>
     <p>
       Orbe Works does not collect or retain account information, browsing history,
       DNS query history, advertising identifiers, or payment information through
-      Adless. The app has no account, login, or custom backend. Blocking statistics
-      are stored locally in the app&apos;s protected storage. Permitted DNS queries
-      are transmitted to the configured third-party DNS providers only to obtain
-      DNS answers; their handling is governed by their own privacy policies.
-      Adless does use Sentry for crash and performance diagnostics; it receives
-      technical diagnostic data such as app version, operating system, device
-      model, stack traces, and timing data. Adless does not send DNS queries,
-      domain names, browsing history, or a user identity to Sentry.
+      Adless. The app has no account or login. The service stores only an
+      aggregate blocked total associated with an anonymous installation token;
+      it does not store domains, DNS packets, or an application-level history.
+      Because a DoH GET can carry the DNS wire message in the URL and the
+      installation token is part of the endpoint path, Cloudflare may process
+      technical request metadata under its infrastructure and logging systems;
+      Adless does not enable application-level request logging or send these
+      values to Sentry.
+      Permitted DNS queries are transmitted to Cloudflare DNS or Quad9 only to
+      obtain DNS answers; their handling is governed by their own policies.
+      Adless uses Sentry for crash and performance diagnostics, but does not send
+      DNS queries, domain names, browsing history, or the installation token to it.
     </p>
 
     <h2>Third-party services</h2>
     <p>
       Apple processes App Store purchases and subscriptions under Apple&apos;s own
-      terms and privacy policy. Cloudflare DNS and Quad9 process permitted
-      DNS-over-HTTPS queries to return DNS answers under their respective service
-      and privacy policies. Sentry, operated by Functional Software, Inc.,
-      processes crash and performance diagnostics for reliability purposes under its
-      privacy policy. Adless downloads public, static blocklist files from GitHub
-      Pages. Those requests can include standard technical connection information
-      handled by the hosting provider, such as an IP address.
+      terms and privacy policy. Cloudflare provides infrastructure for the Adless
+      edge service. Cloudflare DNS and Quad9 process permitted DNS-over-HTTPS
+      queries to return DNS answers under their respective service and privacy
+      policies. Sentry, operated by Functional Software, Inc., processes crash
+      and performance diagnostics for reliability. Adless downloads public,
+      static blocklist files from GitHub Pages; hosting providers can process
+      standard technical connection information for those requests.
     </p>
 
     <h2>Data retention and deletion</h2>
     <p>
-      Adless does not maintain a user account or server-side user record. Local
-      blocklists, subscription state, and blocking statistics can be removed by
-      deleting the app. Apple manages purchase records and subscription history.
+      Adless does not maintain a user account or domain history. The aggregate
+      counter is removed from the app's data when you delete it. The
+      device-bound Keychain token may remain in the Keychain after uninstall on
+      the same device; it is not migrated to a new device. The service retains
+      only aggregate counter data needed to show the total and operate the
+      service; it is not a domain history. This version has no token-deletion
+      endpoint. Apple
+      manages purchase records and subscription history. Adless does not sell
+      data or use DNS queries for advertising.
+    </p>
+
+    <h2>Important limitations</h2>
+    <p>
+      DNS encryption protects the connection to the configured service; Adless
+      does not promise anonymity, hide your IP address, prevent infrastructure
+      logs, or guarantee that your internet provider cannot infer destinations.
+      iCloud Private Relay, IP address tracking limits, another DNS profile, a
+      VPN, a captive portal, or network policy can change which resolver iOS uses.
     </p>
 
     <h2>Children</h2>

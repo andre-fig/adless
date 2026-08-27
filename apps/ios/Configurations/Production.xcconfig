@@ -1,7 +1,6 @@
 // Official App Store, TestFlight, and production configuration.
 ADLESS_ENVIRONMENT = production
 ADLESS_APP_BUNDLE_IDENTIFIER = com.orbeworks.adless
-ADLESS_PACKET_TUNNEL_BUNDLE_IDENTIFIER = com.orbeworks.adless.tunnel
-ADLESS_APP_GROUP_IDENTIFIER = group.com.orbeworks.adless
 ADLESS_DISPLAY_NAME = Adless
 ADLESS_TEST_BUNDLE_IDENTIFIER = com.orbeworks.adless.tests
+ADLESS_DNS_CLOUD_BASE_URL = https:/$()/dns.adless.app

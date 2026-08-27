@@ -1,22 +1,22 @@
 import Foundation
 
 enum BlocklistParser {
-    static func parseCanonical(_ data: Data, maximumDomains: Int = BlocklistConfiguration.maximumDomainCount) throws -> Set<String> {
+    static func parseCanonical(_ data: Data, maximumDomains: Int = 200_000) throws -> Set<String> {
         guard let text = String(data: data, encoding: .utf8), text.hasSuffix("\n") else {
-            throw BlocklistUpdateError.invalidBlocklist
+            throw BlocklistParserError.invalidBlocklist
         }
         let lines = text.split(separator: "\n", omittingEmptySubsequences: true).map(String.init)
         guard !lines.isEmpty, lines.count <= maximumDomains else {
-            throw BlocklistUpdateError.invalidBlocklist
+            throw BlocklistParserError.invalidBlocklist
         }
         guard lines == lines.sorted(), lines.count == Set(lines).count else {
-            throw BlocklistUpdateError.invalidBlocklist
+            throw BlocklistParserError.invalidBlocklist
         }
 
         var result = Set<String>(minimumCapacity: lines.count)
         for line in lines {
             guard normalize(line) == line else {
-                throw BlocklistUpdateError.invalidBlocklist
+                throw BlocklistParserError.invalidBlocklist
             }
             result.insert(line)
         }
@@ -30,4 +30,8 @@ enum BlocklistParser {
     static func matches(domain: String, entries: Set<String>) -> Bool {
         DNSDomainMatcher.matches(domain: domain, entries: entries)
     }
+}
+
+enum BlocklistParserError: Error {
+    case invalidBlocklist
 }

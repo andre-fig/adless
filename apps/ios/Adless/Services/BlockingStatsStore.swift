@@ -5,22 +5,29 @@ struct BlockingStatsSnapshot: Codable, Equatable {
     let dayKey: String
     var todayCount: Int
     var allTimeCount: Int
+    var dayBaselineTotal: Int?
+
+    init(dayKey: String, todayCount: Int, allTimeCount: Int, dayBaselineTotal: Int? = nil) {
+        self.dayKey = dayKey
+        self.todayCount = todayCount
+        self.allTimeCount = allTimeCount
+        self.dayBaselineTotal = dayBaselineTotal
+    }
 
     static func empty(for dayKey: String) -> BlockingStatsSnapshot {
-        BlockingStatsSnapshot(dayKey: dayKey, todayCount: 0, allTimeCount: 0)
+        BlockingStatsSnapshot(dayKey: dayKey, todayCount: 0, allTimeCount: 0, dayBaselineTotal: nil)
     }
 }
 
+/// Stores only the last known cloud total and a local day baseline. The edge
+/// service remains authoritative; this cache keeps the existing counter UI
+/// useful while the device is offline and prevents visible decreases.
 struct BlockingStatsStore {
     private let fileManager: FileManager
     private let baseDirectory: URL?
     private let fixedNow: Date?
 
-    init(
-        fileManager: FileManager = .default,
-        baseDirectory: URL? = nil,
-        now: Date? = nil
-    ) {
+    init(fileManager: FileManager = .default, baseDirectory: URL? = nil, now: Date? = nil) {
         self.fileManager = fileManager
         self.baseDirectory = baseDirectory
         self.fixedNow = now
@@ -39,41 +46,63 @@ struct BlockingStatsStore {
             let rolledOver = BlockingStatsSnapshot(
                 dayKey: today,
                 todayCount: 0,
-                allTimeCount: snapshot.allTimeCount
+                allTimeCount: snapshot.allTimeCount,
+                dayBaselineTotal: snapshot.allTimeCount
             )
             try? save(rolledOver)
             return rolledOver
         }
-
         return snapshot
     }
 
+    @discardableResult
+    func updateRemoteTotal(_ remoteTotal: Int) -> BlockingStatsSnapshot {
+        let previous = read()
+        let total = max(previous.allTimeCount, max(0, remoteTotal))
+        let baseline = previous.dayBaselineTotal
+            ?? (previous.allTimeCount == 0 && previous.todayCount == 0
+                ? total
+                : max(0, previous.allTimeCount - previous.todayCount))
+        let today = max(previous.todayCount, max(0, total - baseline))
+        let next = BlockingStatsSnapshot(
+            dayKey: previous.dayKey,
+            todayCount: today,
+            allTimeCount: total,
+            dayBaselineTotal: baseline
+        )
+        try? save(next)
+        return next
+    }
+
     func save(_ snapshot: BlockingStatsSnapshot) throws {
+        try fileManager.createDirectory(at: rootURL, withIntermediateDirectories: true)
         let data = try JSONEncoder().encode(snapshot)
-        try atomicWrite(data, to: stateURL)
+        let temporary = rootURL.appendingPathComponent(".blocking-stats-\(UUID().uuidString).tmp")
+        do {
+            try data.write(to: temporary)
+            guard rename(temporary.path, stateURL.path) == 0 else {
+                throw CocoaError(.fileWriteUnknown, userInfo: [NSFilePathErrorKey: stateURL.path])
+            }
+            try? fileManager.setAttributes(
+                [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication],
+                ofItemAtPath: stateURL.path
+            )
+        } catch {
+            try? fileManager.removeItem(at: temporary)
+            os_log("Blocking stats cache write failed: %{public}@", log: .default, type: .error, error.localizedDescription)
+            throw error
+        }
     }
 
     static func dayKey(for date: Date, timeZone: TimeZone = .current) -> String {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
         let components = calendar.dateComponents([.year, .month, .day], from: date)
-        let year = String(components.year ?? 0).leftPadded(to: 4)
-        let month = String(components.month ?? 0).leftPadded(to: 2)
-        let day = String(components.day ?? 0).leftPadded(to: 2)
-        return "\(year)-\(month)-\(day)"
+        return String(format: "%04d-%02d-%02d", components.year ?? 0, components.month ?? 0, components.day ?? 0)
     }
 
     private var rootURL: URL {
         if let baseDirectory { return baseDirectory }
-        if let group = fileManager.containerURL(
-            forSecurityApplicationGroupIdentifier: BuildEnvironment.appGroupIdentifier
-        ) {
-            return group
-                .appendingPathComponent("Library", isDirectory: true)
-                .appendingPathComponent("Application Support", isDirectory: true)
-                .appendingPathComponent("BlockingStats", isDirectory: true)
-        }
-
         let support = (try? fileManager.url(
             for: .applicationSupportDirectory,
             in: .userDomainMask,
@@ -87,100 +116,5 @@ struct BlockingStatsStore {
 
     private var stateURL: URL {
         rootURL.appendingPathComponent("blocking-stats.json")
-    }
-
-    private func atomicWrite(_ data: Data, to destination: URL) throws {
-        try fileManager.createDirectory(at: rootURL, withIntermediateDirectories: true)
-        do {
-            try data.write(to: destination, options: .atomic)
-            try? fileManager.setAttributes(
-                [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication],
-                ofItemAtPath: destination.path
-            )
-        } catch {
-            os_log("Blocking stats write failed: %{public}@", log: .default, type: .error, error.localizedDescription)
-            throw error
-        }
-    }
-}
-
-private extension String {
-    func leftPadded(to length: Int) -> String {
-        guard count < length else { return self }
-        return String(repeating: "0", count: length - count) + self
-    }
-}
-
-final class BlockingStatsRecorder: @unchecked Sendable {
-    private let queue = DispatchQueue(label: "com.orbeworks.adless.blocking-stats", qos: .utility)
-    private let store: BlockingStatsStore
-
-    private var snapshot: BlockingStatsSnapshot?
-    private var pendingCount = 0
-    private var scheduledFlush: DispatchWorkItem?
-
-    init(store: BlockingStatsStore = BlockingStatsStore()) {
-        self.store = store
-    }
-
-    func recordBlockedRequest() {
-        queue.async { [weak self] in
-            guard let self else { return }
-
-            let today = BlockingStatsStore.dayKey(for: Date())
-            if self.snapshot?.dayKey != today {
-                self.snapshot = self.store.read()
-                self.pendingCount = 0
-            }
-
-            guard var snapshot = self.snapshot else { return }
-            if snapshot.todayCount < Int.max {
-                snapshot.todayCount += 1
-            }
-            if snapshot.allTimeCount < Int.max {
-                snapshot.allTimeCount += 1
-            }
-            self.snapshot = snapshot
-            self.pendingCount += 1
-
-            if self.pendingCount >= 20 {
-                self.flushOnQueue()
-            } else {
-                self.scheduleFlushOnQueue()
-            }
-        }
-    }
-
-    func flush() {
-        queue.sync {
-            flushOnQueue()
-        }
-    }
-
-    private func scheduleFlushOnQueue() {
-        guard scheduledFlush == nil else { return }
-        let workItem = DispatchWorkItem { [weak self] in
-            self?.flushOnQueue()
-        }
-        scheduledFlush = workItem
-        queue.asyncAfter(deadline: .now() + 2, execute: workItem)
-    }
-
-    private func flushOnQueue() {
-        scheduledFlush?.cancel()
-        scheduledFlush = nil
-        guard pendingCount > 0, let snapshot else { return }
-
-        do {
-            try store.save(snapshot)
-            pendingCount = 0
-        } catch {
-            os_log("Blocking stats flush failed: %{public}@", log: .default, type: .error, error.localizedDescription)
-            scheduleFlushOnQueue()
-        }
-    }
-
-    deinit {
-        flush()
     }
 }

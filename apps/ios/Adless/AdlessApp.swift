@@ -1,6 +1,6 @@
 import SwiftUI
 import Combine
-import NetworkExtension
+import Foundation
 import Sentry
 
 @main
@@ -20,19 +20,21 @@ struct AdlessApp: App {
 
 @MainActor
 final class AppViewModel: ObservableObject {
-    @Published var isOn: Bool = false
+    @Published var isOn = false
     @Published var statusText: String = String(localized: "Off")
     @Published private(set) var isPreparing = true
     @Published private(set) var hasSubscription = false
     @Published var isSubscriptionPresented = false
+    @Published var isSystemApprovalAlertPresented = false
     @Published private(set) var blockedTodayCount = 0
     @Published private(set) var allTimeBlockCount = 0
 
-    private var blocklistManager: BlocklistManager?
-    private let blockingStatsStore = BlockingStatsStore()
-    private let vpnManager = VPNManager()
     let subscriptionManager = SubscriptionManager()
-    private var vpnStatusObserver: NSObjectProtocol?
+
+    private let dnsSettingsManager = DNSSettingsManager()
+    private let blockingStatsStore = BlockingStatsStore()
+    private let statsAPIClient = DNSStatsAPIClient()
+    private var dnsSettingsObserver: NSObjectProtocol?
 
     init() {
         subscriptionManager.onEntitlementChanged = { [weak self] hasAccess in
@@ -48,11 +50,12 @@ final class AppViewModel: ObservableObject {
             self.hasSubscription = true
             self.isSubscriptionPresented = false
             Task { @MainActor [weak self] in
-                await self?.activateBlocking()
+                await self?.activateProtection()
             }
         }
-        vpnStatusObserver = NotificationCenter.default.addObserver(
-            forName: .NEVPNStatusDidChange,
+
+        dnsSettingsObserver = NotificationCenter.default.addObserver(
+            forName: Notification.Name("NEDNSSettingsConfigurationDidChangeNotification"),
             object: nil,
             queue: .main
         ) { [weak self] _ in
@@ -73,13 +76,9 @@ final class AppViewModel: ObservableObject {
     }
 
     deinit {
-        if let vpnStatusObserver {
-            NotificationCenter.default.removeObserver(vpnStatusObserver)
+        if let dnsSettingsObserver {
+            NotificationCenter.default.removeObserver(dnsSettingsObserver)
         }
-    }
-
-    var blockedCount: Int {
-        blocklistManager?.cachedCount ?? 0
     }
 
     @MainActor
@@ -91,45 +90,41 @@ final class AppViewModel: ObservableObject {
         }
 
         if isOn {
-            let transaction = AdlessSentry.startTransaction(name: "protection.deactivate", operation: "networkextension")
+            let transaction = AdlessSentry.startTransaction(name: "protection.deactivate", operation: "dns-settings")
             defer { transaction?.finish() }
             do {
-                try await vpnManager.stop()
+                try await dnsSettingsManager.remove()
                 await refreshStatus()
             } catch {
-                AdlessSentry.capture(error, operation: "protection.deactivate")
+                AdlessSentry.capture(error, operation: "dns.settings.remove")
                 statusText = String(localized: "Could not change blocking status")
             }
             return
         }
 
-        await activateBlocking()
+        await activateProtection()
     }
 
     @MainActor
-    func activateBlocking() async {
-        guard !isPreparing, let blocklistManager else { return }
-        guard hasSubscription else {
+    func activateProtection() async {
+        guard !isPreparing, hasSubscription else {
             isSubscriptionPresented = true
             return
         }
 
-        // Reflect the user's action immediately. The Network Extension can
-        // take a moment to save and start its configuration, so waiting for it
-        // before changing the published state makes the button appear stuck.
-        isOn = true
         statusText = String(localized: "Connecting")
-        await Task.yield()
-
-        let transaction = AdlessSentry.startTransaction(name: "protection.activate", operation: "networkextension")
+        let transaction = AdlessSentry.startTransaction(name: "protection.activate", operation: "dns-settings")
         defer { transaction?.finish() }
 
         do {
-            _ = try blocklistManager.ensureActiveBlocklist()
-            try await vpnManager.start()
+            let state = try await dnsSettingsManager.install()
             await refreshStatus()
+            await refreshCloudStats()
+            if state == .disabled {
+                isSystemApprovalAlertPresented = true
+            }
         } catch {
-            AdlessSentry.capture(error, operation: "protection.activate")
+            AdlessSentry.capture(error, operation: "dns.settings.save")
             isOn = false
             statusText = String(localized: "Could not change blocking status")
         }
@@ -137,20 +132,22 @@ final class AppViewModel: ObservableObject {
 
     @MainActor
     func refreshStatus() async {
-        let state = await vpnManager.currentStatus()
-        isOn = hasSubscription && isProtectionActive(state)
+        let state = await dnsSettingsManager.currentState()
+        isOn = hasSubscription && state == .enabled
+        AdlessSentry.event("dns.settings.status_change", state: state.rawValue)
+
         if !hasSubscription {
             statusText = String(localized: "Premium access required")
             return
         }
+
         switch state {
-        case .invalid: statusText = String(localized: "Invalid")
-        case .disconnected: statusText = String(localized: "Off")
-        case .connecting: statusText = String(localized: "Connecting")
-        case .connected: statusText = String(localized: "On")
-        case .reasserting: statusText = String(localized: "Reconnecting")
-        case .disconnecting: statusText = String(localized: "Disconnecting")
-        @unknown default: statusText = String(localized: "Unknown")
+        case .notConfigured, .disabled:
+            statusText = String(localized: "Off")
+        case .enabled:
+            statusText = String(localized: "On")
+        case .invalid:
+            statusText = String(localized: "Invalid")
         }
     }
 
@@ -163,62 +160,52 @@ final class AppViewModel: ObservableObject {
 
     @MainActor
     func applicationDidBecomeActive() async {
-        guard !isPreparing, let blocklistManager else { return }
-        refreshBlockingStats()
         await subscriptionManager.loadAndRefresh()
         hasSubscription = subscriptionManager.hasActiveEntitlement
         await disableIfSubscriptionExpired()
         await refreshStatus()
+        refreshBlockingStats()
+        await refreshCloudStats()
+    }
 
+    private func refreshCloudStats() async {
         guard hasSubscription else { return }
-        let result = await blocklistManager.refreshIfNeeded()
-        if case .updated = result, isOn {
-            await vpnManager.reloadProviderBlocklist()
+        do {
+            let total = try await statsAPIClient.fetchBlockedTotal()
+            let snapshot = blockingStatsStore.updateRemoteTotal(total)
+            blockedTodayCount = snapshot.todayCount
+            allTimeBlockCount = snapshot.allTimeCount
+        } catch {
+            // The cached total remains visible. Statistics are best effort and
+            // must never disable or delay DNS protection.
+            AdlessSentry.capture(error, operation: "stats.fetch")
+            refreshBlockingStats()
         }
     }
 
     private func beginPreparation() {
         let preparationStartedAt = Date()
         let minimumPreparationDuration: TimeInterval = 0.35
+        let elapsed = Date().timeIntervalSince(preparationStartedAt)
+        let remaining = max(0, minimumPreparationDuration - elapsed)
 
-        DispatchQueue.global(qos: .userInitiated).async {
-            let manager = BlocklistManager()
-            let elapsed = Date().timeIntervalSince(preparationStartedAt)
-            let remaining = max(0, minimumPreparationDuration - elapsed)
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + remaining) { [weak self] in
-                Task { @MainActor [weak self] in
-                    await self?.finishPreparation(with: manager)
-                }
+        DispatchQueue.main.asyncAfter(deadline: .now() + remaining) { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.hasSubscription = self.subscriptionManager.hasActiveEntitlement
+                self.isPreparing = false
+                await self.applicationDidBecomeActive()
             }
         }
     }
 
     @MainActor
-    private func finishPreparation(with manager: BlocklistManager) async {
-        blocklistManager = manager
-        hasSubscription = subscriptionManager.hasActiveEntitlement
-
-        let state = await vpnManager.currentStatus()
-        let wasAlreadyActive = isProtectionActive(state)
-        isOn = hasSubscription && wasAlreadyActive
-        statusText = isOn ? String(localized: "On") : String(localized: "Off")
-
-        isPreparing = false
-        await applicationDidBecomeActive()
-    }
-
-    @MainActor
     private func disableIfSubscriptionExpired() async {
         guard !hasSubscription else { return }
-        let state = await vpnManager.currentStatus()
-        guard isProtectionActive(state) else { return }
-        try? await vpnManager.stop()
+        let state = await dnsSettingsManager.currentState()
+        guard state == .enabled || state == .disabled else { return }
+        try? await dnsSettingsManager.remove()
         isOn = false
         statusText = String(localized: "Premium access required")
-    }
-
-    private func isProtectionActive(_ state: NEVPNStatus) -> Bool {
-        state == .connected || state == .connecting || state == .reasserting
     }
 }

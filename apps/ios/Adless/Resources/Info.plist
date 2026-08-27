@@ -42,17 +42,13 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>NSNetworkExtensionUsageDescription</key>
-	<string>Adless uses a local VPN tunnel only for on-device DNS filtering. Browsing traffic is not sent to an Adless VPN server.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>AdlessEnvironment</key>
 	<string>$(ADLESS_ENVIRONMENT)</string>
-	<key>AdlessAppGroupIdentifier</key>
-	<string>$(ADLESS_APP_GROUP_IDENTIFIER)</string>
-	<key>AdlessPacketTunnelBundleIdentifier</key>
-	<string>$(ADLESS_PACKET_TUNNEL_BUNDLE_IDENTIFIER)</string>
 	<key>AdlessDisplayName</key>
 	<string>$(ADLESS_DISPLAY_NAME)</string>
+	<key>AdlessDNSCloudBaseURL</key>
+	<string>$(ADLESS_DNS_CLOUD_BASE_URL)</string>
 </dict>
 </plist>

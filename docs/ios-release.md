@@ -1,124 +1,110 @@
-# Automated iOS release
+# Publicação do iOS
 
-The repository uses a two-branch flow:
+O fluxo é:
 
 ```text
-develop  ->  TestFlight  ->  pull request  ->  main  ->  test, archive, upload, submit
+develop → TestFlight → pull request → main → archive, validação e App Store
 ```
 
-## Automatic TestFlight builds
+## TestFlight
 
-Every push to `develop` that changes production iOS code, resources, project
-configuration, the App Store Connect helper, or the export options starts
-`.github/workflows/testflight-ios.yml`. A manual run is also available from
-**Actions → Upload Adless to TestFlight → Run workflow**.
+Cada push relevante em `develop` inicia `.github/workflows/testflight-ios.yml`;
+há também execução manual. O workflow testa `AdlessTests`, cria um archive
+Release do scheme `Adless`, exporta, inspeciona o archive/IPA, valida com as
+ferramentas Apple, envia ao TestFlight, espera o processamento e adiciona o
+build ao grupo interno. Ele não submete a revisão.
 
-The workflow creates a Release archive, exports an App Store distribution IPA,
-validates it with Apple's tooling, uploads it to App Store Connect, and waits
-for the build to reach `VALID`. It then adds the build to the internal
-`Adless Internal Testers` group so it is available to the configured internal
-testers. It does not attach the build to an App Store version or submit
-anything for review. The archive uses the production
-StoreKit code path; the local `Adless.storekit` configuration is not supplied
-to the archive or export commands.
+O archive usa produtos StoreKit reais/Sandbox; `Adless.storekit` é apenas para
+desenvolvimento. O scheme `Adless Dev` nunca é usado para distribuição.
 
-The archive always uses the shared `Adless` scheme with the `Release`
-configuration. The `Adless Dev` scheme and its `Release Dev` configuration are
-never used for TestFlight or App Store distribution.
+## App Store
 
-The workflow shares the same App Store Connect secrets and automatic signing
-setup as the production release workflow. A newer `develop` run cancels an
-older one, so only the newest development build is kept in flight. A build
-number is selected above the highest build already known by App Store Connect.
+Cada push relevante em `main` inicia `.github/workflows/release-ios.yml`. O
+workflow roda testes, escolhe um build acima do conhecido no App Store Connect,
+cria archive, exporta, verifica, valida, envia, espera o processamento e
+submete a versão. Versões já em revisão ou à venda são ignoradas sem erro para
+evitar submissão duplicada.
 
-Every push to `main` that changes production iOS code/resources, the App Store
-Connect release helper, or the export options starts
-`.github/workflows/release-ios.yml`. A blocklist-only commit does not start an
-iOS binary release. The workflow keeps only one release in flight: a newer run
-cancels the previous run in the same concurrency group. If Apple has already
-accepted an upload before cancellation, the next preflight still checks the
-App Store state and avoids submitting a duplicate version.
+Metadata, screenshots, preços, acordos, produtos e trial devem existir no App
+Store Connect antes do workflow. O repositório não cria preços nem alterará a
+configuração de assinatura.
 
-## GitHub secrets
+## Secrets
 
-The private repository must contain these three Apple Actions secrets:
+Obrigatórios:
 
-- `ASC_KEY_ID`: App Store Connect API key ID;
-- `ASC_ISSUER_ID`: App Store Connect issuer ID;
-- `ASC_PRIVATE_KEY`: the complete contents of the `.p8` key;
+- `ASC_KEY_ID`;
+- `ASC_ISSUER_ID`;
+- `ASC_PRIVATE_KEY`, conteúdo completo do `.p8`.
 
-`SENTRY_AUTH_TOKEN` is an optional fourth secret: when present, it must be a
-Sentry token allowed to upload debug symbols for the `portside-xz/adless`
-project.
+Opcional:
 
-The key is written only to the runner's temporary directory with mode `600`.
-It is never committed, logged, or included in the IPA. The workflow uses the
-same key for the App Store Connect API and for Xcode automatic provisioning.
-Release configurations explicitly generate DWARF with dSYM for both
-`Adless.app` and `PacketTunnel.appex`. After the archive is complete, the
-workflow verifies that `Adless.app` embeds exactly one extension,
-`PacketTunnel.appex`, and inspects its effective signed entitlements with
-`codesign` for the production Packet Tunnel and App Group values. It also
-verifies both symbol bundles and, when `SENTRY_AUTH_TOKEN` is
-present, uploads the exact archive dSYMs with
-`tools/sentry/upload-dsyms.sh`. Upload errors fail the workflow instead of
-silently publishing an unsymbolicated build. If the optional secret is absent,
-the app still builds, but Sentry issues from that build will not have uploaded
-symbols.
+- `SENTRY_AUTH_TOKEN`, somente para upload de dSYM ao projeto configurado.
 
-The Apple Developer team must allow automatic signing for the app and the Packet
-Tunnel extension. If Apple requires a distribution certificate or profile to be
-managed manually for this account, configure that in the Apple Developer
-portal and add the corresponding CI signing secrets before enabling a release;
-do not commit certificates or provisioning profiles.
+A chave é materializada no diretório temporário do runner, com permissão 600,
+e nunca entra no IPA ou nos logs. Não há credencial Apple no repositório.
 
-## App Store Connect preparation
+O App ID de produção `com.orbeworks.adless` precisa ter a capability Network
+Extension `dns-settings`, e o profile de distribuição deve conter o entitlement
+correspondente. O target não tem extensão embutida nem App Group. Se a equipe
+Apple ainda não tiver habilitado a capability, ative-a no App ID, regenere o
+profile e permita signing automático; isso é uma etapa externa ao repositório.
+Remova também do App ID as capabilities antigas de provider, Packet Tunnel,
+DNS Proxy e App Groups e regenere os profiles de desenvolvimento e distribuição.
+Um profile gerenciado antigo pode continuar listando permissões históricas,
+mesmo quando elas não são entitlements efetivos do app; não use esse profile
+para o release final.
 
-The version configured in `apps/ios/Adless.xcodeproj` must already exist in App
-Store Connect with its metadata, products, agreements, screenshots, and review
-information completed. The workflow intentionally does not create or edit
-metadata or prices.
+### Resultado da verificação de deployment
 
-The preflight step behaves safely when the version is already `READY_FOR_REVIEW`,
-`WAITING_FOR_REVIEW`, `IN_REVIEW`, `PENDING_DEVELOPER_RELEASE`,
-`PENDING_APPLE_RELEASE`, or `READY_FOR_SALE`: it reports that there is nothing
-to submit and exits successfully. This prevents a normal commit from creating
-a second review submission for the same version. For a new release, first
-create the new version in App Store Connect and change `MARKETING_VERSION` in
-the project; then merge the prepared changes into `main`.
+A documentação da Apple descreve DNS Settings como uma configuração do sistema
+iOS que usa os protocolos criptografados nativos e diz que o usuário precisa
+ativá-la explicitamente. A restrição de iOS supervisionado documentada para
+`DNS proxy provider` não se aplica ao caminho `dns-settings` usado aqui. A
+documentação do entitlement também instrui habilitar Network Extensions para
+um app distribuído pela App Store. Portanto, não há uma exigência objetiva de
+MDM indicada para esta arquitetura, mas a aprovação da capability no App ID e
+o profile de distribuição continuam sendo pré-requisitos externos que não
+podem ser simulados no repositório.
 
-For a version in `PREPARE_FOR_SUBMISSION` or a rejected version, the workflow:
+## Verificações de pacote
 
-1. checks the current App Store state;
-2. chooses a build number higher than both the repository and App Store;
-3. runs the iOS tests;
-4. archives and exports the signed IPA;
-5. validates and uploads it with Apple's tooling;
-6. waits for processing to become `VALID`;
-7. links the build to the version and submits a new review submission.
-
-If a later API or signing step fails, the workflow stops and leaves the last
-valid App Store build untouched. The build may have been uploaded before a
-failure in the final submission step; in that case finish the review submission
-from App Store Connect instead of uploading the same build again.
-
-## Manual release
-
-Use **Actions → Release Adless iOS to App Store Connect → Run workflow**. The
-same version-state and signing checks apply. It is not a bypass for a version
-that Apple is already reviewing.
-
-## Local checks
+Depois do archive:
 
 ```sh
-actionlint .github/workflows/release-ios.yml
-python3 -m py_compile tools/appstore/appstore_connect.py
-xcodebuild -project apps/ios/Adless.xcodeproj \
-  -scheme AdlessTests \
-  -destination 'platform=iOS Simulator,name=iPhone 16' \
-  CODE_SIGNING_ALLOWED=NO test
+sh tools/ios/verify_archive.sh /tmp/Adless.xcarchive
+sh tools/ios/verify_ipa.sh /tmp/Adless-export/Adless.ipa
 ```
 
-The helper uses only Python's standard library and the `openssl` executable
-already available on macOS runners. No Apple private key is required for local
-tests of the iOS project.
+Os scripts conferem no código assinado o bundle ID, presença de `dns-settings`,
+ausência de App Group/entitlement legado, ausência total de `.appex` e
+existência de somente `Adless.app`. O profile embutido deve ser conferido
+separadamente no portal Apple e regenerado se ainda listar capabilities antigas.
+O workflow também exige somente `Adless.app.dSYM` no archive.
+
+Essas verificações são intencionalmente feitas no artefato assinado, não só no
+projeto fonte. Sem credenciais da equipe não é possível afirmar que um archive
+de distribuição foi assinado; nesse caso o build local sem assinatura só prova
+layout e compilação.
+
+## Checks locais
+
+```sh
+actionlint .github/workflows/testflight-ios.yml
+actionlint .github/workflows/release-ios.yml
+python3 -m py_compile tools/appstore/appstore_connect.py
+xcodebuild -project apps/ios/Adless.xcodeproj -scheme AdlessTests \
+  -destination 'platform=iOS Simulator,name=iPhone 16' CODE_SIGNING_ALLOWED=NO test
+```
+
+O deploy do DNS é independente e está documentado em
+[`dns-cloud.md`](dns-cloud.md); ele usa `CLOUDFLARE_API_TOKEN` e
+`CLOUDFLARE_ACCOUNT_ID`, nunca secrets do app.
+
+## Referências oficiais
+
+- [DNS settings](https://developer.apple.com/documentation/networkextension/dns-settings);
+- [`NEDNSSettingsManager`](https://developer.apple.com/documentation/networkextension/nednssettingsmanager);
+- [`NEDNSOverHTTPSSettings`](https://developer.apple.com/documentation/networkextension/nednsoverhttpssettings);
+- [Network Extension entitlement](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.networking.networkextension);
+- [Enable App ID capabilities](https://developer.apple.com/help/account/identifiers/enable-app-capabilities/).

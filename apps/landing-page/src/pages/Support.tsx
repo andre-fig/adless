@@ -1,18 +1,18 @@
 import LegalLayout from "./LegalLayout";
 
 const Support = () => (
-  <LegalLayout title="Adless Support" updatedAt="August 20, 2026">
+  <LegalLayout title="Adless Support" updatedAt="August 26, 2026">
     <p>
-      Adless is an on-device DNS protection app for iPhone. It does not use a
-      remote VPN server or an Adless account.
+      Adless is an encrypted DNS protection app for iPhone. It does not use an
+      Adless account and does not proxy your general internet traffic.
     </p>
 
     <h2>Before contacting support</h2>
     <ul>
       <li>Make sure the subscription is active in your Apple Account.</li>
       <li>Open Adless and tap the main button to enable protection.</li>
-      <li>Check Settings → General → VPN &amp; Device Management for the Adless local VPN profile.</li>
-      <li>If the network changes, Adless reconnects its local DNS tunnel automatically.</li>
+      <li>Open Settings → General → VPN &amp; Network → DNS and enable the Adless DNS configuration if iOS asks for approval.</li>
+      <li>When a network changes, iOS applies the saved DNS configuration when it remains available.</li>
     </ul>
 
     <h2>Contact us</h2>

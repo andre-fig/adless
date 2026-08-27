@@ -14,40 +14,30 @@ if [ "$#" -eq 2 ]; then
 else
   archive="$1"
 fi
+
 app="$archive/Products/Applications/Adless.app"
-extension="$app/PlugIns/PacketTunnel.appex"
-
 test -d "$app"
-test -d "$extension"
+test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")" = "com.orbeworks.adless"
 
-plugin_count="$(find "$app/PlugIns" -maxdepth 1 -type d -name '*.appex' -print | wc -l | tr -d '[:space:]')"
-test "$plugin_count" -eq 1
+if [ -d "$app/PlugIns" ]; then
+  plugin_count="$(find "$app/PlugIns" -type d -name '*.appex' -print | wc -l | tr -d '[:space:]')"
+  test "$plugin_count" -eq 0
+fi
+test -z "$(find "$archive" -type d -name '*.appex' -print -quit)"
 
 if [ "$layout_only" = true ]; then
-  echo "Verified Adless.app with only PacketTunnel.appex."
+  echo "Verified Adless.app archive with no embedded extensions."
   exit 0
 fi
 
 temporary_directory="$(mktemp -d)"
 trap 'rm -rf "$temporary_directory"' EXIT
-
-check_signed_bundle() {
-  bundle="$1"
-  expected_identifier="$2"
-  expected_group="$3"
-  name="$(basename "$bundle" | tr '.' '_')"
-  entitlements="$temporary_directory/$name.entitlements.plist"
-
-  identifier="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$bundle/Info.plist")"
-  test "$identifier" = "$expected_identifier"
-  codesign -d --entitlements :- "$bundle" > "$entitlements" 2>/dev/null
-  test -s "$entitlements"
-  network_extension="$(/usr/libexec/PlistBuddy -c 'Print :com.apple.developer.networking.networkextension:0' "$entitlements")"
-  app_group="$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.application-groups:0' "$entitlements")"
-  test "$network_extension" = "packet-tunnel-provider"
-  test "$app_group" = "$expected_group"
-}
-
-check_signed_bundle "$app" "com.orbeworks.adless" "group.com.orbeworks.adless"
-check_signed_bundle "$extension" "com.orbeworks.adless.tunnel" "group.com.orbeworks.adless"
-echo "Verified Adless.app with only PacketTunnel.appex and signed Packet Tunnel/App Group entitlements."
+entitlements="$temporary_directory/Adless.entitlements.plist"
+codesign -d --entitlements :- "$app" > "$entitlements" 2>/dev/null
+test -s "$entitlements"
+grep -q 'dns-settings' "$entitlements"
+if grep -Eq 'dns-proxy|packet-tunnel-provider|NEDNSProxy|NEPacketTunnel|NETunnelProvider|com\.orbeworks\.adless\.tunnel|application-groups' "$entitlements"; then
+  echo "Legacy networking entitlement found in signed archive" >&2
+  exit 1
+fi
+echo "Verified signed Adless.app archive with dns-settings and no embedded extensions."

@@ -318,13 +318,13 @@ private enum AdlessLegalDocument: Hashable {
     }
 
     var lastUpdated: String {
-        String(localized: "Last updated: August 20, 2026")
+        String(localized: "Last updated: August 26, 2026")
     }
 
     var introduction: String {
         switch self {
         case .terms:
-            return String(localized: "These Terms of Use govern your use of Adless, an on-device DNS filtering application developed by Orbe Works.")
+            return String(localized: "These Terms of Use govern your use of Adless, a DNS filtering application developed by Orbe Works.")
         case .privacy:
             return String(localized: "Adless is developed by Orbe Works. This Privacy Policy explains what happens when you use the Adless iOS app and website.")
         }
@@ -342,12 +342,12 @@ private enum AdlessLegalDocument: Hashable {
                 AdlessLegalSection(
                     id: "use_of_service",
                     title: String(localized: "Use of the service"),
-                    body: String(localized: "Adless provides local DNS-based blocking of domains identified by its blocklist. No filtering system can identify every ad, tracker, or domain, and blocking a domain can occasionally affect a website or app. You are responsible for deciding whether to keep the protection enabled.")
+                    body: String(localized: "Adless provides DNS-based blocking of domains identified by its blocklist. No filtering system can identify every ad, tracker, or domain, and blocking a domain can occasionally affect a website or app. You are responsible for deciding whether to keep the protection enabled.")
                 ),
                 AdlessLegalSection(
                     id: "availability",
                     title: String(localized: "Availability"),
-                    body: String(localized: "Adless may update the blocklist, app, or service to improve reliability and security. The app keeps a valid local list and can continue using it when the network is unavailable, but uninterrupted operation cannot be guaranteed.")
+                    body: String(localized: "Adless may update the blocklist, app, or service to improve reliability and security. DNS protection depends on the saved iOS configuration and network availability, but uninterrupted operation cannot be guaranteed.")
                 )
             ]
         case .privacy:
@@ -355,22 +355,22 @@ private enum AdlessLegalDocument: Hashable {
                 AdlessLegalSection(
                     id: "what_adless_does",
                     title: String(localized: "What Adless does"),
-                    body: String(localized: "Adless uses an Apple Network Extension Packet Tunnel locally to process DNS queries on your device and block domains included in the active blocklist. Blocked names are answered locally. Permitted DNS queries are sent as encrypted DNS-over-HTTPS wire messages to Cloudflare DNS or Quad9 so they can be resolved. Adless does not operate a server or a remote VPN service.")
+                    body: String(localized: "Adless configures Apple encrypted DNS settings. DNS queries go over HTTPS to the Adless DNS service, where the active blocklist is applied before permitted queries are resolved by Cloudflare DNS or Quad9. Web traffic does not pass through Adless, and no account is required.")
                 ),
                 AdlessLegalSection(
                     id: "information_we_collect",
                     title: String(localized: "Information we collect"),
-                    body: String(localized: "Orbe Works does not collect or retain account information, browsing history, DNS query history, advertising identifiers, or payment information through Adless. The app has no account, login, or custom backend. Blocking statistics are stored locally in the app’s protected storage. Permitted DNS queries are transmitted to the configured third-party DNS providers only to obtain DNS answers; their handling is governed by their own privacy policies. Adless uses Sentry for crash and performance diagnostics. Sentry receives technical diagnostic data such as app version, operating system, device model, stack traces, and timing data. Adless does not send DNS queries, domain names, browsing history, or a user identity to Sentry.")
+                    body: String(localized: "Orbe Works does not collect or retain account information, browsing history, DNS query history, advertising identifiers, or payment information through Adless. The app has no account or login. The service stores only an aggregate blocked total associated with an anonymous installation token; it does not store domains, DNS packets, or an application-level history. Because a DoH GET can carry the DNS wire message in the URL and the installation token is part of the endpoint path, Cloudflare may process technical request metadata under its infrastructure and logging systems; Adless does not enable application-level request logging or send these values to Sentry. Permitted DNS queries are transmitted to Cloudflare DNS or Quad9 only to obtain DNS answers under their own policies. Adless uses Sentry for crash and performance diagnostics, but does not send DNS queries, domain names, browsing history, or the installation token to it.")
                 ),
                 AdlessLegalSection(
                     id: "third_parties",
                     title: String(localized: "Third parties"),
-                    body: String(localized: "Apple processes App Store purchases and subscriptions under Apple’s own terms and privacy policy. Cloudflare DNS and Quad9 process permitted DNS-over-HTTPS queries to return DNS answers under their respective service and privacy policies. Sentry, operated by Functional Software, Inc., processes crash and performance diagnostics for reliability purposes under its privacy policy. Adless downloads public, static blocklist files from GitHub Pages. Those requests can include standard technical connection information handled by the hosting provider, such as an IP address.")
+                    body: String(localized: "Apple processes App Store purchases and subscriptions under Apple’s own terms and privacy policy. Cloudflare provides infrastructure for the Adless edge service. Cloudflare DNS and Quad9 process permitted DNS-over-HTTPS queries to return DNS answers under their respective service and privacy policies. Sentry processes crash and performance diagnostics for reliability. Adless does not sell data or use DNS queries for advertising.")
                 ),
                 AdlessLegalSection(
                     id: "data_retention",
                     title: String(localized: "Data retention"),
-                    body: String(localized: "Adless does not maintain a user account or server-side user record. Local blocklists, subscription state, and blocking statistics can be removed by deleting the app. Apple manages purchase records and subscription history.")
+                    body: String(localized: "Adless does not maintain a user account or domain history. The app stores the last known aggregate counter locally; the service stores aggregate totals associated with an anonymous installation token and does not maintain query history. The device-bound Keychain token may remain in the Keychain after uninstall on the same device; it is not migrated to a new device. This version has no token-deletion endpoint. Apple manages purchase records and subscription history.")
                 ),
                 AdlessLegalSection(
                     id: "children",

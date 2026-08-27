@@ -1,5 +1,4 @@
 import Foundation
-@preconcurrency import NetworkExtension
 import Sentry
 
 enum AdlessSentry {
@@ -25,15 +24,15 @@ enum AdlessSentry {
         }
     }
 
-    nonisolated static func event(_ operation: String, status: NEVPNStatus? = nil) {
+    nonisolated static func event(_ operation: String, state: String? = nil) {
         guard SentrySDK.isEnabled else { return }
         SentrySDK.capture(message: operation) { scope in
             scope.setTag(value: operation, key: "operation")
-            scope.setTag(value: status.map(statusName) ?? "unknown", key: "vpn_status")
+            scope.setTag(value: state ?? "unknown", key: "dns_status")
         }
     }
 
-    nonisolated static func capture(_ error: Error, operation: String, status: NEVPNStatus? = nil) {
+    nonisolated static func capture(_ error: Error, operation: String, state: String? = nil) {
         guard SentrySDK.isEnabled else { return }
         let nsError = error as NSError
         let description = sanitizedDescription(nsError.localizedDescription)
@@ -47,25 +46,13 @@ enum AdlessSentry {
             scope.setTag(value: nsError.domain, key: "error_domain")
             scope.setTag(value: String(nsError.code), key: "error_code")
             scope.setTag(value: description, key: "error_description")
-            scope.setTag(value: status.map(statusName) ?? "unknown", key: "vpn_status")
+            scope.setTag(value: state ?? "unknown", key: "dns_status")
         }
     }
 
     nonisolated static func startTransaction(name: String, operation: String) -> Span? {
         guard SentrySDK.isEnabled else { return nil }
         return SentrySDK.startTransaction(name: name, operation: operation)
-    }
-
-    nonisolated private static func statusName(_ status: NEVPNStatus) -> String {
-        switch status {
-        case .invalid: return "invalid"
-        case .disconnected: return "disconnected"
-        case .connecting: return "connecting"
-        case .connected: return "connected"
-        case .reasserting: return "reasserting"
-        case .disconnecting: return "disconnecting"
-        @unknown default: return "unknown"
-        }
     }
 
     nonisolated private static func sanitizedDescription(_ value: String) -> String {

@@ -18,6 +18,7 @@ import re
 import shutil
 import sys
 import tempfile
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -29,7 +30,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = Path(__file__).with_name("sources.json")
 DEFAULT_ALLOWLIST = Path(__file__).with_name("allowlist.txt")
 DEFAULT_OUTPUT = REPO_ROOT / "apps/landing-page/public/blocklists"
-DEFAULT_SEED = REPO_ROOT / "apps/ios/Adless/Resources/SeedBlocklist.txt"
+DEFAULT_WORKER_OUTPUT = REPO_ROOT / "apps/dns-worker/data/blocklist.txt"
 ARTIFACT_NAMES = ("manifest.json", "blocklist.txt", "blocklist.txt.gz", "blocklist.sha256")
 DOMAIN_PATTERN = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
 ADBLOCK_DOMAIN_RULE = re.compile(r"^\|\|([^\^$\s/|]+)\^$")
@@ -93,17 +94,29 @@ def _is_ip_literal(value: str) -> bool:
 def normalize_domain(value: str) -> str | None:
     """Return an ASCII lower-case DNS hostname or None for an invalid value."""
 
-    candidate = value.strip().strip("\ufeff").rstrip(".").lower()
-    if not candidate or candidate in RESERVED_NAMES or _is_ip_literal(candidate):
+    candidate = value.strip().strip("\ufeff")
+    candidate = candidate.translate(str.maketrans({"\u3002": ".", "\uff0e": ".", "\uff61": "."}))
+    if candidate.endswith("."):
+        candidate = candidate[:-1]
+    if not candidate or candidate.endswith(".") or candidate.startswith("."):
         return None
-    if candidate.startswith(".") or "*" in candidate or "/" in candidate:
-        return None
-    if any(character in candidate for character in ("|", "^", "$", ":", "@", " ", "\t")):
-        return None
+    labels: list[str] = []
+    for raw_label in candidate.split("."):
+        label = unicodedata.normalize("NFKC", raw_label).lower()
+        if not label:
+            return None
+        if any(character in label for character in ("*", "/", "|", "^", "$", ":", "@", " ", "\t", "#", "?")):
+            return None
+        if all(ord(character) < 128 for character in label):
+            labels.append(label)
+            continue
+        try:
+            labels.append("xn--" + label.encode("punycode").decode("ascii"))
+        except UnicodeError:
+            return None
 
-    try:
-        candidate = candidate.encode("idna").decode("ascii").lower()
-    except UnicodeError:
+    candidate = ".".join(labels)
+    if not candidate or candidate in RESERVED_NAMES or _is_ip_literal(candidate):
         return None
 
     if len(candidate) > 253 or "." not in candidate or ".." in candidate:
@@ -300,6 +313,9 @@ def validate_artifacts(output_dir: Path) -> dict[str, Any]:
     except (OSError, json.JSONDecodeError) as error:
         raise BlocklistError(f"Could not read generated artifacts: {error}") from error
 
+    if not isinstance(manifest, dict):
+        raise BlocklistError("Generated manifest must be an object")
+
     try:
         canonical_text_value = canonical.decode("utf-8")
         domains = validate_canonical_text(canonical_text_value)
@@ -354,10 +370,10 @@ def generate(
     config_path: Path = DEFAULT_CONFIG,
     allowlist_path: Path = DEFAULT_ALLOWLIST,
     output_dir: Path = DEFAULT_OUTPUT,
-    seed_path: Path = DEFAULT_SEED,
+    worker_path: Path = DEFAULT_WORKER_OUTPUT,
     timeout: int = 30,
     allow_large_change: bool = False,
-    sync_seed: bool = False,
+    sync_worker: bool = False,
 ) -> dict[str, Any]:
     sources, policy = load_config(config_path)
     maximum_source_bytes = int(policy.get("maximumSourceBytes", 25_000_000))
@@ -436,8 +452,8 @@ def generate(
         for name in ARTIFACT_NAMES:
             os.replace(candidate_dir / name, output_dir / name)
 
-        if sync_seed:
-            _atomic_write(seed_path, canonical)
+        if sync_worker:
+            _atomic_write(worker_path, canonical)
     finally:
         shutil.rmtree(candidate_dir, ignore_errors=True)
 
@@ -449,10 +465,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--allowlist", type=Path, default=DEFAULT_ALLOWLIST)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--seed", type=Path, default=DEFAULT_SEED)
+    parser.add_argument("--worker-output", type=Path, default=DEFAULT_WORKER_OUTPUT)
     parser.add_argument("--timeout", type=int, default=30)
     parser.add_argument("--allow-large-change", action="store_true")
-    parser.add_argument("--sync-seed", action="store_true")
+    parser.add_argument("--sync-worker", action="store_true")
     return parser.parse_args(argv)
 
 
@@ -463,10 +479,10 @@ def main(argv: list[str] | None = None) -> int:
             config_path=args.config,
             allowlist_path=args.allowlist,
             output_dir=args.output_dir,
-            seed_path=args.seed,
+            worker_path=args.worker_output,
             timeout=args.timeout,
             allow_large_change=args.allow_large_change,
-            sync_seed=args.sync_seed,
+            sync_worker=args.sync_worker,
         )
     except BlocklistError as error:
         print(f"error: {error}", file=sys.stderr)

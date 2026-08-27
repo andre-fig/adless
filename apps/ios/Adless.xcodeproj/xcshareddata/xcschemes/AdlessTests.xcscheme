@@ -28,20 +28,6 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "B10000000000000000000003"
-               BuildableName = "PacketTunnel.appex"
-               BlueprintName = "PacketTunnel"
-               ReferencedContainer = "container:Adless.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "NO"
-            buildForProfiling = "NO"
-            buildForArchiving = "NO"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
                BlueprintIdentifier = "B10000000000000000000018"
                BuildableName = "AdlessTests.xctest"
                BlueprintName = "AdlessTests"

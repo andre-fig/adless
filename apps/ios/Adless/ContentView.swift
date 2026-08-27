@@ -232,14 +232,10 @@ struct ContentView: View {
             guard phase == .active else { return }
             Task { await viewModel.applicationDidBecomeActive() }
         }
-        .task(id: scenePhase) {
-            guard scenePhase == .active else { return }
-            while !Task.isCancelled {
-                await MainActor.run {
-                    viewModel.refreshBlockingStats()
-                }
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
-            }
+        .alert("Enable DNS protection in Settings", isPresented: $viewModel.isSystemApprovalAlertPresented) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Open Settings → General → VPN & Network → DNS and enable Adless. Protection will appear here when it is active.")
         }
         .sheet(
             isPresented: Binding(

@@ -12,6 +12,9 @@
     "build:landing": "npm --workspace @adless/landing-page run build",
     "lint": "npm --workspace @adless/landing-page run lint",
     "typecheck": "npm --workspace @adless/landing-page run typecheck",
+    "build:dns-worker": "npm --prefix apps/dns-worker run build",
+    "test:dns-worker": "npm --prefix apps/dns-worker run test",
+    "prepare:dns-blocklist": "python3 tools/dns-worker/prepare_blocklist.py",
     "preview:landing": "npm --workspace @adless/landing-page run preview",
     "prepare": "bash tools/dev/install-git-hooks.sh",
     "setup:hooks": "bash tools/dev/install-git-hooks.sh"

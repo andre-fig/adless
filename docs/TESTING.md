@@ -1,434 +1,126 @@
-# Guia de testes
+# Testes
 
-Este documento descreve os testes automatizados e manuais do Adless, além dos
-limites de cada ambiente. O objetivo é validar o bloqueio sem transformar
-falhas de uma fonte, de um provedor DoH ou de uma assinatura em perda de
-conectividade ou de proteção.
-
-## Pirâmide de validação
-
-```text
-pre-commit       verificações rápidas dos arquivos staged
-pre-push         testes direcionados aos caminhos alterados
-pull request     validação final da landing, blocklist ou iOS
-iPhone físico    Network Extension e DNS real
-App Store/Sandbox produtos, cobrança, trial e renovação
-```
-
-O simulador é adequado para UI, build e XCTest, mas não comprova a
-interceptação DNS do sistema. O acesso à internet real não é usado nos testes
-unitários.
-
-## Comandos de validação geral
-
-Na raiz do monorepo:
+## Suite local
 
 ```sh
 git diff --check
 python3 -m unittest discover -s tools/blocklists/tests -v
+npm run test:dns-worker
 npm run lint
 npm run typecheck
 npm run build:landing
+npm run build:dns-worker
 ```
 
-Para alterações em workflows:
+Os testes do Worker usam mocks e cobrem:
+
+- POST e GET RFC 8484, content type, tamanho, método e Base64URL;
+- uma pergunta, contagens, nomes comprimidos, EDNS0 e transaction ID;
+- A, AAAA, HTTPS, SVCB, CNAME, TXT, MX, NS, PTR, SOA e SRV;
+- bloqueio exato e por subdomínio, nome semelhante e allowlist;
+- ausência de upstream para bloqueados;
+- NXDOMAIN válido sem fallback;
+- timeout/falha de transporte, HTTP inválido, corpo vazio ou DNS inválido com
+  fallback Cloudflare→Quad9;
+- SERVFAIL quando os dois falham;
+- cache limitado ao TTL, concorrência, rate limiting e integridade da lista;
+- ausência de resolver em texto puro, domínio e IP em logs de aplicação.
+
+A suíte Python testa download HTTPS, normalização IDN, allowlist, ordenação,
+deduplicação, gzip determinístico, checksum, contagem e rejeição de alteração
+grande.
+
+## XCTest e build
 
 ```sh
-actionlint .github/workflows/*.yml
-```
-
-Para alterações iOS, acrescente o build ou XCTest correspondente. Antes de
-entregar, confirme o estado do worktree com `git status --short --branch`.
-
-Não declare um teste como aprovado sem executar o comando correspondente.
-
-## Landing page
-
-### Testes automatizados
-
-O workspace `apps/landing-page` usa ESLint type-aware e TypeScript strict:
-
-```sh
-npm run lint
-npm run typecheck
-npm run build:landing
-```
-
-Esses comandos verificam, respectivamente, regras de código, tipos nos
-projetos da aplicação e da configuração do Vite, e a build de produção.
-
-### Teste manual
-
-Para trabalhar na interface:
-
-```sh
-npm run dev:landing
-```
-
-Verifique manualmente:
-
-- navegação entre home, termos, privacidade e suporte;
-- responsividade em viewport móvel e desktop;
-- tema claro/escuro;
-- seletor de idioma;
-- links e arquivos públicos da blocklist;
-- ausência da blocklist no bundle JavaScript.
-
-Depois da build, os arquivos públicos devem continuar acessíveis em:
-
-```text
-/blocklists/manifest.json
-/blocklists/blocklist.txt.gz
-/blocklists/blocklist.txt
-```
-
-## Pipeline da blocklist
-
-### Testes unitários Python
-
-Execute:
-
-```sh
-python3 -m unittest discover -s tools/blocklists/tests -v
-```
-
-Os testes usam fixtures e mocks, sem download da OISD ou de qualquer fonte
-externa. A suíte cobre:
-
-- entrada de domínio simples;
-- formato hosts com `0.0.0.0` e `127.0.0.1`;
-- formato Adblock utilizado pela OISD Small;
-- comentários, linhas vazias e pontos finais;
-- normalização para minúsculas;
-- conversão de IDN para ASCII/Punycode;
-- deduplicação e ordenação determinística;
-- allowlist e remoção de descendentes;
-- rejeição de regras executáveis não suportadas;
-- rejeição de HTML, fonte vazia e conteúdo inválido;
-- gzip determinístico;
-- manifesto, versão baseada em conteúdo e checksum;
-- preservação da versão anterior em variação excessiva;
-- rejeição de gzip corrompido.
-
-### Geração e validação local
-
-```sh
-python3 tools/blocklists/generate_blocklist.py --sync-seed
-python3 tools/blocklists/validate_blocklist.py
-python3 tools/blocklists/validate_blocklist.py \
-  --seed apps/ios/Adless/Resources/SeedBlocklist.txt
-```
-
-O comando de geração acessa a fonte HTTPS configurada e deve ser executado
-somente quando a atualização real for desejada. Não edite os artefatos ou o
-seed manualmente.
-
-Para uma variação grande que foi revisada e considerada legítima:
-
-```sh
-python3 tools/blocklists/generate_blocklist.py \
-  --allow-large-change \
-  --sync-seed
-```
-
-Depois compare o manifesto, a quantidade de domínios e o diff da lista antes
-de publicar.
-
-## XCTest do iOS
-
-### Executar a suíte
-
-Com o simulador `iPhone 16` disponível:
-
-```sh
-xcodebuild \
-  -project apps/ios/Adless.xcodeproj \
-  -scheme AdlessTests \
+xcodebuild -project apps/ios/Adless.xcodeproj -scheme AdlessTests \
   -destination 'platform=iOS Simulator,name=iPhone 16' \
-  CODE_SIGNING_ALLOWED=NO \
-  test
+  -derivedDataPath /tmp/adless-ios-test-derived-data \
+  CODE_SIGNING_ALLOWED=NO test
+
+xcodebuild -project apps/ios/Adless.xcodeproj -scheme Adless \
+  -sdk iphonesimulator -configuration Debug \
+  -derivedDataPath /tmp/adless-ios-build \
+  CODE_SIGNING_ALLOWED=NO build
 ```
 
-Para listar destinos:
+Os testes iOS verificam regras de domínio, StoreKit/política de acesso,
+persistência local do último total, não diminuição do contador e configuração
+de ambiente. A configuração nativa DoH usa `NEDNSSettingsManager`; sua
+ativação efetiva não pode ser simulada completamente no Simulator.
 
-```sh
-xcrun simctl list devices available
-```
+## Matriz manual em iPhone
 
-O target `AdlessTests` inclui o app e a extensão necessários para compilar os
-testes. Se o nome do simulador variar, use o identificador exibido por
-`simctl`.
+Depois de uma assinatura Sandbox ativa:
 
-### Cobertura atual
-
-`apps/ios/AdlessTests/BlocklistTests.swift` cobre:
-
-- parsing canônico e correspondência de subdomínios;
-- correspondência de domínio completo e domínios-pai com `Set<String>`;
-- maiúsculas e ponto final;
-- rejeição de falsos sufixos, como `ads.example.com.evil`;
-- IDN já convertido para Punycode;
-- matriz de sites que devem permanecer acessíveis;
-- matriz de domínios de publicidade que devem ser bloqueados;
-- lista canônica não ordenada e conteúdo inválido;
-- gzip válido, tamanho esperado e payload corrompido;
-- atualização válida e manifesto sem mudança de conteúdo;
-- checksum inválido e download interrompido;
-- preservação da lista anterior após falha;
-- acesso ativo, grace period e expiração da assinatura;
-- formatação do trial do StoreKit;
-- persistência atômica do estado de assinatura;
-- contadores diários e all-time de bloqueios.
-
-`apps/ios/AdlessTests/DNSDoHTests.swift` usa mocks de HTTP e cobre:
-
-- POST com o DNS wire body sem alteração;
-- cabeçalhos `Content-Type` e `Accept` de `application/dns-message`;
-- respostas `A` e `AAAA` válidas;
-- `NXDOMAIN` sem fallback;
-- timeout, HTTP 500, corpo vazio e payload DNS inválido no principal com
-  fallback para Quad9;
-- falha dos dois provedores produzindo erro para o handler, que responde
-  `SERVFAIL` localmente;
-- consultas concorrentes sem troca de transaction ID/resposta;
-- cancelamento sem iniciar o fallback;
-- endpoints HTTPS, bootstrap local dos hostnames DoH para evitar recursão e
-  ausência de um upstream UDP tradicional.
-- circuit breaker após três falhas consecutivas, expiração do intervalo aberto
-  e reset explícito de rede;
-- reutilização do mesmo cliente HTTP em consultas subsequentes;
-- registro agregado de latência sem dados da consulta;
-- comparação controlada entre uma baseline simulada do antigo UDP, DoH frio e
-  DoH reutilizado. Como o produto não pode voltar a usar UDP em texto puro,
-  essa comparação não abre um socket UDP real.
-
-Os testes não acessam Cloudflare, Quad9 ou GitHub Pages. Para uma verificação
-manual opcional dos endpoints reais, use:
-
-```sh
-python3 tools/dns/smoke_doh.py
-python3 tools/dns/smoke_doh.py --endpoint cloudflare
-```
-
-Os testes de rede substituem `URLSession` com `StubURLProtocol` e usam
-diretórios temporários. Eles não acessam GitHub Pages.
-
-## Testes manuais no iPhone
-
-### Preparação
-
-Antes de testar DNS real:
-
-1. selecione um Team válido no Xcode;
-2. confirme o App Group correspondente ao scheme nos targets `Adless` e
-   `PacketTunnel` (`group.com.orbeworks.adless.dev` para `Adless Dev` ou
-   `group.com.orbeworks.adless` para `Adless`);
-3. instale o app em um iPhone físico;
-4. confirme que a assinatura de desenvolvimento ou Sandbox está ativa;
-5. desative outros perfis VPN/DNS que possam interferir no resultado.
-
-O estado de ativação deve sobreviver ao fechamento e à reabertura do app. Ao
-abrir, a tela de preparação deve verificar o status existente antes de exibir
-`Protection Active` ou `Protection Off`.
-
-### Matriz funcional
-
-Teste cada cenário com proteção desligada e ligada quando aplicável:
+1. toque em Ativar;
+2. aprove o Adless em Ajustes → Geral → VPN e Rede → DNS, quando o iOS solicitar;
+3. volte ao app e confirme que o estado só fica protegido quando
+   `isEnabled == true`;
+4. toque em Desativar e confirme que o estado real volta a desligado;
+5. remova a configuração manualmente em Ajustes e confirme que o app não diz
+   estar protegido;
+6. reinicie o iPhone e bloqueie a tela por várias horas;
+7. alterne Wi‑Fi, 5G e modo avião;
+8. teste IPv4/IPv6, Safari e outro navegador, além de apps que usam DNS;
+9. entre e saia do paywall, compre mensal/anual, restaure a compra, cancele e
+   deixe expirar;
+10. confirme que a API de stats atualiza ao entrar em primeiro plano e que a
+    falha da API preserva o último número sem erro invasivo;
+11. confira layouts de iPhone e iPad, tamanhos de texto e localizações.
 
 | Cenário | Resultado esperado |
 | --- | --- |
-| Ativar com assinatura válida | botão muda imediatamente e Packet Tunnel conecta |
-| Desativar | Packet Tunnel é desligado e o tráfego volta ao DNS do sistema |
-| Fechar e reabrir com proteção ativa | app abre diretamente como ativo |
-| Sem internet ao ativar | lista local funciona; ativação não depende do download |
-| Manifesto indisponível | lista anterior ou seed continua ativa |
-| Assinatura expirada com a extensão ativa | Packet Tunnel permanece em pass-through, sem bloquear domínios; a internet continua funcionando |
-| Assinatura expirada ao abrir o app | app mostra Premium access required e não ativa uma nova sessão de bloqueio |
-| Compra concluída | drawer fecha e o app tenta ativar a proteção |
-| Atualização válida da lista | nova lista é instalada sem arquivo parcial |
-| Atualização inválida | lista anterior continua ativa |
+| Assinatura válida + configuração habilitada | UI protegida e DNS usa o endpoint salvo |
+| Configuração salva, mas não habilitada | UI desligada e instrução para Ajustes |
+| Configuração removida manualmente | UI desligada; Ativar pode recriar a configuração |
+| Assinatura expirada | configuração removida e UI não afirma proteção |
+| API de stats indisponível | último total permanece; DNS não é desligado |
+| Rede alterada/tela bloqueada | iOS decide a disponibilidade; app não precisa ficar aberto |
+| Modo avião/captive portal/DoH bloqueado | resolução pode falhar; sem fallback para DNS sem criptografia |
 
-### Domínios permitidos e bloqueados
+## Interferências conhecidas
 
-A matriz automatizada usa estes domínios de controle:
+Teste com iCloud Private Relay, “Limitar Rastreamento de Endereço IP”, outro
+perfil DNS, outra VPN, DNS da rede e captive portal. O sistema pode selecionar
+outra configuração, bloquear DoH ou exigir novo consentimento. O Adless não
+promete prevalência, anonimato, ocultação de IP nem que o provedor não possa
+inferir destinos.
 
-Devem continuar resolvendo:
+## Archive, entitlements e IPA
 
-```text
-www.google.com
-web.whatsapp.com
-www.instagram.com
-www.facebook.com
-www.youtube.com
-```
-
-Devem ser bloqueados quando a lista contém a regra correspondente:
-
-```text
-googlesyndication.com
-adsrvr.org
-criteo.com
-pubmatic.com
-adnxs1.com
-```
-
-Esses domínios de publicidade são alvos DNS, não necessariamente páginas
-visualizáveis no navegador. Para um resultado confiável, verifique o log do
-Packet Tunnel e o comportamento de uma consulta DNS, além de tentar o carregamento
-em um app que use o domínio.
-
-### Correspondência de nomes
-
-Confirme os seguintes casos no XCTest e, quando necessário, em uma build do
-dispositivo:
-
-- `ads.example.com` bloqueia `cdn.ads.example.com`;
-- `ADS.EXAMPLE.COM.` é tratado como `ads.example.com`;
-- `ads.example.com.evil` não é bloqueado pela regra `ads.example.com`;
-- `xn--bcher-kva.example` corresponde à forma canônica Punycode;
-- um domínio sem regra de pai continua permitido;
-- um IP, `localhost` ou regra com wildcard inválido não entra na lista.
-
-## DNS UDP e TCP
-
-O provider aceita os dois tipos de flow:
-
-- UDP: mantém o flow retido, lê datagrams continuamente e reutiliza a conexão
-  do cliente durante a vida do flow; cada consulta permitida é resolvida por
-  um intercâmbio HTTPS limitado;
-- TCP: processa mensagens DNS com prefixo de tamanho e mantém uma fila de
-  respostas com buffer limitado; os pedidos DoH podem ser concorrentes.
-
-Valide manualmente:
-
-1. várias consultas em sequência na mesma sessão;
-2. abertura simultânea de várias consultas por um app;
-3. consulta permitida com upstream primário disponível;
-4. fallback para Quad9 DoH quando Cloudflare DoH falha;
-5. resposta rápida `SERVFAIL` quando os dois provedores DoH não respondem;
-6. encerramento do app ou da rede sem flow preso;
-7. retomada após alternar entre Wi-Fi e rede celular.
-8. modo avião e retorno da rede;
-9. reinício do iPhone e reabertura do app com o estado reconstruído.
-
-O app não deve deixar páginas permitidas aguardando silenciosamente. Também
-não deve enviar HTTP, HTTPS ou conteúdo de aplicativos aos resolvedores; somente
-o pacote DNS permitido é encaminhado, dentro de HTTPS. Não deve existir
-conexão do tunnel para UDP/TCP port 53.
-
-### Diagnóstico sem expor domínios
-
-Em builds de desenvolvimento, observe somente estados, contadores e erros
-sanitizados do subsistema `com.orbeworks.adless`:
+O archive de distribuição requer Team, App ID e profile com
+`com.apple.developer.networking.networkextension = dns-settings`. Não é possível
+provar a assinatura de distribuição sem credenciais da equipe Apple. Quando
+disponível:
 
 ```sh
-log stream --style compact --level debug \
-  --predicate 'subsystem == "com.orbeworks.adless"'
+xcodebuild archive -project apps/ios/Adless.xcodeproj -scheme Adless \
+  -configuration Release -destination 'generic/platform=iOS' \
+  -archivePath /tmp/Adless.xcarchive -allowProvisioningUpdates
+sh tools/ios/verify_archive.sh /tmp/Adless.xcarchive
+xcodebuild -exportArchive -archivePath /tmp/Adless.xcarchive \
+  -exportOptionsPlist docs/app-store/ExportOptions.plist \
+  -exportPath /tmp/Adless-export
+sh tools/ios/verify_ipa.sh /tmp/Adless-export/Adless.ipa
 ```
 
-O código não registra o conteúdo das consultas permitidas nem a URL completa
-dos provedores. Para confirmar o caminho criptografado, use o smoke test, os
-testes de mock e uma captura de rede do dispositivo que mostre somente TLS
-para TCP 443; não habilite logging de payload DNS em uma build de produção.
+Os verificadores falham se o archive/IPA não tiver `Adless.app`, se houver
+qualquer `.appex`, se faltar `dns-settings` no bundle assinado ou se existir
+entitlement legado. A inspeção do IPA deve ser feita antes do upload.
+Também confira no Apple Developer que o profile usado não é um profile gerenciado
+antigo que ainda autoriza App Groups ou providers removidos; o profile precisa
+ser regenerado depois da limpeza do App ID.
 
-Para acompanhar os logs no Mac conectado ao dispositivo:
+## Smoke real opcional
+
+Após deploy staging/produção, use um token descartável:
 
 ```sh
-log stream --style compact --level debug \
-  --predicate 'subsystem == "com.orbeworks.adless"'
+ADLESS_INSTALLATION_TOKEN='...' \
+  python3 tools/dns/smoke_worker.py --url https://dns.adless.app
 ```
 
-Os logs úteis normalmente aparecem nos processos `Adless` e
-`PacketTunnel`. Mensagens do `nesessionmanager` e `neagent` ajudam a
-diagnosticar instalação, conexão e encerramento da Network Extension.
-
-## StoreKit manual
-
-### Configuração local
-
-No scheme `Adless`, mantenha o arquivo `Adless.storekit` selecionado. Use
-**Debug → StoreKit → Manage Transactions** para:
-
-- comprar o plano mensal e anual;
-- validar o trial de sete dias;
-- renovar ou expirar uma transação;
-- testar restauração de compra;
-- limpar transações para repetir o fluxo.
-
-Após uma compra válida, confirme que o drawer fecha e que o app tenta ativar a
-proteção. Sem entitlement, o botão deve abrir o drawer em vez de iniciar o
-Packet Tunnel.
-
-### Sandbox e produção
-
-O arquivo `.storekit` não valida a configuração do App Store Connect. Para
-testar Sandbox ou TestFlight, confirme externamente:
-
-- produtos disponíveis para o app;
-- mesmo Subscription Group;
-- preços e territórios;
-- trial de sete dias;
-- usuário Sandbox;
-- acordos e metadata da assinatura.
-
-Não use credenciais reais em testes locais nem registre dados de pagamento nos
-logs.
-
-## Hooks e CI
-
-`npm install` e `npm ci` ativam os hooks locais. O `pre-commit` é rápido; o
-`pre-push` escolhe testes pelos arquivos alterados:
-
-- blocklist: testes Python;
-- landing: lint, typecheck e build;
-- iOS: XCTest no simulador;
-- workflows: `actionlint`.
-
-O workflow `ios-tests.yml` roda em pull requests e manualmente. O workflow de
-release também executa o XCTest antes do archive assinado. `update-blocklist.yml` roda semanalmente e `deploy-pages.yml` publica
-a landing e os artefatos estáticos na `main`.
-
-Quando um workflow falhar, primeiro reproduza o comando localmente. Depois
-verifique o log do job e o estado externo correspondente, como GitHub Pages,
-App Store Connect, assinatura ou dispositivo.
-
-## Como adicionar testes
-
-### Python
-
-- prefira `unittest` e fixtures pequenas;
-- faça mock de `download_https` para evitar internet;
-- use diretórios temporários para artefatos;
-- verifique que uma falha não substitui a versão válida anterior.
-
-### Swift
-
-- use `XCTest` no target `AdlessTests`;
-- use `StubURLProtocol` para respostas de manifesto e payload;
-- use `FileManager.temporaryDirectory` para storage;
-- teste sucesso, falha, retry, checksum e preservação de estado;
-- não dependa de uma assinatura real ou de um iPhone conectado.
-
-### Teste manual
-
-Documente no pull request quando uma alteração exigir:
-
-- iPhone físico;
-- Wi-Fi ou rede celular;
-- produto Sandbox/TestFlight;
-- configuração do App Store Connect;
-- execução de GitHub Actions.
-
-## Checklist de entrega
-
-```sh
-git diff --check
-python3 -m unittest discover -s tools/blocklists/tests -v
-npm run lint
-npm run typecheck
-npm run build:landing
-```
-
-Para mudanças iOS, execute o `xcodebuild` de `AdlessTests`. Para mudanças de
-workflow, execute `actionlint`. Informe os resultados exatos na entrega e não
-confunda build bem-sucedido com teste de DNS real no dispositivo.
+O token não deve aparecer em logs ou shell history. O smoke test valida TLS do
+sistema, POST, GET, wire response e stats; não registra o domínio sintético,
+token ou IP. Não faça testes com `curl -k`.

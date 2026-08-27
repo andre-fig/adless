@@ -11,7 +11,7 @@ on:
       - "apps/ios/Adless/Resources/Assets.xcassets/**"
       - "apps/ios/Adless/Resources/Adless.entitlements"
       - "apps/ios/Adless/Resources/Info.plist"
-      - "apps/ios/AdlessPacketTunnel/**"
+      - "apps/ios/Adless/Resources/Localizable.xcstrings"
       - "apps/ios/Adless.xcodeproj/**"
       - "apps/ios/Adless.storekit"
       - "docs/app-store/ExportOptions.plist"
@@ -165,8 +165,12 @@ jobs:
           dsyms_path="$RUNNER_TEMP/Adless.xcarchive/dSYMs"
           test -d "$dsyms_path"
           test -d "$dsyms_path/Adless.app.dSYM"
-          test -d "$dsyms_path/PacketTunnel.appex.dSYM"
-          echo "Verified app and Packet Tunnel dSYMs in the archive."
+          test "$(find "$dsyms_path" -mindepth 1 -maxdepth 1 -type d -name '*.appex.dSYM' | wc -l | tr -d '[:space:]')" -eq 0
+          echo "Verified the app dSYM and no extension dSYMs in the archive."
+
+      - name: Verify exported IPA contents
+        if: steps.preflight.outputs.should_release == 'true'
+        run: sh tools/ios/verify_ipa.sh "$RUNNER_TEMP/Adless-export/Adless.ipa"
 
       - name: Upload archive dSYMs to Sentry
         if: steps.preflight.outputs.should_release == 'true' && env.SENTRY_AUTH_TOKEN != ''

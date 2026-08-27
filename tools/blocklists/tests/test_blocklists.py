@@ -10,8 +10,8 @@ from tools.blocklists import generate_blocklist as pipeline
 class BlocklistParsingTests(unittest.TestCase):
     def test_production_seed_smoke_matrix_keeps_core_sites_reachable_and_ad_domains_blocked(self):
         entries = pipeline.parse_domains(
-            pipeline.DEFAULT_SEED.read_text(encoding="utf-8"),
-            source_id="embedded-seed",
+            (pipeline.DEFAULT_OUTPUT / "blocklist.txt").read_text(encoding="utf-8"),
+            source_id="published-blocklist",
         )
 
         expected_allowed = (
@@ -64,6 +64,8 @@ class BlocklistParsingTests(unittest.TestCase):
         )
 
         self.assertEqual(domains, {"xn--bcher-kva.example"})
+        self.assertEqual(pipeline.normalize_domain("Straße.Example."), "xn--strae-oqa.example")
+        self.assertIsNone(pipeline.normalize_domain("example.com.."))
 
     def test_rejects_unsupported_executable_adblock_rule(self):
         with self.assertRaises(pipeline.BlocklistError):

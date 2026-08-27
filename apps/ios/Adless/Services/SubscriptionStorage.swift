@@ -27,12 +27,6 @@ struct SubscriptionStorage {
 
     private var rootURL: URL {
         if let baseDirectory { return baseDirectory }
-        if let group = fileManager.containerURL(forSecurityApplicationGroupIdentifier: SubscriptionConfiguration.appGroupIdentifier) {
-            return group
-                .appendingPathComponent("Library", isDirectory: true)
-                .appendingPathComponent("Application Support", isDirectory: true)
-                .appendingPathComponent(SubscriptionConfiguration.subscriptionDirectoryName, isDirectory: true)
-        }
         let support = (try? fileManager.url(
             for: .applicationSupportDirectory,
             in: .userDomainMask,

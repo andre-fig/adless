@@ -38,13 +38,13 @@ jobs:
         env:
           ALLOW_LARGE_CHANGE: ${{ inputs.allow_large_change || false }}
         run: |
-          args=(--sync-seed)
+          args=(--sync-worker)
           if [[ "$ALLOW_LARGE_CHANGE" == "true" ]]; then
             args+=(--allow-large-change)
           fi
           python tools/blocklists/generate_blocklist.py "${args[@]}"
+          python tools/dns-worker/prepare_blocklist.py
           python tools/blocklists/validate_blocklist.py
-          python tools/blocklists/validate_blocklist.py --seed apps/ios/Adless/Resources/SeedBlocklist.txt
 
       - name: Reject unexpected changes
         shell: bash
@@ -54,7 +54,8 @@ jobs:
             "apps/landing-page/public/blocklists/blocklist.txt"
             "apps/landing-page/public/blocklists/blocklist.txt.gz"
             "apps/landing-page/public/blocklists/blocklist.sha256"
-            "apps/ios/Adless/Resources/SeedBlocklist.txt"
+            "apps/dns-worker/data/blocklist.txt"
+            "apps/dns-worker/data/blocklist.meta.json"
           )
 
           while IFS= read -r line; do
@@ -73,7 +74,8 @@ jobs:
             apps/landing-page/public/blocklists/blocklist.txt
             apps/landing-page/public/blocklists/blocklist.txt.gz
             apps/landing-page/public/blocklists/blocklist.sha256
-            apps/ios/Adless/Resources/SeedBlocklist.txt
+            apps/dns-worker/data/blocklist.txt
+            apps/dns-worker/data/blocklist.meta.json
           )
 
           if git diff --quiet -- "${paths[@]}"; then
