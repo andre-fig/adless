@@ -9,10 +9,12 @@ develop → TestFlight → pull request → main → archive, validação e App 
 ## TestFlight
 
 Cada push relevante em `develop` inicia `.github/workflows/testflight-ios.yml`;
-há também execução manual. O workflow testa `AdlessTests`, cria um archive
-Release do scheme `Adless`, exporta, inspeciona o archive/IPA, valida com as
-ferramentas Apple, envia ao TestFlight, espera o processamento e adiciona o
-build ao grupo interno. Ele não submete a revisão.
+há também execução manual. O pre-push local executa `AdlessTests`; o workflow
+de publicação cria um archive Release do scheme `Adless`, exporta, inspeciona o
+archive/IPA, valida com as ferramentas Apple, envia ao TestFlight, espera o
+processamento e adiciona o build ao grupo interno. Ele não submete a revisão.
+O workflow separado `ios-tests.yml` permanece apenas como gate remoto para
+pull requests.
 
 O archive usa produtos StoreKit reais/Sandbox; `Adless.storekit` é apenas para
 desenvolvimento. O scheme `Adless Dev` nunca é usado para distribuição.
@@ -20,10 +22,10 @@ desenvolvimento. O scheme `Adless Dev` nunca é usado para distribuição.
 ## App Store
 
 Cada push relevante em `main` inicia `.github/workflows/release-ios.yml`. O
-workflow roda testes, escolhe um build acima do conhecido no App Store Connect,
-cria archive, exporta, verifica, valida, envia, espera o processamento e
-submete a versão. Versões já em revisão ou à venda são ignoradas sem erro para
-evitar submissão duplicada.
+pre-push local executa `AdlessTests`; o workflow escolhe um build acima do
+conhecido no App Store Connect, cria archive, exporta, verifica, valida, envia,
+espera o processamento e submete a versão. Versões já em revisão ou à venda
+são ignoradas sem erro para evitar submissão duplicada.
 
 Metadata, screenshots, preços, acordos, produtos e trial devem existir no App
 Store Connect antes do workflow. O repositório não cria preços nem alterará a

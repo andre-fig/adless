@@ -9,8 +9,8 @@ on:
       - "apps/ios/Adless/Managers/**"
       - "apps/ios/Adless/Services/**"
       - "apps/ios/Adless/Resources/**"
-      - "apps/dns-worker/**"
       - "apps/ios/Adless.xcodeproj/**"
+      - "apps/ios/Configurations/**"
       - "apps/ios/Adless.storekit"
       - "docs/app-store/ExportOptions.plist"
       - "tools/appstore/**"
@@ -31,7 +31,7 @@ env:
   ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
   ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
   SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-  SENTRY_ORG: portside-xz
+  SENTRY_ORG: orbeworks
   SENTRY_PROJECT: adless
   ASC_INTERNAL_BETA_GROUP_ID: "7582fab8-73d9-41ec-b544-0392c7cfa4b0"
   IOS_PROJECT: apps/ios/Adless.xcodeproj

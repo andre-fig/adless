@@ -40,12 +40,6 @@ jobs:
       - name: Install JavaScript dependencies
         run: npm ci
 
-      - name: Run blocklist tests
-        run: python3 -m unittest discover -s tools/blocklists/tests -v
-
-      - name: Run Worker tests
-        run: npm run test:dns-worker
-
       - name: Prepare and validate the edge blocklist
         run: |
           python3 tools/dns-worker/prepare_blocklist.py

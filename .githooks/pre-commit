@@ -2,6 +2,7 @@
 
 set -euo pipefail
 
+# shellcheck disable=SC1091
 source "$(dirname "$0")/common.sh"
 
 staged_paths_file="$(mktemp "${TMPDIR:-/tmp}/adless-pre-commit.XXXXXX")"

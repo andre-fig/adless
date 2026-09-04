@@ -22,7 +22,7 @@ if [ ! -d "$dsyms_path" ]; then
   exit 1
 fi
 
-export SENTRY_ORG="${SENTRY_ORG:-portside-xz}"
+export SENTRY_ORG="${SENTRY_ORG:-orbeworks}"
 export SENTRY_PROJECT="${SENTRY_PROJECT:-adless}"
 
 sentry-cli debug-files upload --include-sources "$dsyms_path"

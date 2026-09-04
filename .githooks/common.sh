@@ -12,6 +12,9 @@ has_path_matching() {
   while IFS= read -r path; do
     [ -n "$path" ] || continue
     for pattern in "$@"; do
+      # The right-hand side is intentionally unquoted: pattern matching is
+      # the purpose of this helper.
+      # shellcheck disable=SC2053
       if [[ "$path" == $pattern ]]; then
         return 0
       fi
@@ -60,6 +63,12 @@ PY
 run_blocklist_tests() {
   require_command python3 "install Python 3"
   python3 -m unittest discover -s "$REPO_ROOT/tools/blocklists/tests" -v
+}
+
+run_worker_checks() {
+  require_command npm "install Node.js 20 or newer"
+  npm --prefix "$REPO_ROOT" run test:dns-worker
+  npm --prefix "$REPO_ROOT" run build:dns-worker
 }
 
 run_landing_lint() {
