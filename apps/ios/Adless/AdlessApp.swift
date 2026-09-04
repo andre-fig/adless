@@ -133,16 +133,10 @@ final class AppViewModel: ObservableObject {
             return
         }
 
-        // Saving a DNS configuration does not enable it. Once iOS has saved a
-        // disabled configuration, trying to save it again does not help the
-        // user and can make the activation button appear to do nothing. Keep
-        // the user in the explicit system-approval flow until the setting is
-        // enabled in Settings.
-        if await dnsSettingsManager.currentState() == .disabled {
-            isSystemApprovalAlertPresented = true
-            return
-        }
-
+        // Always reinstall the profile when activating. This also migrates a
+        // previously saved, disabled profile to the current authorized DoH
+        // URL and credential.
+        isOn = false
         statusText = String(localized: "Connecting")
         let transaction = AdlessSentry.startTransaction(name: "protection.activate", operation: "dns-settings")
         defer { transaction?.finish() }

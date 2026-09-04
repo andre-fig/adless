@@ -9,6 +9,8 @@ const PRODUCT_IDS = new Set([
 ]);
 const MAX_INSTALLATIONS_PER_SUBSCRIPTION = 8;
 const NOTIFICATION_TTL_SECONDS = 60 * 60 * 24 * 45;
+const MAX_APPLE_IDENTIFIER_LENGTH = 128;
+const MAX_APPLE_CLOCK_SKEW_MS = 5 * 60 * 1000;
 
 export type AuthorizationStatus = "active" | "expired" | "revoked";
 export type TokenRole = "dns" | "stats";
@@ -26,6 +28,7 @@ export interface AuthorizationRecord {
   dnsTokenHash: string;
   statsTokenHash: string;
   originalTransactionId: string;
+  transactionId: string;
   productId: string;
   environment: AppleEnvironment;
   status: AuthorizationStatus;
@@ -47,13 +50,20 @@ interface SubscriptionInstallations {
   installationIds: string[];
 }
 
+interface TransactionClaim {
+  schemaVersion: 1;
+  originalTransactionId: string;
+  installationIds: string[];
+}
+
 export interface AppleTransactionPayload {
   bundleId: string;
   environment: AppleEnvironment;
   productId: string;
   originalTransactionId: string;
   transactionId: string;
-  expiresDate?: number;
+  purchaseDate: number;
+  expiresDate: number;
   revocationDate?: number;
   signedDate: number;
   type?: string;
@@ -83,7 +93,7 @@ export interface AppleNotificationPayload {
 }
 
 export type TokenAuthorization =
-  | { kind: "active" | "expired"; installationId: string }
+  | { kind: "active" | "expired"; installationId: string; accessUntil: number }
   | { kind: "rejected"; reason: "unknown" | "forbidden" };
 
 export interface AuthorizationEnvironment {
@@ -112,8 +122,16 @@ function tokenKey(hash: string): string {
   return authKey(`token:${hash}`);
 }
 
-function subscriptionKey(originalTransactionId: string): string {
+function subscriptionKey(environment: AppleEnvironment, originalTransactionId: string): string {
+  return authKey(`subscription:${environment}:${originalTransactionId}`);
+}
+
+function legacySubscriptionKey(originalTransactionId: string): string {
   return authKey(`subscription:${originalTransactionId}`);
+}
+
+function transactionKey(environment: AppleEnvironment, transactionId: string): string {
+  return authKey(`transaction:${environment}:${transactionId}`);
 }
 
 function notificationKey(notificationUUID: string): string {
@@ -149,19 +167,29 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-function validTransaction(transaction: AppleTransactionPayload, env: AuthorizationEnvironment): boolean {
+function validTransaction(transaction: AppleTransactionPayload, env: AuthorizationEnvironment, now = Date.now()): boolean {
+  const identifiersAreValid = [transaction.originalTransactionId, transaction.transactionId].every((value) =>
+    typeof value === "string" && value.length > 0 && value.length <= MAX_APPLE_IDENTIFIER_LENGTH);
+  const datesAreValid = Number.isSafeInteger(transaction.purchaseDate)
+    && Number.isSafeInteger(transaction.expiresDate)
+    && transaction.purchaseDate > 0
+    && transaction.purchaseDate <= now + MAX_APPLE_CLOCK_SKEW_MS
+    && transaction.expiresDate > transaction.purchaseDate
+    && Number.isSafeInteger(transaction.signedDate)
+    && transaction.signedDate >= transaction.purchaseDate
+    && transaction.signedDate <= now + MAX_APPLE_CLOCK_SKEW_MS
+    && (transaction.revocationDate === undefined
+      || (Number.isSafeInteger(transaction.revocationDate)
+        && transaction.revocationDate >= transaction.purchaseDate
+        && transaction.revocationDate <= now + MAX_APPLE_CLOCK_SKEW_MS));
   return transaction.bundleId === (env.APPLE_BUNDLE_ID ?? "com.orbeworks.adless")
     && (transaction.environment === "Production" || transaction.environment === "Sandbox")
     && PRODUCT_IDS.has(transaction.productId)
-    && typeof transaction.originalTransactionId === "string"
-    && transaction.originalTransactionId.length > 0
-    && typeof transaction.transactionId === "string"
-    && transaction.transactionId.length > 0
-    && Number.isSafeInteger(transaction.signedDate)
-    && (transaction.expiresDate === undefined || Number.isSafeInteger(transaction.expiresDate));
+    && identifiersAreValid
+    && datesAreValid;
 }
 
-function validNotification(notification: AppleNotificationPayload, env: AuthorizationEnvironment): boolean {
+function validNotification(notification: AppleNotificationPayload, env: AuthorizationEnvironment, now = Date.now()): boolean {
   const data = notification.data;
   const configuredAppAppleId = env.APPLE_APP_ID ? Number(env.APPLE_APP_ID) : undefined;
   const appAppleIdMatches = configuredAppAppleId === undefined
@@ -169,7 +197,9 @@ function validNotification(notification: AppleNotificationPayload, env: Authoriz
   return typeof notification.notificationType === "string"
     && typeof notification.notificationUUID === "string"
     && notification.notificationUUID.length > 0
+    && notification.notificationUUID.length <= MAX_APPLE_IDENTIFIER_LENGTH
     && Number.isSafeInteger(notification.signedDate)
+    && notification.signedDate <= now + MAX_APPLE_CLOCK_SKEW_MS
     && appAppleIdMatches
     && (!data?.bundleId || data.bundleId === (env.APPLE_BUNDLE_ID ?? "com.orbeworks.adless"))
     && (!data?.environment || data.environment === "Production" || data.environment === "Sandbox");
@@ -205,7 +235,7 @@ export async function authorizeToken(
   if (record.status === "revoked") return { kind: "rejected", reason: "forbidden" };
   const active = recordIsActive(record, now);
   if (role === "stats" && !active) return { kind: "rejected", reason: "forbidden" };
-  return { kind: active ? "active" : "expired", installationId: mapping.installationId };
+  return { kind: active ? "active" : "expired", installationId: mapping.installationId, accessUntil: record.accessUntil };
 }
 
 function statusFromTransaction(transaction: AppleTransactionPayload, now: number): AuthorizationStatus {
@@ -213,11 +243,20 @@ function statusFromTransaction(transaction: AppleTransactionPayload, now: number
   return (transaction.expiresDate ?? 0) > now ? "active" : "expired";
 }
 
-async function addSubscriptionInstallation(kv: AuthorizationKV, transactionId: string, installationId: string): Promise<void> {
-  const current = await readJSON<SubscriptionInstallations>(kv, subscriptionKey(transactionId));
+async function addSubscriptionInstallation(
+  kv: AuthorizationKV,
+  environment: AppleEnvironment,
+  originalTransactionId: string,
+  installationId: string,
+): Promise<void> {
+  const key = subscriptionKey(environment, originalTransactionId);
+  const current = await readJSON<SubscriptionInstallations>(kv, key);
   const installationIds = current?.installationIds.filter(validInstallationId) ?? [];
-  if (!installationIds.includes(installationId)) installationIds.push(installationId);
-  await kv.put(subscriptionKey(transactionId), JSON.stringify({
+  if (!installationIds.includes(installationId)) {
+    if (installationIds.length >= MAX_INSTALLATIONS_PER_SUBSCRIPTION) throw new Error("subscription installation limit reached");
+    installationIds.push(installationId);
+  }
+  await kv.put(key, JSON.stringify({
     schemaVersion: 1,
     installationIds: installationIds.slice(-MAX_INSTALLATIONS_PER_SUBSCRIPTION),
   }));
@@ -234,7 +273,7 @@ export async function registerInstallation(
   now = Date.now(),
 ): Promise<{ dnsToken: string; statsToken: string; installationId: string; accessUntil: number }> {
   if (!env.AUTH) throw new Error("authorization storage is not configured");
-  if (!validInstallationId(installationId) || !validTransaction(transaction, env)) {
+  if (!validInstallationId(installationId) || !validTransaction(transaction, env, now)) {
     throw new Error("invalid authorization data");
   }
   const accessUntil = transaction.expiresDate ?? 0;
@@ -243,6 +282,13 @@ export async function registerInstallation(
   }
 
   const previous = await readJSON<AuthorizationRecord>(env.AUTH, installationKey(installationId));
+  const transactionClaimKey = transactionKey(transaction.environment, transaction.transactionId);
+  const claimedTransaction = await readJSON<TransactionClaim>(env.AUTH, transactionClaimKey);
+  const claimedInstallations = claimedTransaction?.installationIds.filter(validInstallationId) ?? [];
+  if (!claimedInstallations.includes(installationId) && claimedInstallations.length >= MAX_INSTALLATIONS_PER_SUBSCRIPTION) {
+    throw new Error("transaction replay limit reached");
+  }
+  await addSubscriptionInstallation(env.AUTH, transaction.environment, transaction.originalTransactionId, installationId);
   await removeTokenMapping(env.AUTH, previous?.dnsTokenHash);
   await removeTokenMapping(env.AUTH, previous?.statsTokenHash);
 
@@ -253,6 +299,7 @@ export async function registerInstallation(
     schemaVersion: 1,
     installationId,
     originalTransactionId: transaction.originalTransactionId,
+    transactionId: transaction.transactionId,
     productId: transaction.productId,
     environment: transaction.environment,
     status: statusFromTransaction(transaction, now),
@@ -268,7 +315,11 @@ export async function registerInstallation(
   await env.AUTH.put(installationKey(installationId), JSON.stringify(record));
   await env.AUTH.put(tokenKey(dnsTokenHash), JSON.stringify({ schemaVersion: 1, installationId, role: "dns" }));
   await env.AUTH.put(tokenKey(statsTokenHash), JSON.stringify({ schemaVersion: 1, installationId, role: "stats" }));
-  await addSubscriptionInstallation(env.AUTH, transaction.originalTransactionId, installationId);
+  await env.AUTH.put(transactionClaimKey, JSON.stringify({
+    schemaVersion: 1,
+    originalTransactionId: transaction.originalTransactionId,
+    installationIds: [...new Set([...claimedInstallations, installationId])].slice(-MAX_INSTALLATIONS_PER_SUBSCRIPTION),
+  }));
   return { dnsToken, statsToken, installationId, accessUntil };
 }
 
@@ -280,6 +331,7 @@ function nextRecordFromNotification(
   now: number,
 ): AuthorizationRecord {
   const type = notification.notificationType;
+  if (notification.signedDate <= current.lastSignedDate) return current;
   const forceRevoke = type === "REFUND" || type === "REVOKE";
   if (forceRevoke) {
     return {
@@ -301,10 +353,10 @@ function nextRecordFromNotification(
   const isInBillingRetryPeriod = renewal?.isInBillingRetryPeriod ?? current.isInBillingRetryPeriod ?? false;
   const signedDate = Math.max(current.lastSignedDate, notification.signedDate, transaction?.signedDate ?? 0);
 
-  if (notification.signedDate < current.lastSignedDate && !transaction?.revocationDate) return current;
   return {
     ...current,
     productId: transaction?.productId ?? renewal?.productId ?? current.productId,
+    transactionId: transaction?.transactionId ?? current.transactionId,
     status: effectiveStatus,
     accessUntil,
     inGracePeriod,
@@ -324,11 +376,20 @@ export async function processAppleNotification(
   if (!env.AUTH) throw new Error("authorization storage is not configured");
   const originalTransactionId = transaction?.originalTransactionId ?? renewal?.originalTransactionId;
   if (!originalTransactionId) return;
-  const subscriptions = await readJSON<SubscriptionInstallations>(env.AUTH, subscriptionKey(originalTransactionId));
-  for (const installationId of subscriptions?.installationIds ?? []) {
+  const environment = transaction?.environment ?? renewal?.environment;
+  if (!environment) return;
+  const [subscriptions, legacySubscriptions] = await Promise.all([
+    readJSON<SubscriptionInstallations>(env.AUTH, subscriptionKey(environment, originalTransactionId)),
+    readJSON<SubscriptionInstallations>(env.AUTH, legacySubscriptionKey(originalTransactionId)),
+  ]);
+  const installationIds = [...new Set([
+    ...(subscriptions?.installationIds ?? []),
+    ...(legacySubscriptions?.installationIds ?? []),
+  ])];
+  for (const installationId of installationIds) {
     if (!validInstallationId(installationId)) continue;
     const current = await readJSON<AuthorizationRecord>(env.AUTH, installationKey(installationId));
-    if (!current || current.originalTransactionId !== originalTransactionId) continue;
+    if (!current || current.originalTransactionId !== originalTransactionId || current.environment !== environment) continue;
     const next = nextRecordFromNotification(current, notification, transaction, renewal, now);
     await env.AUTH.put(installationKey(installationId), JSON.stringify({
       ...next,
@@ -365,10 +426,12 @@ export async function handleAuthorizationRegister(
   }
 
   try {
+    const now = dependencies.now?.() ?? Date.now();
+    const jwsOptions = { ...dependencies.appleJWSOptions, verificationTime: dependencies.appleJWSOptions?.verificationTime ?? new Date(now) };
     const transaction = dependencies.verifyTransaction
       ? await dependencies.verifyTransaction(transactionJWS)
-      : await verifyAppleJWS<AppleTransactionPayload>(transactionJWS, dependencies.appleJWSOptions);
-    const result = await registerInstallation(env, installationId, transaction, dependencies.now?.() ?? Date.now());
+      : await verifyAppleJWS<AppleTransactionPayload>(transactionJWS, jwsOptions);
+    const result = await registerInstallation(env, installationId, transaction, now);
     return jsonResponse(result);
   } catch {
     return jsonResponse({ error: "transaction not authorized" }, 401);
@@ -386,10 +449,12 @@ export async function handleAppleNotification(
   if (!signedPayload) return jsonResponse({ error: "invalid request" }, 400);
 
   try {
+    const now = dependencies.now?.() ?? Date.now();
+    const jwsOptions = { ...dependencies.appleJWSOptions, verificationTime: dependencies.appleJWSOptions?.verificationTime ?? new Date(now) };
     const notification = dependencies.verifyNotification
       ? await dependencies.verifyNotification(signedPayload)
-      : await verifyAppleJWS<AppleNotificationPayload>(signedPayload, dependencies.appleJWSOptions);
-    if (!validNotification(notification, env) || !env.AUTH) return jsonResponse({ error: "invalid notification" }, 400);
+      : await verifyAppleJWS<AppleNotificationPayload>(signedPayload, jwsOptions);
+    if (!validNotification(notification, env, now) || !env.AUTH) return jsonResponse({ error: "invalid notification" }, 400);
     if (await env.AUTH.get(notificationKey(notification.notificationUUID), "text")) return jsonResponse({ ok: true });
 
     const transactionJWS = notification.data?.signedTransactionInfo;
@@ -397,18 +462,19 @@ export async function handleAppleNotification(
     const transaction = transactionJWS
       ? dependencies.verifyTransaction
         ? await dependencies.verifyTransaction(transactionJWS)
-        : await verifyAppleJWS<AppleTransactionPayload>(transactionJWS, dependencies.appleJWSOptions)
+        : await verifyAppleJWS<AppleTransactionPayload>(transactionJWS, jwsOptions)
       : undefined;
     const renewal = renewalJWS
       ? dependencies.verifyRenewalInfo
         ? await dependencies.verifyRenewalInfo(renewalJWS)
-        : await verifyAppleJWS<AppleRenewalInfoPayload>(renewalJWS, dependencies.appleJWSOptions)
+        : await verifyAppleJWS<AppleRenewalInfoPayload>(renewalJWS, jwsOptions)
       : undefined;
 
-    if (transaction && !validTransaction(transaction, env)) return jsonResponse({ error: "invalid transaction" }, 400);
+    if (transaction && !validTransaction(transaction, env, now)) return jsonResponse({ error: "invalid transaction" }, 400);
     if (renewal && (!PRODUCT_IDS.has(renewal.productId ?? "")
       || typeof renewal.originalTransactionId !== "string"
       || renewal.originalTransactionId.length === 0
+      || renewal.originalTransactionId.length > MAX_APPLE_IDENTIFIER_LENGTH
       || (renewal.environment !== "Production" && renewal.environment !== "Sandbox"))) {
       return jsonResponse({ error: "invalid renewal" }, 400);
     }
@@ -424,7 +490,7 @@ export async function handleAppleNotification(
     if (transaction && renewal && renewal.productId && transaction.productId !== renewal.productId) {
       return jsonResponse({ error: "notification product mismatch" }, 400);
     }
-    await processAppleNotification(env, notification, transaction, renewal, dependencies.now?.() ?? Date.now());
+    await processAppleNotification(env, notification, transaction, renewal, now);
     await env.AUTH.put(notificationKey(notification.notificationUUID), "1", { expirationTtl: NOTIFICATION_TTL_SECONDS });
     return jsonResponse({ ok: true });
   } catch {

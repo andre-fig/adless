@@ -19,7 +19,8 @@ Limites implementados:
 - POST e corpo DNS com no máximo 4 KiB;
 - exatamente uma pergunta e no máximo 4.096 resource records;
 - timeout de 1,5 s por upstream;
-- rate limit padrão de 1.200 requisições por minuto por token/IP em memória;
+- rate limit padrão de 1.200 requisições por minuto por hash de token/hash de IP
+  em memória (os valores brutos não são mantidos na chave);
 - cache local do isolate limitado a 512 entradas e ao TTL recebido;
 - respostas A/AAAA bloqueadas com TTL sintético de 60 segundos; a resposta HTTP
   continua `Cache-Control: no-store`;
@@ -28,6 +29,10 @@ Limites implementados:
 O rate limiting por IP é uma medida de abuso na edge; o IP não é enviado para
 o Durable Object nem armazenado pela aplicação. A proteção antifraude do token
 é deliberadamente de baixo privilégio e não substitui autenticação de conta.
+O Worker mantém uma cache positiva limitada por 10 minutos e pela expiração da
+autorização para absorver falhas transitórias do KV. Sem uma autorização
+positiva em cache, a indisponibilidade do KV retorna erro; não existe fail-open
+para tokens desconhecidos.
 
 ## Desenvolvimento local
 
@@ -129,11 +134,12 @@ Notifications V2. O Worker valida a assinatura, deduplica pelo
 billing retry e grace period. Cancelamento de renovação não corta o acesso
 enquanto `expiresDate` ainda estiver no futuro.
 
-O caminho DNS calcula o hash do token, consulta apenas o KV e decide antes de
-cache, Durable Object ou upstream. Token ativo bloqueia normalmente; token
-emitido cuja validade acabou resolve via upstream sem bloqueio e sem stats;
-token desconhecido, inventado ou revogado recebe 401. Apple e Railway nunca
-são consultados em uma requisição DNS.
+O caminho DNS calcula o hash do token, consulta apenas o KV (ou uma cache
+positiva curta em caso de indisponibilidade) e decide antes de cache, Durable
+Object ou upstream. Token ativo bloqueia normalmente; token emitido cuja
+validade acabou resolve via upstream sem bloqueio e sem stats; token
+desconhecido, inventado ou revogado recebe 401. Apple e Railway nunca são
+consultados em uma requisição DNS.
 
 ### Configuração manual Apple
 

@@ -9,6 +9,7 @@ import {
   handleAppleNotification,
   handleAuthorizationRegister,
   processAppleNotification,
+  authorizeToken,
   type AppleNotificationPayload,
   type AppleRenewalInfoPayload,
   type AppleTransactionPayload,
@@ -30,18 +31,22 @@ const AUTH_ENV = {
 
 class MemoryKV implements AuthorizationKV {
   readonly values = new Map<string, string>();
+  unavailable = false;
 
   async get(key: string, type: "json" | "text" = "text"): Promise<unknown> {
+    if (this.unavailable) throw new Error("KV unavailable");
     const value = this.values.get(key);
     if (value === undefined) return null;
     return type === "json" ? JSON.parse(value) : value;
   }
 
   async put(key: string, value: string): Promise<void> {
+    if (this.unavailable) throw new Error("KV unavailable");
     this.values.set(key, value);
   }
 
   async delete(key: string): Promise<void> {
+    if (this.unavailable) throw new Error("KV unavailable");
     this.values.delete(key);
   }
 }
@@ -53,6 +58,7 @@ function testTransaction(overrides: Partial<AppleTransactionPayload> = {}): Appl
     productId: "com.orbeworks.adless.pro.monthly",
     originalTransactionId: "1000000000000001",
     transactionId: "1000000000000002",
+    purchaseDate: 900_000,
     expiresDate: 2_000_000,
     signedDate: 1_000_000,
     ...overrides,
@@ -127,8 +133,8 @@ function makeWorker(
   options: Parameters<typeof createDNSWorker>[2] = {},
 ) {
   const authorizeToken = options.authorizeToken ?? (async (_env: WorkerEnvironment, token: string, _role: TokenRole, _now: number): Promise<TokenAuthorization> => {
-    if (token === TOKEN) return { kind: "active", installationId: INSTALLATION_ID };
-    if (token === OTHER_TOKEN) return { kind: "active", installationId: OTHER_INSTALLATION_ID };
+    if (token === TOKEN) return { kind: "active", installationId: INSTALLATION_ID, accessUntil: Number.MAX_SAFE_INTEGER };
+    if (token === OTHER_TOKEN) return { kind: "active", installationId: OTHER_INSTALLATION_ID, accessUntil: Number.MAX_SAFE_INTEGER };
     return { kind: "rejected", reason: "unknown" };
   });
   return createDNSWorker(text, metadata(text), { ...options, fetch: fetchImpl, authorizeToken });
@@ -439,7 +445,7 @@ test("rejects a blocklist whose metadata count or checksum is invalid", async ()
   const text = "ads.example.com\n";
   const worker = createDNSWorker(text, { ...metadata(text), domainCount: 2 }, {
     fetch: async () => new Response(null, { status: 500 }),
-    authorizeToken: async () => ({ kind: "active", installationId: INSTALLATION_ID }),
+    authorizeToken: async () => ({ kind: "active", installationId: INSTALLATION_ID, accessUntil: Number.MAX_SAFE_INTEGER }),
   });
   const result = await worker.fetch(requestFor(query("allowed.example.com")), {}, context());
   assert.equal(result.status, 500);
@@ -562,6 +568,38 @@ test("unknown tokens are rejected before cache, Durable Object, and upstream", a
   assert.equal(result.status, 401);
   assert.equal(upstreamCalls, 0);
   assert.equal(stats.idCalls, 0);
+});
+
+test("KV outages use only bounded positive authorization cache entries", async () => {
+  const kv = new MemoryKV();
+  const transaction = testTransaction({ expiresDate: AUTH_NOW + 1_000 });
+  const credentials = await registerTestInstallation(kv, INSTALLATION_ID, transaction);
+  let clock = AUTH_NOW;
+  let upstreamCalls = 0;
+  const worker = createDNSWorker("ads.example.com\n", metadata("ads.example.com\n"), {
+    now: () => clock,
+    fetch: async () => {
+      upstreamCalls += 1;
+      return new Response(binaryBody(response(query("safe.example.com"))), { headers: { "content-type": "application/dns-message" } });
+    },
+  });
+  const env = { ...AUTH_ENV, AUTH: kv };
+
+  await worker.fetch(requestForToken(query("safe.example.com"), credentials.dnsToken), env, context());
+  kv.unavailable = true;
+  clock = AUTH_NOW + 500;
+  const stillActive = await worker.fetch(requestForToken(query("ads.example.com"), credentials.dnsToken), env, context());
+  assert.equal(stillActive.status, 200);
+  assert.equal(upstreamCalls, 1, "a known active token keeps blocking during a short KV outage");
+
+  const unknown = await worker.fetch(requestForToken(query("safe.example.com"), "u".repeat(43)), env, context());
+  assert.equal(unknown.status, 503);
+  assert.equal(upstreamCalls, 1, "an unknown token never fails open during a KV outage");
+
+  clock = AUTH_NOW + 62_000;
+  const expired = await worker.fetch(requestForToken(query("safe.example.com"), credentials.dnsToken), env, context());
+  assert.equal(expired.status, 200);
+  assert.equal(upstreamCalls, 2, "a known token resolves without blocking after its cached expiry");
 });
 
 test("DNS and stats credentials cannot be used for the other endpoint", async () => {
@@ -760,6 +798,29 @@ test("rotating credentials preserves the installation counter and stores no plai
     assert.equal(String(value).includes(second.dnsToken), false);
     assert.equal(String(value).includes(second.statsToken), false);
   }
+});
+
+test("replayed notification timestamps cannot override newer subscription state", async () => {
+  const kv = new MemoryKV();
+  const transaction = testTransaction({ expiresDate: AUTH_NOW + 100_000 });
+  const credentials = await registerTestInstallation(kv, INSTALLATION_ID, transaction);
+  const env = { ...AUTH_ENV, AUTH: kv };
+  await processAppleNotification(
+    env,
+    testNotification({ notificationUUID: "notification-new", signedDate: 1_300_000, notificationType: "DID_RENEW" }),
+    { ...transaction, transactionId: "1000000000000003", expiresDate: AUTH_NOW + 200_000, signedDate: 1_200_000 },
+    undefined,
+    AUTH_NOW + 1_000,
+  );
+  await processAppleNotification(
+    env,
+    testNotification({ notificationUUID: "notification-old", signedDate: 1_250_000, notificationType: "REFUND" }),
+    { ...transaction, revocationDate: AUTH_NOW + 1_500 },
+    undefined,
+    AUTH_NOW + 1_500,
+  );
+  const authorized = await authorizeToken(env, credentials.dnsToken, "dns", AUTH_NOW + 1_500);
+  assert.equal(authorized.kind, "active");
 });
 
 test("DNS authorization does not call Apple or another backend per request", async () => {

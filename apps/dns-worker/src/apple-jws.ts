@@ -10,6 +10,7 @@ const APPLE_JWS_INTERMEDIATE_EXTENSION = "1.2.840.113635.100.6.2.1";
 
 export interface AppleJWSVerificationOptions {
   trustedRootCertificate?: Uint8Array;
+  verificationTime?: Date;
 }
 
 export class AppleJWSVerificationError extends Error {
@@ -53,6 +54,12 @@ async function verifyCertificateChain(header: Record<string, unknown>, options: 
     const intermediate = new X509Certificate(decodeBase64(chain[1] as string).buffer as ArrayBuffer);
     const suppliedRoot = new X509Certificate(decodeBase64(chain[2] as string).buffer as ArrayBuffer);
     const trustedRoot = new X509Certificate((options.trustedRootCertificate ?? decodeBase64(APPLE_ROOT_CA_G3_BASE64)).buffer as ArrayBuffer);
+    const verificationTime = options.verificationTime ?? new Date();
+    for (const certificate of [leaf, intermediate, suppliedRoot, trustedRoot]) {
+      if (verificationTime < certificate.notBefore || verificationTime > certificate.notAfter) {
+        throw new AppleJWSVerificationError();
+      }
+    }
 
     if (!(await sameCertificate(suppliedRoot, trustedRoot))
       || leaf.issuer !== intermediate.subject

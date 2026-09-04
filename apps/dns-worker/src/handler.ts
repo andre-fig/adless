@@ -30,6 +30,8 @@ const CIRCUIT_FAILURES = 3;
 const CIRCUIT_OPEN_MS = 15_000;
 const RATE_WINDOW_MS = 60_000;
 const DEFAULT_RATE_LIMIT = 1200;
+const AUTHORIZATION_CACHE_GRACE_MS = 10 * 60_000;
+const MAX_AUTHORIZATION_CACHE_ENTRIES = 4096;
 const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 const CLOUDFLARE_DOH = "https://cloudflare-dns.com/dns-query";
 const QUAD9_DOH = "https://dns.quad9.net/dns-query";
@@ -44,6 +46,11 @@ interface CacheEntry {
 interface RateEntry {
   start: number;
   count: number;
+}
+
+interface AuthorizationCacheEntry {
+  authorization: Extract<TokenAuthorization, { kind: "active" | "expired" }>;
+  staleAt: number;
 }
 
 export interface WorkerDependencies {
@@ -100,6 +107,11 @@ function contentTypeIsDNS(request: Request): boolean {
   return value === "application/dns-message";
 }
 
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 async function requestBody(request: Request): Promise<{ data?: Uint8Array; error?: Response }> {
   const length = request.headers.get("content-length");
   if (length && (!/^\d+$/.test(length) || Number(length) > MAX_QUERY_BYTES)) return { error: new Response(null, { status: 413 }) };
@@ -145,6 +157,7 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
   const timeoutMs = dependencies.upstreamTimeoutMs ?? UPSTREAM_TIMEOUT_MS;
   const cache = new Map<string, CacheEntry>();
   const rateEntries = new Map<string, RateEntry>();
+  const authorizationCache = new Map<string, AuthorizationCacheEntry>();
   const circuit = { failures: 0, openedAt: 0 };
   let blocklistPromise: Promise<Blocklist> | undefined;
 
@@ -161,9 +174,10 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
     return blocklistPromise;
   };
 
-  const allowedByRate = (request: Request, token: string): boolean => {
+  const allowedByRate = async (request: Request, token: string): Promise<boolean> => {
     const ip = request.headers.get("cf-connecting-ip") ?? "unknown";
-    const key = `${token}:${ip}`;
+    const [tokenHash, ipHash] = await Promise.all([sha256Hex(token), sha256Hex(ip)]);
+    const key = `${tokenHash}:${ipHash}`;
     const timestamp = now();
     const previous = rateEntries.get(key);
     if (!previous || timestamp - previous.start >= RATE_WINDOW_MS) {
@@ -179,6 +193,50 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
     }
     previous.count += 1;
     return previous.count <= rateLimit;
+  };
+
+  const authorizationCacheKey = async (token: string, role: TokenRole): Promise<string> =>
+    `${role}:${await sha256Hex(token)}`;
+
+  const authorizeWithAvailability = async (
+    env: WorkerEnvironment,
+    token: string,
+    role: TokenRole,
+    timestamp: number,
+    authorize: (env: WorkerEnvironment, token: string, role: TokenRole, now: number) => Promise<TokenAuthorization>,
+  ): Promise<TokenAuthorization> => {
+    const key = await authorizationCacheKey(token, role);
+    try {
+      const authorization = await authorize(env, token, role, timestamp);
+      if (authorization.kind === "rejected") {
+        authorizationCache.delete(key);
+        return authorization;
+      }
+      // Only cache records with a server-provided expiry. This is a bounded
+      // availability window for known credentials, never a fail-open path.
+      if (Number.isSafeInteger(authorization.accessUntil)) {
+        if (authorizationCache.size >= MAX_AUTHORIZATION_CACHE_ENTRIES && !authorizationCache.has(key)) {
+          authorizationCache.delete(authorizationCache.keys().next().value as string);
+        }
+        authorizationCache.set(key, {
+          authorization,
+          staleAt: timestamp + AUTHORIZATION_CACHE_GRACE_MS,
+        });
+      }
+      return authorization;
+    } catch (error) {
+      const cached = authorizationCache.get(key);
+      if (!cached || cached.staleAt <= timestamp) {
+        authorizationCache.delete(key);
+        throw error;
+      }
+      if (cached.authorization.accessUntil <= timestamp) {
+        return role === "dns"
+          ? { kind: "expired", installationId: cached.authorization.installationId, accessUntil: cached.authorization.accessUntil }
+          : { kind: "rejected", reason: "forbidden" };
+      }
+      return cached.authorization;
+    }
   };
 
   const purgeExpiredCache = (timestamp: number): void => {
@@ -288,24 +346,24 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
         if (!token) return jsonResponse({ error: "unauthorized" }, 401);
         let authorization: TokenAuthorization;
         try {
-          authorization = await authorizeToken(env, token, "stats", now());
+          authorization = await authorizeWithAvailability(env, token, "stats", now(), authorizeToken);
         } catch {
           return jsonResponse({ error: "temporarily unavailable" }, 503);
         }
         if (authorization.kind === "rejected") return jsonResponse({ error: "unauthorized" }, 401);
-        if (!allowedByRate(request, token)) return jsonResponse({ error: "rate limited" }, 429);
+        if (!await allowedByRate(request, token)) return jsonResponse({ error: "rate limited" }, 429);
         return fetchStats(env, authorization.installationId);
       }
       const token = tokenFromPath(url.pathname);
       if (!token) return new Response(null, { status: 404 });
       let authorization: TokenAuthorization;
       try {
-        authorization = await authorizeToken(env, token, "dns", now());
+        authorization = await authorizeWithAvailability(env, token, "dns", now(), authorizeToken);
       } catch {
         return new Response(null, { status: 503 });
       }
       if (authorization.kind === "rejected") return jsonResponse({ error: "unauthorized" }, 401);
-      if (!allowedByRate(request, token)) return new Response(null, { status: 429, headers: { "retry-after": "60" } });
+      if (!await allowedByRate(request, token)) return new Response(null, { status: 429, headers: { "retry-after": "60" } });
 
       let query: Uint8Array | undefined;
       if (request.method === "POST") {

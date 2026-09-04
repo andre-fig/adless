@@ -101,8 +101,11 @@ QNAME, pacote DNS e IP não são dimensões nem valores persistidos.
 rejeitado nesse caminho e o endpoint retorna `{ blockedTotal, updatedAt }`. O
 app lê em primeiro plano e após ativação, preserva o último valor offline e
 nunca reduz a UI.
-Rate limiting é mantido na edge por janela curta e IP/token apenas em memória;
-nenhum IP é gravado em armazenamento de aplicação.
+Rate limiting é mantido na edge por janela curta, usando somente
+`SHA-256(token):SHA-256(IP)` como chave em memória; token e IP brutos não são
+registrados nem gravados. Em caso de falha temporária do KV, apenas uma
+autorização positiva conhecida pode ser reutilizada por até 10 minutos e até
+seu `accessUntil`; tokens desconhecidos continuam rejeitados.
 
 Os tokens são credenciais bearer de baixo privilégio; a assinatura Apple é a
 autorização server-side. Não há conta, login, Railway ou banco externo.
