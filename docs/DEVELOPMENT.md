@@ -14,8 +14,8 @@ Os schemes são:
 
 | Scheme | Configuração | Bundle ID | Endpoint | Nome |
 | --- | --- | --- | --- | --- |
-| `Adless Dev` | `Debug Dev` / `Release Dev` | `com.orbeworks.adless.dev` | `https://dns.adless.app` | Adless Dev |
-| `Adless` | `Debug` / `Release` | `com.orbeworks.adless` | `https://dns.adless.app` | Adless |
+| `Adless Dev` | `Debug Dev` / `Release Dev` | `com.orbeworks.adless.dev` | `https://adless-dns.adless-production.workers.dev` | Adless Dev |
+| `Adless` | `Debug` / `Release` | `com.orbeworks.adless` | `https://adless-dns.adless-production.workers.dev` | Adless |
 
 O app requer a capability Network Extension `dns-settings`. Não há target
 adicional, embedding, App Group ou perfil gerido. O App ID e os profiles de
@@ -50,13 +50,14 @@ npm ci
 npm run build:dns-worker
 npm run test:dns-worker
 python3 tools/dns-worker/prepare_blocklist.py
-npx --yes wrangler@4 dev --config apps/dns-worker/wrangler.toml --env staging
+npx --yes wrangler@4 deploy --config apps/dns-worker/wrangler.toml
 ```
 
 O Worker exige token de instalação no caminho DoH e Bearer na API de stats. O
-Worker usa apenas HTTPS para upstream e não é um proxy de tráfego. Deployment,
-certificado do hostname, rollback, secrets, métricas, custo e incidentes estão
-em [`dns-cloud.md`](dns-cloud.md).
+Worker usa apenas HTTPS para upstream e não é um proxy de tráfego. Existe
+somente o Worker remoto de produção, publicado em `workers.dev`; os testes
+locais usam mocks. Deployment, rollback, secrets, métricas, custo e incidentes
+estão em [`dns-cloud.md`](dns-cloud.md).
 
 ## Blocklist
 

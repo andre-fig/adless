@@ -729,12 +729,20 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Activa la protección DNS en Ajustes" } }
       }
     },
-    "Open Settings → General → VPN & Network → DNS and enable Adless. Protection will appear here when it is active." : {
+    "In the next screen, open VPN & Device Management, then DNS, and enable Adless. Return here; protection will be checked automatically." : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Settings → General → VPN & Network → DNS and enable Adless. Protection will appear here when it is active." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Abra Ajustes → Geral → VPN e Rede → DNS e ative o Adless. A proteção aparecerá aqui quando estiver ativa." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Abre Ajustes → General → VPN y red → DNS y activa Adless. La protección aparecerá aquí cuando esté activa." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "In the next screen, open VPN & Device Management, then DNS, and enable Adless. Return here; protection will be checked automatically." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Na próxima tela, abra Gestão de VPN e Dispositivo, depois DNS, e ative o Adless. Ao voltar, a proteção será verificada automaticamente." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "En la siguiente pantalla, abre Gestión de VPN y Dispositivo, luego DNS, y activa Adless. Al volver, la protección se comprobará automáticamente." } }
+      }
+    },
+    "Open Settings" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Settings" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Abrir Ajustes" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Abrir Ajustes" } }
       }
     },
     "years" : {

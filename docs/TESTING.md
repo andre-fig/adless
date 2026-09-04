@@ -114,11 +114,11 @@ ser regenerado depois da limpeza do App ID.
 
 ## Smoke real opcional
 
-Após deploy staging/produção, use um token descartável:
+Após o deploy de produção, use um token descartável:
 
 ```sh
 ADLESS_INSTALLATION_TOKEN='...' \
-  python3 tools/dns/smoke_worker.py --url https://dns.adless.app
+  python3 tools/dns/smoke_worker.py --url https://adless-dns.adless-production.workers.dev
 ```
 
 O token não deve aparecer em logs ou shell history. O smoke test valida TLS do

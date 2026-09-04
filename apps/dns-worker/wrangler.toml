@@ -1,7 +1,7 @@
 name = "adless-dns"
 main = "src/worker.ts"
 compatibility_date = "2026-08-26"
-workers_dev = false
+workers_dev = true
 preview_urls = false
 
 [observability]
@@ -10,34 +10,10 @@ enabled = false
 [vars]
 DEPLOYMENT_ENV = "production"
 
-[[routes]]
-pattern = "dns.adless.app/*"
-zone_name = "adless.app"
-
 [[durable_objects.bindings]]
 name = "STATS"
 class_name = "StatsDurableObject"
 
 [[migrations]]
-tag = "v1"
-new_sqlite_classes = ["StatsDurableObject"]
-
-[env.staging]
-name = "adless-dns-staging"
-workers_dev = true
-preview_urls = false
-routes = []
-
-[env.staging.observability]
-enabled = false
-
-[env.staging.vars]
-DEPLOYMENT_ENV = "staging"
-
-[[env.staging.durable_objects.bindings]]
-name = "STATS"
-class_name = "StatsDurableObject"
-
-[[env.staging.migrations]]
 tag = "v1"
 new_sqlite_classes = ["StatsDurableObject"]

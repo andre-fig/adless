@@ -19,8 +19,7 @@ export interface DurableObjectNamespaceLike {
 
 export interface WorkerEnvironment {
   STATS?: DurableObjectNamespaceLike;
-  DEPLOYMENT_ENV?: "production" | "staging";
-  STAGING_ALLOWED_DNS_TOKEN?: string;
+  DEPLOYMENT_ENV?: "production";
 }
 
 export interface WorkerExecutionContext {

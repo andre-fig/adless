@@ -6,7 +6,7 @@
 iPhone
   │ NEDNSSettingsManager + NEDNSOverHTTPSSettings
   ▼
-https://dns.adless.app/<installation-token>/dns-query
+https://adless-dns.adless-production.workers.dev/<installation-token>/dns-query
   │ Cloudflare Worker, blocklist em memória
   ├─ bloqueado → resposta DNS sintetizada, sem upstream
   └─ permitido → Cloudflare DoH

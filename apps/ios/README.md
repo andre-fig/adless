@@ -38,8 +38,8 @@ mostra a proteção como desligada e pode instalá-la novamente ao tocar em Ativ
 
 | Scheme | Configuration | App ID | DNS endpoint base | Display name |
 | --- | --- | --- | --- | --- |
-| `Adless Dev` | `Debug Dev` / `Release Dev` | `com.orbeworks.adless.dev` | `https://dns.adless.app` | Adless Dev |
-| `Adless` | `Debug` / `Release` | `com.orbeworks.adless` | `https://dns.adless.app` | Adless |
+| `Adless Dev` | `Debug Dev` / `Release Dev` | `com.orbeworks.adless.dev` | `https://adless-dns.adless-production.workers.dev` | Adless Dev |
+| `Adless` | `Debug` / `Release` | `com.orbeworks.adless` | `https://adless-dns.adless-production.workers.dev` | Adless |
 
 O token de instalação é criado com 256 bits aleatórios e guardado como
 Generic Password no Keychain, com `ThisDeviceOnly`. Ele não é derivado de
@@ -49,7 +49,7 @@ consulta autenticada do contador.
 ## Ciclo de proteção
 
 Ao ativar, o app cria um endpoint individual
-`https://dns.adless.app/<token>/dns-query`, salva a configuração DoH da Apple e
+`https://adless-dns.adless-production.workers.dev/<token>/dns-query`, salva a configuração DoH da Apple e
 recarrega o estado. O iOS mantém a configuração enquanto o app não está
 aberto, inclusive após reinicialização e com a tela bloqueada. A assinatura
 StoreKit continua sendo a autoridade local: quando expira, o app remove a

@@ -8,8 +8,8 @@ contratar ou estimar orçamento.
 
 ## Topologia e limites
 
-O hostname de produção é `dns.adless.app` e o endpoint é
-`https://dns.adless.app/<token>/dns-query`. O DNS do iOS envia somente wire
+O hostname de produção é `adless-dns.adless-production.workers.dev` e o endpoint é
+`https://adless-dns.adless-production.workers.dev/<token>/dns-query`. O DNS do iOS envia somente wire
 messages RFC 8484. O Worker não aceita URL de destino, JSON para resolução,
 DNS UDP/TCP, CORS ou métodos diferentes de GET/POST.
 
@@ -44,32 +44,11 @@ por subdomínio, allowlist incorporada no artefato, fallback, NXDOMAIN,
 SERVFAIL, cache, limites, rate limiting, checksum e ausência de DNS em texto
 puro.
 
-Para executar localmente com Wrangler, use `wrangler dev` e um token de teste.
-O ambiente `staging` é separado:
-
-```sh
-npx --yes wrangler@4 dev --config apps/dns-worker/wrangler.toml --env staging
-npx --yes wrangler@4 deploy --config apps/dns-worker/wrangler.toml --env staging
-```
-
-Staging deve ser fechado antes do deploy. Gere um token descartável de 256 bits
-fora do repositório e grave-o somente como secret da Cloudflare:
-
-```sh
-openssl rand -base64 32 | tr '+/' '-_' | tr -d '=' \
-  | npx --yes wrangler@4 secret put STAGING_ALLOWED_DNS_TOKEN \
-      --env staging --config apps/dns-worker/wrangler.toml
-```
-
-O ambiente precisa ter `DEPLOYMENT_ENV=staging` e esse secret válido. O Worker
-rejeita tokens diferentes antes de rate limit, cache, Durable Object ou
-upstream; se o secret estiver ausente ou inválido, responde indisponível em vez
-de abrir o resolvedor. Essa allowlist é exclusiva para staging e não representa
-a autorização server-side de assinaturas da produção.
-
-Não use o token real em shell history ou issue. A validação deve enviar um
-query DNS conhecido, conferir `Content-Type: application/dns-message`, ID e
-rcode, e nunca imprimir o hostname consultado.
+Os testes locais usam mocks. Existe somente o Worker remoto de produção,
+publicado no subdomínio `workers.dev` da conta Cloudflare. Não use o token real
+em shell history ou issue. A validação deve enviar um query DNS sintético,
+conferir `Content-Type: application/dns-message`, ID e rcode, e nunca imprimir
+o hostname consultado.
 
 ## Deploy de produção
 
@@ -88,13 +67,14 @@ npm run build:dns-worker
 npx --yes wrangler@4 deploy --config apps/dns-worker/wrangler.toml
 ```
 
-O `wrangler.toml` declara o Worker `adless-dns`, a rota
-`dns.adless.app/*`, o Durable Object `StatsDurableObject` e a migração SQLite.
-No painel DNS, `dns.adless.app` deve estar na zone `adless.app` com o proxy
-Cloudflare habilitado e certificado Universal SSL ativo. O hostname customizado
-é uma configuração externa: confirme `dig +short dns.adless.app`, cadeia TLS e
-o certificado com `openssl s_client -connect dns.adless.app:443
--servername dns.adless.app </dev/null`.
+O `wrangler.toml` declara o Worker `adless-dns` em `workers.dev`, o Durable
+Object `StatsDurableObject` e a migração SQLite. Não é necessário configurar
+zone DNS ou certificado customizado; a Cloudflare fornece o HTTPS do
+`workers.dev`. Confirme o endpoint com:
+
+```sh
+curl -i https://adless-dns.adless-production.workers.dev/healthz
+```
 
 Não há credenciais Cloudflare neste repositório e o deploy não foi considerado
 publicado até um run do workflow ou `wrangler deploy` retornar sucesso e o
@@ -106,11 +86,11 @@ O smoke test opcional exige somente um token descartável no ambiente:
 
 ```sh
 ADLESS_INSTALLATION_TOKEN='...' \
-  python3 tools/dns/smoke_worker.py --url https://dns.adless.app
+  python3 tools/dns/smoke_worker.py --url https://adless-dns.adless-production.workers.dev
 ```
 
 O script testa POST e GET, resposta wire, ID, content type e endpoint de
-estatísticas sem registrar token, IP ou domínio. Use `--url` para staging.
+estatísticas sem registrar token, IP ou domínio.
 Falha de DNS, TLS, status HTTP, formato ou estatística deve interromper o
 check; nunca contorne TLS com `curl -k`.
 
@@ -170,18 +150,11 @@ processadores do fluxo.
 
 ## Rate limiting de produção
 
-O limite por token/IP do Worker é apenas um fallback por isolate. No WAF da
-zone `adless.app`, crie uma regra de Rate Limiting para
-`http.host eq "dns.adless.app" and http.request.uri.path matches "^/[A-Za-z0-9_-]{43}/dns-query$"`,
-característica `IP`, período 60 s, limite inicial 2.400 requests e mitigation
-timeout 60 s, ação Block/HTTP 429. Crie outra para
-`http.host eq "dns.adless.app" and http.request.uri.path eq "/v1/stats"`,
-característica `IP`, 60 s, limite 60 e timeout 60 s. Ajuste com p95 real; não
-use um limite baixo que puna CGNAT. O plano deve suportar os campos/limites
-escolhidos; planos sem característica por token só conseguem limitar IP.
-Mantenha a validação de método, tamanho, wire format e token no Worker. A
-regra WAF não substitui o registro de assinatura: o token ainda é bearer e
-pode ser compartilhado até ser revogado.
+O limite por token/IP do Worker é apenas um fallback por isolate, mantido em
+memória. Como o endpoint usa `workers.dev` sem zone própria, não há regra WAF
+de zone neste repositório. Mantenha a validação de método, tamanho, wire format
+e token no Worker. O token ainda é bearer e pode ser compartilhado até ser
+revogado.
 
 ## Estatísticas permitidas
 
@@ -231,7 +204,7 @@ o Adless prevalece nessas situações.
 
 O app não contém token administrativo, credencial Cloudflare ou segredo global.
 Para rotacionar `CLOUDFLARE_API_TOKEN`, crie o novo token com permissões mínimas,
-teste um deploy staging, substitua o secret do GitHub, execute produção e só
+valide o deploy localmente, substitua o secret do GitHub, execute produção e só
 então revogue o token antigo. O token de instalação não é rotacionado em massa.
 Ele é aleatório, fica no Keychain com `ThisDeviceOnly` e não é migrado para um
 novo aparelho; no mesmo aparelho, o Keychain pode sobreviver à desinstalação do

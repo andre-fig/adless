@@ -20,7 +20,8 @@ tools/dns-worker/  # preparação determinística da lista para a edge
 O iOS usa somente `NEDNSSettingsManager` e
 `NEDNSOverHTTPSSettings`. O Xcode contém apenas `Adless` e `AdlessTests`; não
 há extensão, interface de rede, rota, App Group ou configuração gerida. O
-endpoint DoH é `https://dns.adless.app/<installation-token>/dns-query`.
+endpoint DoH de produção é
+`https://adless-dns.adless-production.workers.dev/<installation-token>/dns-query`.
 
 O Worker bloqueia na edge e envia nomes permitidos para Cloudflare DoH, com
 Quad9 como fallback sequencial. Somente DNS passa por essa infraestrutura;

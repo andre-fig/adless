@@ -233,9 +233,12 @@ struct ContentView: View {
             Task { await viewModel.applicationDidBecomeActive() }
         }
         .alert("Enable DNS protection in Settings", isPresented: $viewModel.isSystemApprovalAlertPresented) {
+            Button("Open Settings") {
+                viewModel.openSystemDNSSettings()
+            }
             Button("OK", role: .cancel) { }
         } message: {
-            Text("Open Settings → General → VPN & Network → DNS and enable Adless. Protection will appear here when it is active.")
+            Text("In the next screen, open VPN & Device Management, then DNS, and enable Adless. Return here; protection will be checked automatically.")
         }
         .sheet(
             isPresented: Binding(

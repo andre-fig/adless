@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 import Foundation
+import UIKit
 import Sentry
 
 @main
@@ -112,6 +113,16 @@ final class AppViewModel: ObservableObject {
             return
         }
 
+        // Saving a DNS configuration does not enable it. Once iOS has saved a
+        // disabled configuration, trying to save it again does not help the
+        // user and can make the activation button appear to do nothing. Keep
+        // the user in the explicit system-approval flow until the setting is
+        // enabled in Settings.
+        if await dnsSettingsManager.currentState() == .disabled {
+            isSystemApprovalAlertPresented = true
+            return
+        }
+
         statusText = String(localized: "Connecting")
         let transaction = AdlessSentry.startTransaction(name: "protection.activate", operation: "dns-settings")
         defer { transaction?.finish() }
@@ -130,10 +141,43 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    /// Opens the system DNS configuration screen after the app has saved the
+    /// profile. iOS has no public URL for General > VPN & Network > DNS, so
+    /// this is a best-effort use of the undocumented Settings URL route. The
+    /// user must still enable Adless in Settings.
+    @MainActor
+    func openSystemDNSSettings() {
+        let settingsURLs = [
+            "prefs:root=General&path=ManagedConfigurationList/DNS",
+            "prefs:root=General&path=VPN/DNS",
+            "App-Prefs:root=General"
+        ].compactMap(URL.init(string:))
+
+        openNextSettingsURL(settingsURLs, at: 0)
+    }
+
+    @MainActor
+    private func openNextSettingsURL(_ urls: [URL], at index: Int) {
+        guard urls.indices.contains(index) else { return }
+
+        UIApplication.shared.open(urls[index], options: [:]) { [weak self] didOpen in
+            guard !didOpen else { return }
+            Task { @MainActor [weak self] in
+                self?.openNextSettingsURL(urls, at: index + 1)
+            }
+        }
+    }
+
     @MainActor
     func refreshStatus() async {
         let state = await dnsSettingsManager.currentState()
         isOn = hasSubscription && state == .enabled
+        if isOn {
+            // Returning from Settings triggers this refresh. Do not require
+            // an extra confirmation tap once iOS reports the DNS setting as
+            // enabled.
+            isSystemApprovalAlertPresented = false
+        }
         AdlessSentry.event("dns.settings.status_change", state: state.rawValue)
 
         if !hasSubscription {

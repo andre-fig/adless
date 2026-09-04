@@ -65,16 +65,12 @@ function makeWorker(
   return createDNSWorker(text, metadata(text), { ...options, fetch: fetchImpl });
 }
 
-function stagingEnvironment(overrides: WorkerEnvironment = {}): WorkerEnvironment {
-  return { DEPLOYMENT_ENV: "staging", STAGING_ALLOWED_DNS_TOKEN: TOKEN, ...overrides };
-}
-
 function requestFor(body: Uint8Array, method = "POST", headers: Record<string, string> = {}) {
   return requestForToken(body, TOKEN, method, headers);
 }
 
 function requestForToken(body: Uint8Array, token: string, method = "POST", headers: Record<string, string> = {}) {
-  return new Request(`https://dns.adless.app/${token}/dns-query`, {
+  return new Request(`https://worker.example.test/${token}/dns-query`, {
     method,
     headers: { "content-type": "application/dns-message", ...headers },
     body: body.buffer as ArrayBuffer,
@@ -86,35 +82,13 @@ function context() {
   return { pending, waitUntil(promise: Promise<unknown>) { pending.push(promise); } };
 }
 
-test("health check identifies staging without resolving DNS", async () => {
+test("health check identifies production without resolving DNS", async () => {
   let calls = 0;
   const worker = makeWorker(undefined, async () => { calls += 1; return new Response(null, { status: 500 }); });
-  const result = await worker.fetch(new Request("https://staging.workers.dev/healthz"), stagingEnvironment(), context());
+  const result = await worker.fetch(new Request("https://worker.example.test/healthz"), { DEPLOYMENT_ENV: "production" }, context());
   assert.equal(result.status, 200);
-  assert.deepEqual(await result.json(), { status: "ok", environment: "staging" });
+  assert.deepEqual(await result.json(), { status: "ok", environment: "production" });
   assert.equal(calls, 0);
-});
-
-test("staging accepts only the configured token before cache, Durable Object, or upstream", async () => {
-  const otherToken = "ZYXWVUTSRQPONMLKJIHGFEDCBA9876543210_-abc12";
-  let upstreamCalls = 0;
-  let durableObjectCalls = 0;
-  const namespace = {
-    idFromName() { durableObjectCalls += 1; return "unexpected"; },
-    get() { return { async fetch() { durableObjectCalls += 1; return new Response(null, { status: 500 }); } }; },
-  };
-  const worker = makeWorker(undefined, async () => {
-    upstreamCalls += 1;
-    return new Response(binaryBody(response(query())), { headers: { "content-type": "application/dns-message" } });
-  });
-  const rejectedDNS = await worker.fetch(requestForToken(query("not-blocked.example.com"), otherToken), stagingEnvironment({ STATS: namespace }), context());
-  assert.equal(rejectedDNS.status, 401);
-  const rejectedStats = await worker.fetch(new Request("https://staging.workers.dev/v1/stats", { headers: { authorization: `Bearer ${otherToken}` } }), stagingEnvironment({ STATS: namespace }), context());
-  assert.equal(rejectedStats.status, 401);
-  const missingSecret = await worker.fetch(requestFor(query("missing-secret.example.com")), { DEPLOYMENT_ENV: "staging", STATS: namespace }, context());
-  assert.equal(missingSecret.status, 503);
-  assert.equal(upstreamCalls, 0);
-  assert.equal(durableObjectCalls, 0);
 });
 
 test("accepts valid POST and GET DoH messages with the wire content type", async () => {
@@ -130,7 +104,7 @@ test("accepts valid POST and GET DoH messages with the wire content type", async
   assert.equal(post.headers.get("content-type"), "application/dns-message");
   assert.deepEqual(new Uint8Array(await post.arrayBuffer()), response(incoming));
   const encoded = Buffer.from(incoming).toString("base64url");
-  const get = await worker.fetch(new Request(`https://dns.adless.app/${TOKEN}/dns-query?dns=${encoded}`), {}, context());
+  const get = await worker.fetch(new Request(`https://worker.example.test/${TOKEN}/dns-query?dns=${encoded}`), {}, context());
   assert.equal(get.status, 200);
   assert.equal(calls, 1, "GET should be served from the compatible cache");
 });
@@ -331,7 +305,7 @@ test("rejects malformed payloads, oversized requests, and unsupported methods", 
   assert.equal(badMethod.status, 405);
   const badContentType = await worker.fetch(requestFor(query(), "POST", { "content-type": "application/json" }), {}, context());
   assert.equal(badContentType.status, 415);
-  assert.equal((await worker.fetch(new Request("https://dns.adless.app/healthz", { method: "PUT" }), {}, context())).status, 405);
+  assert.equal((await worker.fetch(new Request("https://worker.example.test/healthz", { method: "PUT" }), {}, context())).status, 405);
 });
 
 test("applies rate limiting without persisting the client IP", async () => {
@@ -389,9 +363,9 @@ test("authenticates stats with the installation token", async () => {
     },
   };
   const worker = makeWorker();
-  const unauthorized = await worker.fetch(new Request("https://dns.adless.app/v1/stats"), { STATS: namespace }, context());
+  const unauthorized = await worker.fetch(new Request("https://worker.example.test/v1/stats"), { STATS: namespace }, context());
   assert.equal(unauthorized.status, 401);
-  const authorized = await worker.fetch(new Request("https://dns.adless.app/v1/stats", {
+  const authorized = await worker.fetch(new Request("https://worker.example.test/v1/stats", {
     headers: { authorization: `Bearer ${TOKEN}` },
   }), { STATS: namespace }, context());
   assert.deepEqual(await authorized.json(), { blockedTotal: 8, updatedAt: "2026-08-26T00:00:00.000Z" });

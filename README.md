@@ -13,7 +13,7 @@ tools/blocklists/      # geração e validação determinística
 ```
 
 O app usa `NEDNSSettingsManager` com `NEDNSOverHTTPSSettings`. Ao tocar em
-Ativar, ele salva a configuração para `https://dns.adless.app/<token>/dns-query`;
+Ativar, ele salva a configuração para `https://adless-dns.adless-production.workers.dev/<token>/dns-query`;
 o iOS pode exigir que o usuário habilite a configuração em Ajustes. Somente DNS
 passa pelo serviço Adless. Sites, vídeos, mensagens e downloads continuam indo
 diretamente aos destinos. Não há conta, login, backend de usuários ou proxy de
@@ -51,7 +51,7 @@ xcodebuild -project apps/ios/Adless.xcodeproj -scheme Adless \
 O endpoint de produção é:
 
 ```text
-https://dns.adless.app/<installation-token>/dns-query
+https://adless-dns.adless-production.workers.dev/<installation-token>/dns-query
 ```
 
 Ele aceita POST `application/dns-message` e GET RFC 8484 com `dns` em Base64URL.

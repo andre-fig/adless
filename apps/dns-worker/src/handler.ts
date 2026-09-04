@@ -74,13 +74,6 @@ function bearerToken(request: Request): string | null {
   return TOKEN_PATTERN.test(token) ? token : null;
 }
 
-function stagingTokenStatus(env: WorkerEnvironment, token: string): "allowed" | "rejected" | "misconfigured" {
-  if (env.DEPLOYMENT_ENV !== "staging") return "allowed";
-  const allowedToken = env.STAGING_ALLOWED_DNS_TOKEN;
-  if (!allowedToken || !TOKEN_PATTERN.test(allowedToken)) return "misconfigured";
-  return token === allowedToken ? "allowed" : "rejected";
-}
-
 function decodeBase64URL(value: string): Uint8Array | null {
   if (!/^[A-Za-z0-9_-]+$/.test(value) || value.length > 8192 || value.length % 4 === 1) return null;
   try {
@@ -270,17 +263,11 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
         if (request.method !== "GET") return new Response(null, { status: 405, headers: { allow: "GET" } });
         const token = bearerToken(request);
         if (!token) return jsonResponse({ error: "unauthorized" }, 401);
-        const tokenStatus = stagingTokenStatus(env, token);
-        if (tokenStatus === "misconfigured") return jsonResponse({ error: "temporarily unavailable" }, 503);
-        if (tokenStatus === "rejected") return jsonResponse({ error: "unauthorized" }, 401);
         if (!allowedByRate(request, token)) return jsonResponse({ error: "rate limited" }, 429);
         return fetchStats(env, token);
       }
       const token = tokenFromPath(url.pathname);
       if (!token) return new Response(null, { status: 404 });
-      const tokenStatus = stagingTokenStatus(env, token);
-      if (tokenStatus === "misconfigured") return new Response(null, { status: 503 });
-      if (tokenStatus === "rejected") return new Response(null, { status: 401 });
       if (!allowedByRate(request, token)) return new Response(null, { status: 429, headers: { "retry-after": "60" } });
 
       let query: Uint8Array | undefined;
