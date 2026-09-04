@@ -20,7 +20,7 @@ Official Apple instructions: [Manage app privacy](https://developer.apple.com/he
   answers.
 - Purchases: StoreKit presents the App Store subscription purchase flow; payment and subscription management are handled by Apple, not by an Adless account or backend.
 
-Adless makes HTTPS requests to the public GitHub Pages blocklist to retrieve a
+Adless makes HTTPS requests to the public Railway landing service to retrieve a
 manifest and a static list. It also sends DNS wire queries over HTTPS to the
 Adless DNS service, which applies the blocklist and forwards permitted queries
 to Cloudflare DNS or Quad9. The service stores only aggregate blocked totals by
@@ -37,7 +37,7 @@ the final binary and the providers' current privacy terms before submitting.
 
 Use:
 
-<https://andre-fig.github.io/adless/privacy>
+<https://landing-production-9feb.up.railway.app/privacy>
 
 The policy is part of the landing-page build and is also recorded in `docs/app-store-submission.md`.
 

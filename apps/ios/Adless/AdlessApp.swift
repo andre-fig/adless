@@ -161,16 +161,15 @@ final class AppViewModel: ObservableObject {
         }
     }
 
-    /// Opens the system DNS configuration screen after the app has saved the
-    /// profile. iOS has no public URL for General > VPN & Network > DNS, so
-    /// this is a best-effort use of the undocumented Settings URL route. The
-    /// user must still enable Adless in Settings.
+    /// Opens the root of the Settings app after the app has saved the profile.
+    /// iOS has no public URL for the DNS screen, so this is a best-effort use
+    /// of the undocumented root Settings URL. The user must still enable
+    /// Adless in Settings.
     @MainActor
     func openSystemDNSSettings() {
         let settingsURLs = [
-            "prefs:root=General&path=ManagedConfigurationList/DNS",
-            "prefs:root=General&path=VPN/DNS",
-            "App-Prefs:root=General"
+            "App-Prefs:",
+            "prefs:"
         ].compactMap(URL.init(string:))
 
         openNextSettingsURL(settingsURLs, at: 0)

@@ -30,8 +30,9 @@ impedem a build.
 
 O diretório público real desta landing é `public/`. Por isso os artefatos da
 blocklist ficam em `public/blocklists/` e entram na build estática sem serem
-incluídos no bundle JavaScript. O workflow de GitHub Pages publica a pasta
-`apps/landing-page/dist` em `https://andre-fig.github.io/adless/`.
+incluídos no bundle JavaScript. O workflow `deploy-landing.yml` publica esta
+aplicação no serviço de produção do Railway, servindo a build na raiz de
+<https://landing-production-9feb.up.railway.app/>.
 
 URLs esperadas:
 

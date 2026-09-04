@@ -145,7 +145,7 @@ def download_https(url: str, *, timeout: int, maximum_bytes: int) -> bytes:
         url,
         headers={
             "Accept": "text/plain, text/*;q=0.9, */*;q=0.1",
-            "User-Agent": "AdlessBlocklistGenerator/1.0 (+https://andre-fig.github.io/adless/)",
+            "User-Agent": "AdlessBlocklistGenerator/1.0 (+https://landing-production-9feb.up.railway.app/)",
         },
     )
     try:

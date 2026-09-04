@@ -92,8 +92,9 @@ há mudança real. A atribuição está em
 
 ## Publicação
 
-`deploy-pages.yml` publica a landing page. `deploy-dns-worker.yml` publica o
-Worker quando os secrets Cloudflare estão configurados. `testflight-ios.yml` e
+`deploy-landing.yml` publica a landing page no serviço de produção do Railway.
+`deploy-dns-worker.yml` publica o Worker quando os secrets Cloudflare estão
+configurados. `testflight-ios.yml` e
 `release-ios.yml` usam os secrets do App Store Connect documentados em
 [`docs/ios-release.md`](docs/ios-release.md). Nenhum workflow faz push para
 branches sem a finalidade específica de atualizar artefatos.

@@ -12,6 +12,8 @@ import LanguageSelector from "@/components/LanguageSelector";
 
 const Index = () => {
   const { t } = useLanguage();
+  const canonicalURL = typeof window === "undefined" ? "/" : `${window.location.origin}/`;
+
   return (
     <>
       <Helmet>
@@ -20,7 +22,7 @@ const Index = () => {
         <meta property="og:title" content={t("pageTitle")} />
         <meta property="og:description" content={t("pageDescription")} />
         <meta name="twitter:card" content="summary_large_image" />
-        <link rel="canonical" href="https://andre-fig.github.io/adless/" />
+        <link rel="canonical" href={canonicalURL} />
       </Helmet>
 
       <LanguageSelector />

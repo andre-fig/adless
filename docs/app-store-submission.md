@@ -13,11 +13,11 @@
 
 ## URLs públicas
 
-- <https://andre-fig.github.io/adless/>;
-- <https://andre-fig.github.io/adless/privacy>;
-- <https://andre-fig.github.io/adless/terms>;
-- <https://andre-fig.github.io/adless/support>;
-- <https://andre-fig.github.io/adless/blocklists/manifest.json>.
+- <https://landing-production-9feb.up.railway.app/>;
+- <https://landing-production-9feb.up.railway.app/privacy>;
+- <https://landing-production-9feb.up.railway.app/terms>;
+- <https://landing-production-9feb.up.railway.app/support>;
+- <https://landing-production-9feb.up.railway.app/blocklists/manifest.json>.
 
 As páginas são estáticas. O app não tem conta, login ou cadastro.
 
@@ -79,7 +79,7 @@ compilação e layout sem assinatura.
 
 ## Privacidade
 
-Use <https://andre-fig.github.io/adless/privacy> e confira a seção
+Use <https://landing-production-9feb.up.railway.app/privacy> e confira a seção
 [`docs/app-store-privacy-questionnaire.md`](app-store-privacy-questionnaire.md)
 contra o binary e as políticas atuais da Apple, Cloudflare e Quad9. A alteração
 para DNS Cloud deve ser refletida na resposta de App Privacy antes da submissão.

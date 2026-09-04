@@ -61,7 +61,7 @@ embutida no Worker fica em `apps/dns-worker/data/`. O gerador é a única fonte
 autorizada para atualizar esses arquivos.
 
 O manifesto publicado é
-`https://andre-fig.github.io/adless/blocklists/manifest.json`. Rejeite lista
+`https://landing-production-9feb.up.railway.app/blocklists/manifest.json`. Rejeite lista
 vazia, inválida ou alteração acima do limite sem revisão explícita. Preserve a
 versão anterior para rollback e registre somente versão, contagem e checksum.
 

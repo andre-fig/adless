@@ -1,4 +1,4 @@
-name: Deploy Adless landing to GitHub Pages
+name: Deploy Adless landing to Railway
 
 on:
   push:
@@ -19,20 +19,18 @@ on:
       - "apps/landing-page/public/blocklists/blocklist.txt.gz"
       - "apps/landing-page/public/blocklists/blocklist.sha256"
       - "package-lock.json"
-      - ".github/workflows/deploy-pages.yml"
+      - ".github/workflows/deploy-landing.yml"
   workflow_dispatch:
 
 concurrency:
-  group: github-pages
+  group: railway-landing-production
   cancel-in-progress: true
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -40,44 +38,30 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: "20"
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build landing and static blocklist artifacts
+      - name: Build landing
         run: npm run build:landing
 
-      - name: Add GitHub Pages SPA fallback
-        run: cp apps/landing-page/dist/index.html apps/landing-page/dist/404.html
-
-      - name: Materialize legal page routes
+      - name: Deploy landing to Railway production
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: a3f28c5a-d16c-41c3-9bf8-9594edfe63f6
+          RAILWAY_SERVICE_ID: 47877f5b-d67e-47e5-9cd6-410ef1e057f4
         run: |
           set -euo pipefail
-          for route in privacy terms support; do
-            mkdir -p "apps/landing-page/dist/$route"
-            cp apps/landing-page/dist/index.html "apps/landing-page/dist/$route/index.html"
-          done
-
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v6
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: apps/landing-page/dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    timeout-minutes: 10
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+          test -n "$RAILWAY_TOKEN" || { echo "RAILWAY_TOKEN secret is missing" >&2; exit 1; }
+          test -n "$RAILWAY_PROJECT_ID" || { echo "RAILWAY_PROJECT_ID secret is missing" >&2; exit 1; }
+          test -n "$RAILWAY_SERVICE_ID" || { echo "RAILWAY_SERVICE_ID secret is missing" >&2; exit 1; }
+          npx --yes @railway/cli@5.49.2 up apps/landing-page \
+            --path-as-root \
+            --project "$RAILWAY_PROJECT_ID" \
+            --service "$RAILWAY_SERVICE_ID" \
+            --environment production \
+            --ci

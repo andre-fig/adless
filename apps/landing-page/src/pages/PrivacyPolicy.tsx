@@ -43,7 +43,7 @@ const PrivacyPolicy = () => (
       queries to return DNS answers under their respective service and privacy
       policies. Sentry, operated by Functional Software, Inc., processes crash
       and performance diagnostics for reliability. Adless downloads public,
-      static blocklist files from GitHub Pages; hosting providers can process
+      static blocklist files from the public Railway landing service; hosting providers can process
       standard technical connection information for those requests.
     </p>
 
