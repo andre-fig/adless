@@ -17,8 +17,17 @@ export interface DurableObjectNamespaceLike {
   get(id: unknown): DurableObjectStubLike;
 }
 
+export interface KVNamespaceLike {
+  get(key: string, type?: "json" | "text"): Promise<unknown>;
+  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
+  delete(key: string): Promise<void>;
+}
+
 export interface WorkerEnvironment {
+  AUTH?: KVNamespaceLike;
   STATS?: DurableObjectNamespaceLike;
+  APPLE_BUNDLE_ID?: string;
+  APPLE_APP_ID?: string;
   DEPLOYMENT_ENV?: "production";
 }
 

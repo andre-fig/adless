@@ -117,7 +117,7 @@ ser regenerado depois da limpeza do App ID.
 Após o deploy de produção, use um token descartável:
 
 ```sh
-ADLESS_INSTALLATION_TOKEN='...' \
+ADLESS_DNS_TOKEN='...' ADLESS_STATS_TOKEN='...' \
   python3 tools/dns/smoke_worker.py --url https://adless-dns.adless-production.workers.dev
 ```
 

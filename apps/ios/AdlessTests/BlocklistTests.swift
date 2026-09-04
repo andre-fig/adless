@@ -98,4 +98,22 @@ final class BlocklistTests: XCTestCase {
         XCTAssertEqual(stale.allTimeCount, 17)
         XCTAssertEqual(stale.todayCount, 5)
     }
+
+    func testDNSConfigurationUsesOnlyTheDNSCredential() throws {
+        let token = String(repeating: "A", count: 43)
+        let endpoint = try DNSCloudConfiguration.endpointURL(for: token)
+
+        XCTAssertEqual(endpoint.host, "adless-dns.adless-production.workers.dev")
+        XCTAssertEqual(endpoint.path, "/\(token)/dns-query")
+        XCTAssertTrue(DNSCloudConfiguration.isAdlessEndpoint(endpoint))
+        XCTAssertFalse(DNSCloudConfiguration.isAdlessEndpoint(URL(string: "https://adless-dns.adless-production.workers.dev/v1/stats")!))
+        XCTAssertTrue(InstallationTokenStore.isValid(token))
+        XCTAssertFalse(InstallationTokenStore.isValid(String(repeating: "A", count: 42)))
+    }
+
+    func testFailedDNSRemovalExplainsManualSettingsFallback() {
+        let error = DNSSettingsManagerError.removalNotConfirmed
+
+        XCTAssertTrue(error.errorDescription?.contains("Disable it manually in Settings") == true)
+    }
 }

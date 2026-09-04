@@ -41,19 +41,22 @@ mostra a proteção como desligada e pode instalá-la novamente ao tocar em Ativ
 | `Adless Dev` | `Debug Dev` / `Release Dev` | `com.orbeworks.adless.dev` | `https://adless-dns.adless-production.workers.dev` | Adless Dev |
 | `Adless` | `Debug` / `Release` | `com.orbeworks.adless` | `https://adless-dns.adless-production.workers.dev` | Adless |
 
-O token de instalação é criado com 256 bits aleatórios e guardado como
-Generic Password no Keychain, com `ThisDeviceOnly`. Ele não é derivado de
-IDFA, IDFV, Apple Account ou hardware e é usado somente no caminho DoH e na
-consulta autenticada do contador.
+O app mantém um `installationId` interno e dois tokens de 256 bits aleatórios,
+`dns-token` e `stats-token`, como Generic Password no Keychain, com
+`ThisDeviceOnly`. Eles não são derivados de IDFA, IDFV, Apple Account ou
+hardware. O primeiro é usado somente no caminho DoH; o segundo somente no
+Bearer do contador.
 
 ## Ciclo de proteção
 
-Ao ativar, o app cria um endpoint individual
-`https://adless-dns.adless-production.workers.dev/<token>/dns-query`, salva a configuração DoH da Apple e
+Após uma compra/restauração válida, o app envia o JWS assinado do StoreKit ao
+Worker, salva as novas credenciais no Keychain e cria um endpoint individual
+`https://adless-dns.adless-production.workers.dev/<dns-token>/dns-query`, salva a configuração DoH da Apple e
 recarrega o estado. O iOS mantém a configuração enquanto o app não está
 aberto, inclusive após reinicialização e com a tela bloqueada. A assinatura
-StoreKit continua sendo a autoridade local: quando expira, o app remove a
-configuração; sem acesso válido, nunca exibe proteção ativa.
+StoreKit e o status server-side são as autoridades: quando expira, o Worker
+deixa de bloquear e o app tenta remover a configuração; se a remoção não for
+confirmada, a UI orienta a desativação manual em Ajustes.
 
 O endpoint aplica a blocklist na edge. Consultas permitidas seguem por DoH
 para Cloudflare DNS e, em falha transitória, Quad9. O app não conhece nem
@@ -62,7 +65,7 @@ processa pacotes DNS individuais e não usa DNS em texto puro.
 ## Contadores
 
 O app consulta `GET /v1/stats` ao entrar em primeiro plano e depois da ativação,
-autenticando com o token. O cache local mantém o último total quando a API está
+autenticando com o `stats-token`. O cache local mantém o último total quando a API está
 offline e nunca reduz o valor exibido. Falhas do contador não desligam a
 proteção nem geram erro invasivo.
 
@@ -85,5 +88,6 @@ instruções operacionais estão em [`docs/dns-cloud.md`](../../docs/dns-cloud.m
 Os product IDs são `com.orbeworks.adless.pro.monthly` e
 `com.orbeworks.adless.pro.yearly`, no mesmo grupo de assinaturas, com trial de
 sete dias configurado no App Store Connect. Compras, restauração, cancelamento,
-grace period e expiração continuam sob StoreKit 2; não há conta nem validação
-remota de recibos.
+grace period e expiração continuam sob StoreKit 2; o Worker valida server-side
+o JWS e recebe as notificações V2 da Apple. Não há conta nem validação em
+Railway.

@@ -55,6 +55,11 @@ Um profile gerenciado antigo pode continuar listando permissões históricas,
 mesmo quando elas não são entitlements efetivos do app; não use esse profile
 para o release final.
 
+As App Store Server Notifications V2 precisam ser configuradas manualmente no
+App Store Connect para Production e Sandbox apontando para:
+`https://adless-dns.adless-production.workers.dev/v1/notifications/apple`.
+O endpoint valida o `signedPayload`; não há segredo Apple no app ou no Worker.
+
 ### Resultado da verificação de deployment
 
 A documentação da Apple descreve DNS Settings como uma configuração do sistema

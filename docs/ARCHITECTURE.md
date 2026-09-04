@@ -6,10 +6,12 @@
 iPhone
   │ NEDNSSettingsManager + NEDNSOverHTTPSSettings
   ▼
-https://adless-dns.adless-production.workers.dev/<installation-token>/dns-query
+https://adless-dns.adless-production.workers.dev/<dns-token>/dns-query
   │ Cloudflare Worker, blocklist em memória
+  ├─ token desconhecido/revogado → rejeição antes de cache, DO e upstream
+  ├─ token expirado → Cloudflare DoH sem bloqueio e sem estatística
   ├─ bloqueado → resposta DNS sintetizada, sem upstream
-  └─ permitido → Cloudflare DoH
+  └─ token ativo permitido → Cloudflare DoH
                    └─ falha transitória → Quad9 DoH
 ```
 
@@ -33,10 +35,18 @@ booleano persistido como fonte de verdade. A notificação de alteração, o
 primeiro plano e o estado real recarregado mantêm a UI coerente após reinício,
 troca de rede ou remoção manual.
 
-O endpoint é validado como origem HTTPS e recebe um token opaco de 32 bytes
-gerado com `SecRandomCopyBytes`. O token fica no Keychain com
+O app mantém um `installationId` UUID e dois tokens opacos de 32 bytes,
+`dns-token` e `stats-token`, no Keychain com
 `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`; não deriva de identidade,
-IDFA, IDFV ou conta Apple.
+IDFA, IDFV ou conta Apple. Após compra/restauração, envia somente o
+`Transaction.jwsRepresentation` ao endpoint de autorização e grava os tokens
+retornados. O Worker nunca grava os valores originais, apenas seus hashes.
+
+O endpoint de autorização valida a cadeia X.509 e a assinatura ES256 do JWS
+StoreKit 2, confere bundle ID, produto e ambiente, e registra a instalação no
+KV `AUTH`. O endpoint de notificações valida App Store Server Notifications V2
+e atualiza renovação, expiração, reembolso, revogação, billing retry e grace
+period. Nenhum desses endpoints é consultado no caminho de cada query DNS.
 
 ## Serviço edge
 
@@ -83,18 +93,19 @@ para rollback no histórico de deploy.
 
 Quando bloqueia, o Worker agenda uma escrita best effort em
 `StatsDurableObject` com apenas `increment: 1`. O ID do Durable Object é
-derivado do token; seu armazenamento contém somente `blockedTotal` e
-`updatedAt`. QNAME, pacote DNS e IP não são dimensões nem valores persistidos.
+derivado do `installationId`, portanto a troca de credenciais mantém o
+contador; seu armazenamento contém somente `blockedTotal` e `updatedAt`.
+QNAME, pacote DNS e IP não são dimensões nem valores persistidos.
 
-`GET /v1/stats` exige `Authorization: Bearer <token>` com o mesmo formato do
-endpoint DoH e retorna `{ blockedTotal, updatedAt }`. O app lê em primeiro
-plano e após ativação, preserva o último valor offline e nunca reduz a UI.
+`GET /v1/stats` exige `Authorization: Bearer <stats-token>`; o `dns-token` é
+rejeitado nesse caminho e o endpoint retorna `{ blockedTotal, updatedAt }`. O
+app lê em primeiro plano e após ativação, preserva o último valor offline e
+nunca reduz a UI.
 Rate limiting é mantido na edge por janela curta e IP/token apenas em memória;
 nenhum IP é gravado em armazenamento de aplicação.
 
-O token compartilhado é um identificador anônimo e segredo de baixo privilégio,
-não uma barreira antifraude perfeita. Não há conta, login ou validação remota
-de compra.
+Os tokens são credenciais bearer de baixo privilégio; a assinatura Apple é a
+autorização server-side. Não há conta, login, Railway ou banco externo.
 
 ## Privacidade e interferências
 

@@ -9,7 +9,7 @@ contratar ou estimar orçamento.
 ## Topologia e limites
 
 O hostname de produção é `adless-dns.adless-production.workers.dev` e o endpoint é
-`https://adless-dns.adless-production.workers.dev/<token>/dns-query`. O DNS do iOS envia somente wire
+`https://adless-dns.adless-production.workers.dev/<dns-token>/dns-query`. O DNS do iOS envia somente wire
 messages RFC 8484. O Worker não aceita URL de destino, JSON para resolução,
 DNS UDP/TCP, CORS ou métodos diferentes de GET/POST.
 
@@ -38,14 +38,15 @@ npm --prefix apps/dns-worker run build
 npm --prefix apps/dns-worker run test
 ```
 
-O build não precisa de dependências JavaScript adicionais. O teste usa mocks e
-verifica POST/GET, content type, IDs, EDNS0, tipos DNS, correspondência exata e
+O build usa `jose`, `@peculiar/x509` e `reflect-metadata` para validar JWS/X.509
+no runtime compatível com Workers. O teste usa mocks e verifica POST/GET,
+content type, IDs, EDNS0, tipos DNS, correspondência exata e
 por subdomínio, allowlist incorporada no artefato, fallback, NXDOMAIN,
 SERVFAIL, cache, limites, rate limiting, checksum e ausência de DNS em texto
 puro.
 
 Os testes locais usam mocks. Existe somente o Worker remoto de produção,
-publicado no subdomínio `workers.dev` da conta Cloudflare. Não use o token real
+publicado no subdomínio `workers.dev` da conta Cloudflare. Não use tokens reais
 em shell history ou issue. A validação deve enviar um query DNS sintético,
 conferir `Content-Type: application/dns-message`, ID e rcode, e nunca imprimir
 o hostname consultado.
@@ -85,7 +86,7 @@ smoke test abaixo passar.
 O smoke test opcional exige somente um token descartável no ambiente:
 
 ```sh
-ADLESS_INSTALLATION_TOKEN='...' \
+ADLESS_DNS_TOKEN='...' ADLESS_STATS_TOKEN='...' \
   python3 tools/dns/smoke_worker.py --url https://adless-dns.adless-production.workers.dev
 ```
 
@@ -115,25 +116,34 @@ use `--allow-large-change` somente após revisão.
 
 ## Autorização de assinatura
 
-O código atual não possui uma base server-side de tokens autorizados e não
-valida transações StoreKit na edge. Qualquer string Base64URL de 43 caracteres
-é aceita; portanto o endpoint atual é um resolvedor aberto para fins de
-produção e não deve ser publicado. StoreKit é validado apenas localmente pelo
-app e a remoção por expiração só ocorre quando o app volta ao primeiro plano.
+`POST /v1/authorization/register` recebe `{ installationId,
+transactionJWS }`. O Worker valida localmente a cadeia X.509 da Apple e a
+assinatura ES256 do StoreKit 2, confere `com.orbeworks.adless`, os dois product
+IDs e o ambiente, e grava no KV `AUTH` somente hashes SHA-256 dos dois tokens,
+além do estado da assinatura. A resposta contém `dnsToken` e `statsToken` uma
+vez para o app salvá-los no Keychain.
 
-A solução mínima futura, sem conta, é um endpoint de controle separado que
-receba o `Transaction.jwsRepresentation` de uma transação verificada, valide a
-assinatura/estado com a App Store Server API ou certificados Apple e grave
-somente `SHA-256(installation-token)`, `originalTransactionId`, estado,
-`expiresAt` e revogação. App Store Server Notifications V2 atualizaria esse
-registro; o caminho DNS consultaria um cache edge/DO e nunca a Apple por query.
-O app deve reenviar a transação em compra, restauração e retorno ao primeiro
-plano. Para não cortar a internet de uma instalação expirada, a política deve
-ser explícita: após `expiresAt` o Worker pode continuar em uma janela curta de
-grace e, depois, responder sem filtragem via upstream para manter resolução,
-enquanto o app remove a configuração no próximo primeiro plano. Isso reduz a
-eficácia antifraude; responder `SERVFAIL` preservaria a cobrança, mas pode
-deixar um DNS ativo sem resolução. Essa escolha ainda não está implementada.
+`POST /v1/notifications/apple` recebe o `signedPayload` das App Store Server
+Notifications V2. O Worker valida a assinatura, deduplica pelo
+`notificationUUID` e atualiza renovação, expiração, reembolso, revogação,
+billing retry e grace period. Cancelamento de renovação não corta o acesso
+enquanto `expiresDate` ainda estiver no futuro.
+
+O caminho DNS calcula o hash do token, consulta apenas o KV e decide antes de
+cache, Durable Object ou upstream. Token ativo bloqueia normalmente; token
+emitido cuja validade acabou resolve via upstream sem bloqueio e sem stats;
+token desconhecido, inventado ou revogado recebe 401. Apple e Railway nunca
+são consultados em uma requisição DNS.
+
+### Configuração manual Apple
+
+No App Store Connect, configure App Store Server Notifications V2 em Production
+e Sandbox com o endpoint
+`https://adless-dns.adless-production.workers.dev/v1/notifications/apple`.
+No Apple Developer, o App ID `com.orbeworks.adless` precisa deixar somente a
+capability `dns-settings` e gerar um novo profile de distribuição. O profile
+local antigo contém capabilities históricas e não deve ser usado para
+TestFlight.
 
 ## Logs e observabilidade
 
@@ -160,7 +170,8 @@ revogado.
 
 O caminho crítico agenda `POST` com `{"increment":1}` no Durable Object e não
 aguarda a gravação para responder DNS. O objeto mantém `blockedTotal` e
-`updatedAt` por instalação. `GET /v1/stats` exige exatamente o Bearer token e
+`updatedAt` por instalação. `GET /v1/stats` exige exatamente o Bearer
+`stats-token` e
 retorna somente esses dois campos. Não use Analytics Engine, logs de request,
 QNAME, pacote DNS, URL completa, token ou IP como dimensão.
 
@@ -205,12 +216,11 @@ o Adless prevalece nessas situações.
 O app não contém token administrativo, credencial Cloudflare ou segredo global.
 Para rotacionar `CLOUDFLARE_API_TOKEN`, crie o novo token com permissões mínimas,
 valide o deploy localmente, substitua o secret do GitHub, execute produção e só
-então revogue o token antigo. O token de instalação não é rotacionado em massa.
-Ele é aleatório, fica no Keychain com `ThisDeviceOnly` e não é migrado para um
-novo aparelho; no mesmo aparelho, o Keychain pode sobreviver à desinstalação do
-app. Esta versão ainda não possui endpoint de exclusão ou registro server-side
-de tokens. Em abuso, aplique bloqueio/rate limit na edge e considere invalidar
-os tokens afetados por uma mudança de produto, sem expor tokens nos logs.
+então revogue o token antigo. Os tokens de instalação são trocados após nova
+autorização; seus hashes ficam no KV e os valores originais ficam no Keychain
+com `ThisDeviceOnly`, sem migração para um novo aparelho. Em abuso, aplique
+bloqueio/rate limit na edge e considere invalidar os tokens afetados por uma
+mudança de produto, sem expor tokens nos logs.
 
 ## Latência e custo
 

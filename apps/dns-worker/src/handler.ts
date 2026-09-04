@@ -12,6 +12,14 @@ import {
   withTransactionID,
   DNSFormatError,
 } from "./dns.js";
+import {
+  authorizeToken as authorizeTokenInKV,
+  handleAppleNotification,
+  handleAuthorizationRegister,
+  type AuthorizationDependencies,
+  type TokenAuthorization,
+  type TokenRole,
+} from "./authorization.js";
 import type { WorkerEnvironment, WorkerExecutionContext } from "./types.js";
 
 const MAX_QUERY_BYTES = 4096;
@@ -43,6 +51,8 @@ export interface WorkerDependencies {
   now?: () => number;
   rateLimit?: number;
   upstreamTimeoutMs?: number;
+  authorizeToken?: (env: WorkerEnvironment, token: string, role: TokenRole, now: number) => Promise<TokenAuthorization>;
+  authorization?: AuthorizationDependencies;
 }
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -177,10 +187,10 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
     }
   };
 
-  const recordBlocked = async (env: WorkerEnvironment, token: string): Promise<void> => {
+  const recordBlocked = async (env: WorkerEnvironment, installationId: string): Promise<void> => {
     if (!env.STATS) return;
     try {
-      const id = env.STATS.idFromName(token);
+      const id = env.STATS.idFromName(installationId);
       await env.STATS.get(id).fetch("https://stats/increment", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -234,10 +244,10 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
     }
   };
 
-  const fetchStats = async (env: WorkerEnvironment, token: string): Promise<Response> => {
+  const fetchStats = async (env: WorkerEnvironment, installationId: string): Promise<Response> => {
     if (!env.STATS) return jsonResponse({ blockedTotal: 0, updatedAt: new Date(0).toISOString() });
     try {
-      const id = env.STATS.idFromName(token);
+      const id = env.STATS.idFromName(installationId);
       const response = await env.STATS.get(id).fetch("https://stats/total");
       if (!response.ok) return jsonResponse({ error: "temporarily unavailable" }, 503);
       const payload = await response.json() as { blockedTotal?: unknown; updatedAt?: unknown };
@@ -253,21 +263,48 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
   return {
     async fetch(request: Request, env: WorkerEnvironment, context: WorkerExecutionContext): Promise<Response> {
       const url = new URL(request.url);
+      const authorizeToken = dependencies.authorizeToken ?? authorizeTokenInKV;
       if (url.pathname === "/healthz") {
         if (request.method !== "GET" && request.method !== "HEAD") {
           return new Response(null, { status: 405, headers: { allow: "GET, HEAD" } });
         }
         return jsonResponse({ status: "ok", environment: env.DEPLOYMENT_ENV ?? "unknown" });
       }
+      if (url.pathname === "/v1/authorization/register") {
+        return handleAuthorizationRegister(request, env, {
+          ...dependencies.authorization,
+          now,
+        });
+      }
+      if (url.pathname === "/v1/notifications/apple") {
+        return handleAppleNotification(request, env, {
+          ...dependencies.authorization,
+          now,
+        });
+      }
       if (url.pathname === "/v1/stats") {
         if (request.method !== "GET") return new Response(null, { status: 405, headers: { allow: "GET" } });
         const token = bearerToken(request);
         if (!token) return jsonResponse({ error: "unauthorized" }, 401);
+        let authorization: TokenAuthorization;
+        try {
+          authorization = await authorizeToken(env, token, "stats", now());
+        } catch {
+          return jsonResponse({ error: "temporarily unavailable" }, 503);
+        }
+        if (authorization.kind === "rejected") return jsonResponse({ error: "unauthorized" }, 401);
         if (!allowedByRate(request, token)) return jsonResponse({ error: "rate limited" }, 429);
-        return fetchStats(env, token);
+        return fetchStats(env, authorization.installationId);
       }
       const token = tokenFromPath(url.pathname);
       if (!token) return new Response(null, { status: 404 });
+      let authorization: TokenAuthorization;
+      try {
+        authorization = await authorizeToken(env, token, "dns", now());
+      } catch {
+        return new Response(null, { status: 503 });
+      }
+      if (authorization.kind === "rejected") return jsonResponse({ error: "unauthorized" }, 401);
       if (!allowedByRate(request, token)) return new Response(null, { status: 429, headers: { "retry-after": "60" } });
 
       let query: Uint8Array | undefined;
@@ -293,14 +330,14 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
       try {
         const blocklist = await loadBlocklist();
         const question = parsed.questions[0];
-        if (question.klass === 1 && blocklist.has(question.name)) {
-          context.waitUntil(recordBlocked(env, token));
+        if (authorization.kind === "active" && question.klass === 1 && blocklist.has(question.name)) {
+          context.waitUntil(recordBlocked(env, authorization.installationId));
           return dnsResponse(blockedResponse(parsed), 200, BLOCKED_RESPONSE_TTL);
         }
         // Keep every installation in its own cache namespace. The current
         // response is global, but future entitlement or policy data must not
         // cross an installation boundary.
-        const key = `${token}:${cacheKey(query)}`;
+        const key = `${authorization.installationId}:${cacheKey(query)}`;
         const timestamp = now();
         purgeExpiredCache(timestamp);
         const cached = cache.get(key);

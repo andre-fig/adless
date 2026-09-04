@@ -101,6 +101,7 @@ node_modules/
 dist/
 dist-ssr/
 apps/dns-worker/dist-test/
+apps/dns-worker/.wrangler/
 *.local
 npm-debug.log*
 yarn-debug.log*

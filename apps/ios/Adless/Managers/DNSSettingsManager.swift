@@ -11,6 +11,7 @@ enum DNSSettingsState: String, Equatable {
 enum DNSSettingsManagerError: LocalizedError {
     case invalidEndpoint
     case configurationNotOwned
+    case removalNotConfirmed
 
     var errorDescription: String? {
         switch self {
@@ -18,6 +19,8 @@ enum DNSSettingsManagerError: LocalizedError {
             return "The DNS protection endpoint is invalid"
         case .configurationNotOwned:
             return "The DNS protection configuration is invalid"
+        case .removalNotConfirmed:
+            return "Adless could not confirm that DNS protection was removed. Disable it manually in Settings."
         }
     }
 }
@@ -35,7 +38,7 @@ actor DNSSettingsManager {
     func install() async throws -> DNSSettingsState {
         try await load()
 
-        let token = try InstallationTokenStore.shared.token()
+        let token = try InstallationTokenStore.shared.dnsToken()
         let endpoint = try DNSCloudConfiguration.endpointURL(for: token)
         let settings = NEDNSOverHTTPSSettings(servers: [])
         settings.serverURL = endpoint
@@ -62,6 +65,10 @@ actor DNSSettingsManager {
             throw DNSSettingsManagerError.configurationNotOwned
         }
         try await removeFromPreferences()
+        try await load()
+        guard systemManager.dnsSettings == nil else {
+            throw DNSSettingsManagerError.removalNotConfirmed
+        }
     }
 
     func currentState() async -> DNSSettingsState {

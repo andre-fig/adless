@@ -53,8 +53,10 @@ python3 tools/dns-worker/prepare_blocklist.py
 npx --yes wrangler@4 deploy --config apps/dns-worker/wrangler.toml
 ```
 
-O Worker exige token de instalação no caminho DoH e Bearer na API de stats. O
-Worker usa apenas HTTPS para upstream e não é um proxy de tráfego. Existe
+O Worker exige `dns-token` no caminho DoH e `stats-token` no Bearer da API de
+stats. A autorização server-side valida o JWS do StoreKit 2 e mantém somente
+hashes no KV da Cloudflare. O Worker usa apenas HTTPS para upstream e não é um
+proxy de tráfego. Existe
 somente o Worker remoto de produção, publicado em `workers.dev`; os testes
 locais usam mocks. Deployment, rollback, secrets, métricas, custo e incidentes
 estão em [`dns-cloud.md`](dns-cloud.md).

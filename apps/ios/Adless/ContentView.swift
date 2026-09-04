@@ -240,6 +240,14 @@ struct ContentView: View {
         } message: {
             Text("In the next screen, open VPN & Device Management, then DNS, and enable Adless. Return here; protection will be checked automatically.")
         }
+        .alert("Disable Adless in Settings", isPresented: $viewModel.isManualDisableAlertPresented) {
+            Button("Open Settings") {
+                viewModel.openSystemDNSSettings()
+            }
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Your subscription has ended, but iOS did not confirm removal. Open Settings and disable Adless manually.")
+        }
         .sheet(
             isPresented: Binding(
                 get: { viewModel.isSubscriptionPresented && !viewModel.isPreparing },

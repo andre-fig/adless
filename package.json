@@ -22,5 +22,10 @@
   "engines": {
     "node": ">=20"
   },
-  "packageManager": "npm@10.9.4"
+  "packageManager": "npm@10.9.4",
+  "dependencies": {
+    "@peculiar/x509": "^2.1.0",
+    "jose": "^6.2.11",
+    "reflect-metadata": "^0.2.2"
+  }
 }

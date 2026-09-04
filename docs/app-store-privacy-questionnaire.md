@@ -8,7 +8,7 @@ Official Apple instructions: [Manage app privacy](https://developer.apple.com/he
 
 - Data collection: **Yes — diagnostics and aggregate app-usage statistics.**
 - Diagnostics: crash data, performance data, and other technical diagnostics sent to Sentry to improve reliability.
-- App usage statistics: an aggregate blocked total associated with a random installation token; no domains, DNS packets, IP addresses, or query history.
+- App usage statistics: an aggregate blocked total associated with an internal installation identifier; no domains, DNS packets, IP addresses, or query history. The service stores only one-way hashes of device-bound DNS/statistics credentials.
 - Tracking: **No**.
 - Data linked to the user: **Not linked to the user**; Adless does not create an account, set a Sentry user identity, or send custom identifiers.
 - Account creation or login: **None**.
@@ -24,11 +24,11 @@ Adless makes HTTPS requests to the public GitHub Pages blocklist to retrieve a
 manifest and a static list. It also sends DNS wire queries over HTTPS to the
 Adless DNS service, which applies the blocklist and forwards permitted queries
 to Cloudflare DNS or Quad9. The service stores only aggregate blocked totals by
-anonymous installation token, not domains or query history. These requests are
+internal installation identifier, not domains or query history. These requests are
 not associated with an account and are not used for tracking. Cloudflare may
 process technical request metadata under its infrastructure/logging systems;
 the Adless application does not enable request logs or send DNS wire data,
-domains, URLs, IP addresses, or the installation token to Sentry. Sentry is
+domains, URLs, IP addresses, or either credential to Sentry. Sentry is
 configured with default PII collection disabled, network tracking disabled, and
 no screenshots or view hierarchy attachments. Recheck these answers against
 the final binary and the providers' current privacy terms before submitting.
@@ -43,4 +43,4 @@ The policy is part of the landing-page build and is also recorded in `docs/app-s
 
 ## Important verification
 
-Before saving the questionnaire, compare these notes with the final App Store Connect questions and the production binary. Also verify in Sentry project settings that IP-address storage is disabled if that is the intended privacy posture. If a future version adds analytics, login, remote filtering, or any server-side account feature, this questionnaire must be reviewed again.
+Before saving the questionnaire, compare these notes with the final App Store Connect questions and the production binary. Also verify in Sentry project settings that IP-address storage is disabled if that is the intended privacy posture. If a future version adds analytics, login, or any account feature, this questionnaire must be reviewed again.

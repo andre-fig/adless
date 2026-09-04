@@ -5,9 +5,73 @@ import { createBlocklist, normalizeDomain } from "../src/blocklist.js";
 import { createDNSWorker } from "../src/handler.js";
 import { BLOCKED_RESPONSE_TTL, parseDNSMessage } from "../src/dns.js";
 import { StatsDurableObject } from "../src/stats.js";
+import {
+  handleAppleNotification,
+  handleAuthorizationRegister,
+  processAppleNotification,
+  type AppleNotificationPayload,
+  type AppleRenewalInfoPayload,
+  type AppleTransactionPayload,
+  type AuthorizationKV,
+  type TokenAuthorization,
+  type TokenRole,
+} from "../src/authorization.js";
 import type { WorkerEnvironment } from "../src/types.js";
 
 const TOKEN = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO1234567890_-".slice(0, 43);
+const OTHER_TOKEN = "ZYXWVUTSRQPONMLKJIHGFEDCBA9876543210_-abc12";
+const INSTALLATION_ID = "11111111-1111-4111-8111-111111111111";
+const OTHER_INSTALLATION_ID = "22222222-2222-4222-8222-222222222222";
+const AUTH_NOW = 1_000_000;
+const AUTH_ENV = {
+  APPLE_BUNDLE_ID: "com.orbeworks.adless",
+  APPLE_APP_ID: "6803552143",
+} as const;
+
+class MemoryKV implements AuthorizationKV {
+  readonly values = new Map<string, string>();
+
+  async get(key: string, type: "json" | "text" = "text"): Promise<unknown> {
+    const value = this.values.get(key);
+    if (value === undefined) return null;
+    return type === "json" ? JSON.parse(value) : value;
+  }
+
+  async put(key: string, value: string): Promise<void> {
+    this.values.set(key, value);
+  }
+
+  async delete(key: string): Promise<void> {
+    this.values.delete(key);
+  }
+}
+
+function testTransaction(overrides: Partial<AppleTransactionPayload> = {}): AppleTransactionPayload {
+  return {
+    bundleId: "com.orbeworks.adless",
+    environment: "Production",
+    productId: "com.orbeworks.adless.pro.monthly",
+    originalTransactionId: "1000000000000001",
+    transactionId: "1000000000000002",
+    expiresDate: 2_000_000,
+    signedDate: 1_000_000,
+    ...overrides,
+  };
+}
+
+function testNotification(overrides: Partial<AppleNotificationPayload> = {}): AppleNotificationPayload {
+  return {
+    notificationType: "DID_CHANGE_RENEWAL_STATUS",
+    notificationUUID: "notification-1",
+    signedDate: 1_100_000,
+    data: {
+      appAppleId: 6_803_552_143,
+      bundleId: "com.orbeworks.adless",
+      environment: "Production",
+    },
+    ...overrides,
+  };
+}
 
 function qname(name: string): Uint8Array {
   const labels = name.replace(/\.$/, "").split(".");
@@ -62,7 +126,12 @@ function makeWorker(
   fetchImpl: typeof fetch = async () => new Response(null, { status: 500 }),
   options: Parameters<typeof createDNSWorker>[2] = {},
 ) {
-  return createDNSWorker(text, metadata(text), { ...options, fetch: fetchImpl });
+  const authorizeToken = options.authorizeToken ?? (async (_env: WorkerEnvironment, token: string, _role: TokenRole, _now: number): Promise<TokenAuthorization> => {
+    if (token === TOKEN) return { kind: "active", installationId: INSTALLATION_ID };
+    if (token === OTHER_TOKEN) return { kind: "active", installationId: OTHER_INSTALLATION_ID };
+    return { kind: "rejected", reason: "unknown" };
+  });
+  return createDNSWorker(text, metadata(text), { ...options, fetch: fetchImpl, authorizeToken });
 }
 
 function requestFor(body: Uint8Array, method = "POST", headers: Record<string, string> = {}) {
@@ -80,6 +149,58 @@ function requestForToken(body: Uint8Array, token: string, method = "POST", heade
 function context() {
   const pending: Promise<unknown>[] = [];
   return { pending, waitUntil(promise: Promise<unknown>) { pending.push(promise); } };
+}
+
+async function registerTestInstallation(
+  kv: MemoryKV,
+  installationId = INSTALLATION_ID,
+  transaction: AppleTransactionPayload = testTransaction(),
+) {
+  const request = new Request("https://worker.example.test/v1/authorization/register", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ installationId, transactionJWS: "test-transaction-jws" }),
+  });
+  const result = await handleAuthorizationRegister(request, { ...AUTH_ENV, AUTH: kv }, {
+    now: () => AUTH_NOW,
+    verifyTransaction: async (jws) => {
+      assert.equal(jws, "test-transaction-jws");
+      return transaction;
+    },
+  });
+  assert.equal(result.status, 200);
+  return await result.json() as { installationId: string; dnsToken: string; statsToken: string; accessUntil: number };
+}
+
+function statsNamespace(expectedInstallationId: string, blockedTotal = 0) {
+  const values = new Map<string, unknown>([
+    ["blockedTotal", blockedTotal],
+    ["updatedAt", "2026-08-26T00:00:00.000Z"],
+  ]);
+  const state = {
+    storage: {
+      async get<T>(key: string) { return values.get(key) as T | undefined; },
+      async put<T>(key: string, value: T) { values.set(key, value); },
+    },
+  };
+  const object = new StatsDurableObject(state, {});
+  let idCalls = 0;
+  return {
+    values,
+    get idCalls() { return idCalls; },
+    idFromName(name: string) {
+      idCalls += 1;
+      assert.equal(name, expectedInstallationId);
+      return name;
+    },
+    get() {
+      return {
+        async fetch(input: RequestInfo | URL, init?: RequestInit) {
+          return object.fetch(new Request(String(input), init));
+        },
+      };
+    },
+  };
 }
 
 test("health check identifies production without resolving DNS", async () => {
@@ -152,7 +273,6 @@ test("cache hit replaces the upstream transaction ID with the current query ID",
 });
 
 test("does not share the in-memory response cache between installation tokens", async () => {
-  const otherToken = "ZYXWVUTSRQPONMLKJIHGFEDCBA9876543210_-abc12";
   const incoming = query("token-scoped-cache.example.com");
   let calls = 0;
   const worker = makeWorker(undefined, async (_url, init) => {
@@ -164,7 +284,7 @@ test("does not share the in-memory response cache between installation tokens", 
   });
 
   await worker.fetch(requestFor(incoming), {}, context());
-  await worker.fetch(requestForToken(incoming, otherToken), {}, context());
+  await worker.fetch(requestForToken(incoming, OTHER_TOKEN), {}, context());
   assert.equal(calls, 2);
 });
 
@@ -317,7 +437,10 @@ test("applies rate limiting without persisting the client IP", async () => {
 
 test("rejects a blocklist whose metadata count or checksum is invalid", async () => {
   const text = "ads.example.com\n";
-  const worker = createDNSWorker(text, { ...metadata(text), domainCount: 2 }, { fetch: async () => new Response(null, { status: 500 }) });
+  const worker = createDNSWorker(text, { ...metadata(text), domainCount: 2 }, {
+    fetch: async () => new Response(null, { status: 500 }),
+    authorizeToken: async () => ({ kind: "active", installationId: INSTALLATION_ID }),
+  });
   const result = await worker.fetch(requestFor(query("allowed.example.com")), {}, context());
   assert.equal(result.status, 500);
 });
@@ -348,7 +471,7 @@ test("stores only an aggregate blocked total in the stats object", async () => {
 test("authenticates stats with the installation token", async () => {
   const namespace = {
     idFromName(name: string) {
-      assert.equal(name, TOKEN);
+      assert.equal(name, INSTALLATION_ID);
       return name;
     },
     get() {
@@ -377,4 +500,291 @@ test("does not expose DNS responses to shared HTTP caches", async () => {
   }));
   const result = await worker.fetch(requestFor(query("cache-header.example.com")), {}, context());
   assert.equal(result.headers.get("cache-control"), "no-store");
+});
+
+test("a valid authorized installation blocks DNS and records stats by installation", async () => {
+  const kv = new MemoryKV();
+  const credentials = await registerTestInstallation(kv);
+  const stats = statsNamespace(INSTALLATION_ID);
+  let upstreamCalls = 0;
+  const worker = createDNSWorker("ads.example.com\n", metadata("ads.example.com\n"), {
+    now: () => AUTH_NOW,
+    fetch: async () => {
+      upstreamCalls += 1;
+      return new Response(binaryBody(response(query("ads.example.com"))), {
+        headers: { "content-type": "application/dns-message" },
+      });
+    },
+  });
+  const env = { ...AUTH_ENV, AUTH: kv, STATS: stats };
+  const requestContext = context();
+  const result = await worker.fetch(requestForToken(query("ads.example.com"), credentials.dnsToken), env, requestContext);
+  assert.equal(result.status, 200);
+  assert.equal(upstreamCalls, 0);
+  await Promise.all(requestContext.pending);
+  const statsResult = await worker.fetch(new Request("https://worker.example.test/v1/stats", {
+    headers: { authorization: `Bearer ${credentials.statsToken}` },
+  }), env, context());
+  assert.equal(statsResult.status, 200);
+  assert.equal((await statsResult.json() as { blockedTotal: number }).blockedTotal, 1);
+  assert.equal(stats.idCalls, 2);
+});
+
+test("malformed StoreKit JWS cannot issue authorization credentials", async () => {
+  const kv = new MemoryKV();
+  const result = await handleAuthorizationRegister(
+    new Request("https://worker.example.test/v1/authorization/register", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ installationId: INSTALLATION_ID, transactionJWS: "not-a-storekit-jws" }),
+    }),
+    { ...AUTH_ENV, AUTH: kv },
+  );
+  assert.equal(result.status, 401);
+  assert.equal(kv.values.size, 0);
+});
+
+test("unknown tokens are rejected before cache, Durable Object, and upstream", async () => {
+  const kv = new MemoryKV();
+  const stats = statsNamespace(INSTALLATION_ID);
+  let upstreamCalls = 0;
+  const worker = createDNSWorker("ads.example.com\n", metadata("ads.example.com\n"), {
+    fetch: async () => {
+      upstreamCalls += 1;
+      return new Response(null, { status: 500 });
+    },
+  });
+  const result = await worker.fetch(requestForToken(query(), "u".repeat(43)), {
+    ...AUTH_ENV,
+    AUTH: kv,
+    STATS: stats,
+  }, context());
+  assert.equal(result.status, 401);
+  assert.equal(upstreamCalls, 0);
+  assert.equal(stats.idCalls, 0);
+});
+
+test("DNS and stats credentials cannot be used for the other endpoint", async () => {
+  const kv = new MemoryKV();
+  const credentials = await registerTestInstallation(kv);
+  const stats = statsNamespace(INSTALLATION_ID);
+  let upstreamCalls = 0;
+  const worker = createDNSWorker("ads.example.com\n", metadata("ads.example.com\n"), {
+    fetch: async () => {
+      upstreamCalls += 1;
+      return new Response(binaryBody(response(query())), { headers: { "content-type": "application/dns-message" } });
+    },
+  });
+  const env = { ...AUTH_ENV, AUTH: kv, STATS: stats };
+  const dnsWithStatsToken = await worker.fetch(requestForToken(query(), credentials.statsToken), env, context());
+  const statsWithDNS = await worker.fetch(new Request("https://worker.example.test/v1/stats", {
+    headers: { authorization: `Bearer ${credentials.dnsToken}` },
+  }), env, context());
+  assert.equal(dnsWithStatsToken.status, 401);
+  assert.equal(statsWithDNS.status, 401);
+  assert.equal(upstreamCalls, 0);
+  assert.equal(stats.idCalls, 0);
+});
+
+test("cancellation keeps DNS blocking until the paid period expires", async () => {
+  const kv = new MemoryKV();
+  const transaction = testTransaction({ expiresDate: AUTH_NOW + 100_000 });
+  const credentials = await registerTestInstallation(kv, INSTALLATION_ID, transaction);
+  await processAppleNotification(
+    { ...AUTH_ENV, AUTH: kv },
+    testNotification({ notificationType: "DID_CHANGE_RENEWAL_STATUS" }),
+    transaction,
+    { environment: "Production", originalTransactionId: transaction.originalTransactionId, autoRenewStatus: 0 },
+    AUTH_NOW + 1_000,
+  );
+  let upstreamCalls = 0;
+  const worker = createDNSWorker("ads.example.com\n", metadata("ads.example.com\n"), {
+    now: () => AUTH_NOW + 1_000,
+    fetch: async () => {
+      upstreamCalls += 1;
+      return new Response(binaryBody(response(query("ads.example.com"))), { headers: { "content-type": "application/dns-message" } });
+    },
+  });
+  const result = await worker.fetch(requestForToken(query("ads.example.com"), credentials.dnsToken), { ...AUTH_ENV, AUTH: kv }, context());
+  assert.equal(result.status, 200);
+  assert.equal(upstreamCalls, 0);
+});
+
+test("grace period keeps the installation active while billing retry is recorded", async () => {
+  const kv = new MemoryKV();
+  const transaction = testTransaction({ expiresDate: AUTH_NOW + 1_000 });
+  const credentials = await registerTestInstallation(kv, INSTALLATION_ID, transaction);
+  await processAppleNotification(
+    { ...AUTH_ENV, AUTH: kv },
+    testNotification({ notificationType: "DID_FAIL_TO_RENEW" }),
+    transaction,
+    {
+      environment: "Production",
+      originalTransactionId: transaction.originalTransactionId,
+      gracePeriodExpiresDate: AUTH_NOW + 10_000,
+      isInBillingRetryPeriod: true,
+    },
+    AUTH_NOW + 2_000,
+  );
+  let upstreamCalls = 0;
+  const worker = createDNSWorker("ads.example.com\n", metadata("ads.example.com\n"), {
+    now: () => AUTH_NOW + 2_000,
+    fetch: async () => {
+      upstreamCalls += 1;
+      return new Response(null, { status: 500 });
+    },
+  });
+  const result = await worker.fetch(requestForToken(query("ads.example.com"), credentials.dnsToken), { ...AUTH_ENV, AUTH: kv }, context());
+  assert.equal(result.status, 200);
+  assert.equal(parseDNSMessage(new Uint8Array(await result.arrayBuffer()), 1).flags & 0xf, 0);
+  assert.equal(upstreamCalls, 0);
+});
+
+test("expiration resolves DNS without blocking or collecting stats", async () => {
+  const kv = new MemoryKV();
+  const transaction = testTransaction({ expiresDate: AUTH_NOW + 1_000 });
+  const credentials = await registerTestInstallation(kv, INSTALLATION_ID, transaction);
+  await processAppleNotification(
+    { ...AUTH_ENV, AUTH: kv },
+    testNotification({ notificationType: "EXPIRED" }),
+    { ...transaction, expiresDate: AUTH_NOW + 1_000 },
+    undefined,
+    AUTH_NOW + 2_000,
+  );
+  const stats = statsNamespace(INSTALLATION_ID);
+  let upstreamCalls = 0;
+  const worker = createDNSWorker("ads.example.com\n", metadata("ads.example.com\n"), {
+    now: () => AUTH_NOW + 2_000,
+    fetch: async () => {
+      upstreamCalls += 1;
+      return new Response(binaryBody(response(query("ads.example.com"))), { headers: { "content-type": "application/dns-message" } });
+    },
+  });
+  const env = { ...AUTH_ENV, AUTH: kv, STATS: stats };
+  const result = await worker.fetch(requestForToken(query("ads.example.com"), credentials.dnsToken), env, context());
+  assert.equal(result.status, 200);
+  assert.equal(upstreamCalls, 1);
+  const statsResult = await worker.fetch(new Request("https://worker.example.test/v1/stats", {
+    headers: { authorization: `Bearer ${credentials.statsToken}` },
+  }), env, context());
+  assert.equal(statsResult.status, 401);
+  assert.equal(stats.idCalls, 0);
+});
+
+test("App Store Server Notifications V2 update refund and revocation status", async () => {
+  const kv = new MemoryKV();
+  const transaction = testTransaction({ expiresDate: AUTH_NOW + 100_000 });
+  const credentials = await registerTestInstallation(kv, INSTALLATION_ID, transaction);
+  const notification = testNotification({
+    notificationType: "REFUND",
+    data: {
+      appAppleId: 6_803_552_143,
+      bundleId: "com.orbeworks.adless",
+      environment: "Production",
+      signedTransactionInfo: "signed-transaction-jws",
+    },
+  });
+  const env = { ...AUTH_ENV, AUTH: kv };
+  const notificationResult = await handleAppleNotification(
+    new Request("https://worker.example.test/v1/notifications/apple", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ signedPayload: "signed-notification-jws" }),
+    }),
+    env,
+    {
+      verifyNotification: async () => notification,
+      verifyTransaction: async () => ({ ...transaction, revocationDate: AUTH_NOW + 2_000 }),
+      now: () => AUTH_NOW + 2_000,
+    },
+  );
+  assert.equal(notificationResult.status, 200);
+  const worker = createDNSWorker("ads.example.com\n", metadata("ads.example.com\n"), { now: () => AUTH_NOW + 2_000 });
+  const refunded = await worker.fetch(requestForToken(query("ads.example.com"), credentials.dnsToken), env, context());
+  assert.equal(refunded.status, 401);
+
+  const revokeNotification = testNotification({
+    notificationType: "REVOKE",
+    notificationUUID: "notification-2",
+    data: {
+      appAppleId: 6_803_552_143,
+      bundleId: "com.orbeworks.adless",
+      environment: "Production",
+      signedTransactionInfo: "signed-transaction-jws",
+    },
+  });
+  const revokeResult = await handleAppleNotification(
+    new Request("https://worker.example.test/v1/notifications/apple", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ signedPayload: "signed-notification-jws-2" }),
+    }),
+    env,
+    {
+      verifyNotification: async () => revokeNotification,
+      verifyTransaction: async () => ({ ...transaction, revocationDate: AUTH_NOW + 3_000 }),
+      now: () => AUTH_NOW + 3_000,
+    },
+  );
+  assert.equal(revokeResult.status, 200);
+  const revoked = await worker.fetch(requestForToken(query("ads.example.com"), credentials.dnsToken), env, context());
+  assert.equal(revoked.status, 401);
+});
+
+test("rotating credentials preserves the installation counter and stores no plaintext token", async () => {
+  const kv = new MemoryKV();
+  const first = await registerTestInstallation(kv, INSTALLATION_ID, testTransaction({ transactionId: "1000000000000002" }));
+  const stats = statsNamespace(INSTALLATION_ID);
+  const env = { ...AUTH_ENV, AUTH: kv, STATS: stats };
+  const worker = createDNSWorker("ads.example.com\n", metadata("ads.example.com\n"), { now: () => AUTH_NOW });
+  const firstContext = context();
+  await worker.fetch(requestForToken(query("ads.example.com"), first.dnsToken), env, firstContext);
+  await Promise.all(firstContext.pending);
+
+  const second = await registerTestInstallation(kv, INSTALLATION_ID, testTransaction({
+    transactionId: "1000000000000003",
+    signedDate: 1_200_000,
+  }));
+  const secondContext = context();
+  await worker.fetch(requestForToken(query("ads.example.com"), second.dnsToken), env, secondContext);
+  await Promise.all(secondContext.pending);
+  const oldToken = await worker.fetch(requestForToken(query("ads.example.com"), first.dnsToken), env, context());
+  assert.equal(oldToken.status, 401);
+  const result = await worker.fetch(new Request("https://worker.example.test/v1/stats", {
+    headers: { authorization: `Bearer ${second.statsToken}` },
+  }), env, context());
+  assert.equal((await result.json() as { blockedTotal: number }).blockedTotal, 2);
+  for (const value of kv.values.values()) {
+    assert.equal(String(value).includes(first.dnsToken), false);
+    assert.equal(String(value).includes(first.statsToken), false);
+    assert.equal(String(value).includes(second.dnsToken), false);
+    assert.equal(String(value).includes(second.statsToken), false);
+  }
+});
+
+test("DNS authorization does not call Apple or another backend per request", async () => {
+  const kv = new MemoryKV();
+  const credentials = await registerTestInstallation(kv);
+  let transactionVerificationCalls = 0;
+  let upstreamCalls = 0;
+  const worker = createDNSWorker("allowed.example.com\n", metadata("allowed.example.com\n"), {
+    fetch: async (url) => {
+      upstreamCalls += 1;
+      assert.equal(String(url), "https://cloudflare-dns.com/dns-query");
+      return new Response(binaryBody(response(query("allowed.example.com"))), { headers: { "content-type": "application/dns-message" } });
+    },
+    authorization: {
+      verifyTransaction: async () => {
+        transactionVerificationCalls += 1;
+        return testTransaction();
+      },
+    },
+  });
+  const result = await worker.fetch(requestForToken(query("allowed.example.com"), credentials.dnsToken), {
+    ...AUTH_ENV,
+    AUTH: kv,
+  }, context());
+  assert.equal(result.status, 200);
+  assert.equal(upstreamCalls, 1);
+  assert.equal(transactionVerificationCalls, 0);
 });

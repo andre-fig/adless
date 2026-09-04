@@ -9,6 +9,12 @@ enabled = false
 
 [vars]
 DEPLOYMENT_ENV = "production"
+APPLE_BUNDLE_ID = "com.orbeworks.adless"
+APPLE_APP_ID = "6803552143"
+
+[[kv_namespaces]]
+binding = "AUTH"
+id = "f248f98bbd0c4f859978ef78cc7f0cda"
 
 [[durable_objects.bindings]]
 name = "STATS"

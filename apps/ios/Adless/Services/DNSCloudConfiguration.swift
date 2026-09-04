@@ -3,6 +3,7 @@ import Foundation
 enum DNSCloudConfiguration {
     static let dnsQueryPath = "dns-query"
     static let statsPath = "/v1/stats"
+    static let authorizationPath = "/v1/authorization/register"
 
     nonisolated static var baseURL: URL {
         guard let url = URL(string: BuildEnvironment.dnsCloudBaseURL),
@@ -29,6 +30,10 @@ enum DNSCloudConfiguration {
         baseURL.appendingPathComponent(statsPath)
     }
 
+    nonisolated static var authorizationURL: URL {
+        baseURL.appendingPathComponent(authorizationPath)
+    }
+
     nonisolated static func isAdlessEndpoint(_ url: URL) -> Bool {
         let components = url.path.split(separator: "/", omittingEmptySubsequences: true)
         guard components.count == 2,
@@ -41,18 +46,5 @@ enum DNSCloudConfiguration {
             && url.port == baseURL.port
             && url.query == nil
             && url.fragment == nil
-    }
-}
-
-private extension InstallationTokenStore {
-    static func isValid(_ token: String) -> Bool {
-        token.count == 43
-            && token.unicodeScalars.allSatisfy { scalar in
-                (48...57).contains(scalar.value)
-                    || (65...90).contains(scalar.value)
-                    || (97...122).contains(scalar.value)
-                    || scalar.value == 45
-                    || scalar.value == 95
-            }
     }
 }

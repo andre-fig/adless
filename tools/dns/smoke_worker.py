@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Optional live smoke test for an Adless DNS Worker deployment.
 
-The token is read from ADLESS_INSTALLATION_TOKEN and is never included in
-diagnostics. The test deliberately uses only a synthetic example query.
+The DNS and stats tokens are read from ADLESS_DNS_TOKEN and
+ADLESS_STATS_TOKEN. They are never included in diagnostics. The test
+deliberately uses only a synthetic example query.
 """
 
 from __future__ import annotations
@@ -49,13 +50,13 @@ def validate_dns(query: bytes, response: bytes) -> None:
         raise RuntimeError("invalid DNS wire response")
 
 
-def check(base_url: str, token: str) -> None:
+def check(base_url: str, dns_token: str, stats_token: str) -> None:
     parsed = urllib.parse.urlparse(base_url)
     if parsed.scheme != "https" or parsed.path not in ("", "/") or parsed.query or parsed.fragment:
         raise RuntimeError("--url must be an HTTPS origin")
     origin = base_url.rstrip("/")
     query = query_wire()
-    endpoint = f"{origin}/{token}/dns-query"
+    endpoint = f"{origin}/{dns_token}/dns-query"
 
     status, headers, body = request(endpoint, method="POST", body=query)
     if status < 200 or status >= 300 or headers.get("content-type", "").split(";", 1)[0] != "application/dns-message":
@@ -68,7 +69,7 @@ def check(base_url: str, token: str) -> None:
         raise RuntimeError("GET did not return DNS wire format")
     validate_dns(query, body)
 
-    stats_status, stats_headers, stats_body = request(f"{origin}/v1/stats", method="GET", token=token)
+    stats_status, stats_headers, stats_body = request(f"{origin}/v1/stats", method="GET", token=stats_token)
     if stats_status != 200 or not stats_headers.get("content-type", "").startswith("application/json"):
         raise RuntimeError("stats endpoint is unavailable")
     payload = json.loads(stats_body)
@@ -81,11 +82,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--url", required=True, help="HTTPS origin, without the token path")
     args = parser.parse_args()
-    token = os.environ.get("ADLESS_INSTALLATION_TOKEN", "")
-    if re.fullmatch(r"[A-Za-z0-9_-]{43}", token) is None:
-        parser.error("ADLESS_INSTALLATION_TOKEN must be a 43-character Base64URL token")
+    dns_token = os.environ.get("ADLESS_DNS_TOKEN", "")
+    stats_token = os.environ.get("ADLESS_STATS_TOKEN", "")
+    if re.fullmatch(r"[A-Za-z0-9_-]{43}", dns_token) is None:
+        parser.error("ADLESS_DNS_TOKEN must be a 43-character Base64URL token")
+    if re.fullmatch(r"[A-Za-z0-9_-]{43}", stats_token) is None:
+        parser.error("ADLESS_STATS_TOKEN must be a 43-character Base64URL token")
     try:
-        check(args.url, token)
+        check(args.url, dns_token, stats_token)
     except (RuntimeError, ValueError, json.JSONDecodeError) as error:
         print(f"Adless DNS Worker: FAILED ({error})")
         return 1
