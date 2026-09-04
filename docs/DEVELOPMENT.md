@@ -79,8 +79,9 @@ rollback para o deployment anterior.
 
 ## Hooks e higiene
 
-Depois de clonar, execute `npm run setup:hooks`. O pre-commit permanece rápido;
-o pre-push roda os checks direcionados: XCTest para alterações iOS, testes do
-Worker e build para alterações de edge, testes de blocklist e lint, typecheck e
-build da landing page quando aplicável. Não use segredos no código, não registre
-domínio, pacote DNS, token ou IP e não faça alterações em produção sem revisão.
+Depois de clonar, execute `npm run setup:hooks`. O pre-commit permanece rápido e
+faz as validações de diff, sintaxe e lint aplicáveis. O pre-push roda os checks
+direcionados: XCTest para qualquer alteração em `apps/ios/**`, testes e build do
+Worker para alterações de edge, testes de blocklist e typecheck/build da landing
+page quando aplicável. Não use segredos no código, não registre domínio, pacote
+DNS, token ou IP e não faça alterações em produção sem revisão.

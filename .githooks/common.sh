@@ -82,7 +82,6 @@ run_landing_typecheck() {
 }
 
 run_landing_checks() {
-  run_landing_lint
   run_landing_typecheck
   npm --prefix "$REPO_ROOT" run build:landing
 }

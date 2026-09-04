@@ -13,8 +13,6 @@ há também execução manual. O pre-push local executa `AdlessTests`; o workflo
 de publicação cria um archive Release do scheme `Adless`, exporta, inspeciona o
 archive/IPA, valida com as ferramentas Apple, envia ao TestFlight, espera o
 processamento e adiciona o build ao grupo interno. Ele não submete a revisão.
-O workflow separado `ios-tests.yml` permanece apenas como gate remoto para
-pull requests.
 
 O archive usa produtos StoreKit reais/Sandbox; `Adless.storekit` é apenas para
 desenvolvimento. O scheme `Adless Dev` nunca é usado para distribuição.
