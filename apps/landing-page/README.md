@@ -48,11 +48,10 @@ de revisão. Resultados e contagens de avisos pertencem ao relatório de valida�
 
 ## Hospedagem e arquivos públicos
 
-**Implemented:** [deploy-landing.yml](../../.github/workflows/deploy-landing.yml)
-faz build e envia `apps/landing-page` ao serviço Railway de produção, por push
-em `main` com caminhos selecionados ou dispatch manual. Depende de
-`RAILWAY_TOKEN`; IDs de destino já estão no workflow e não precisam ser copiados
-para documentação. O destino público referenciado pelo repositório é
+**Implemented:** o serviço Railway de produção está conectado diretamente ao
+repositório GitHub `andre-fig/adless`, branch `main`, usando
+`apps/landing-page` como raiz do serviço. O Railway publica novas versões após
+pushes nessa branch. O destino público referenciado pelo repositório é
 [landing-production-9feb.up.railway.app](https://landing-production-9feb.up.railway.app/).
 **Pending:** revisão publicada, configuração da hospedagem, retenção de logs,
 cabeçalhos e permissões remotas precisam de evidência própria.
