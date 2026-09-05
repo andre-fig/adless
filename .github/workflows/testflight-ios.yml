@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop
+      - beta
     paths:
       - "apps/ios/Adless/*.swift"
       - "apps/ios/Adless/Managers/**"
@@ -12,16 +13,20 @@ on:
       - "apps/ios/Adless.xcodeproj/**"
       - "apps/ios/Configurations/**"
       - "apps/ios/Adless.storekit"
-      - "docs/app-store/ExportOptions.plist"
+      - "apps/ios/Shared/**"
+      - "docs/app-store/ExportOptions-TestFlight.plist"
+      - "docs/app-store/ExportOptions-TestFlight-Internal.plist"
+      - "docs/app-store/testflight-notes.txt"
       - "tools/appstore/**"
       - "tools/ios/**"
       - "tools/sentry/**"
+      - "tools/dns-worker/testflight_builds.py"
       - ".github/workflows/testflight-ios.yml"
   workflow_dispatch:
 
 concurrency:
-  group: adless-ios-testflight
-  cancel-in-progress: true
+  group: adless-ios-distribution
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -39,11 +44,27 @@ env:
 
 jobs:
   upload:
+    if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/beta'
     runs-on: macos-latest
     timeout-minutes: 75
+    # Serialize settings updates with the production Worker deployment workflow.
+    # Do not cancel a running upload or overwrite a concurrent allowlist update.
+    concurrency:
+      group: adless-dns-worker-production
+      cancel-in-progress: false
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check Cloudflare automation credentials
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          python3 tools/dns-worker/testflight_builds.py check
 
       - name: Prepare App Store Connect API key
         id: credentials
@@ -58,6 +79,34 @@ jobs:
           printf '%s' "$ASC_PRIVATE_KEY" > "$key_path"
           chmod 600 "$key_path"
           echo "key_path=$key_path" >> "$GITHUB_OUTPUT"
+
+      - name: Read marketing version
+        id: version
+        run: |
+          set -euo pipefail
+          xcodebuild -project "$IOS_PROJECT" -scheme "$IOS_SCHEME" -configuration Release -showBuildSettings > "$RUNNER_TEMP/Adless-build-settings.txt"
+          marketing_version="$(awk -F ' = ' '$1 ~ /^[[:space:]]*MARKETING_VERSION$/ { print $2; exit }' "$RUNNER_TEMP/Adless-build-settings.txt")"
+          test -n "$marketing_version"
+          echo "marketing_version=$marketing_version" >> "$GITHUB_OUTPUT"
+
+      - name: Check TestFlight version and beta review information
+        env:
+          IOS_MARKETING_VERSION: ${{ steps.version.outputs.marketing_version }}
+        run: |
+          set -euo pipefail
+          # Keep the array nonempty: macOS Bash 3.2 + nounset rejects empty arrays.
+          review_options=(--group-id "$ASC_INTERNAL_BETA_GROUP_ID")
+          if [[ "$GITHUB_REF" == "refs/heads/beta" ]]; then
+            review_options+=(--external)
+          fi
+          python3 tools/appstore/appstore_connect.py \
+            --key-id "$ASC_KEY_ID" \
+            --issuer-id "$ASC_ISSUER_ID" \
+            --key-path "${{ steps.credentials.outputs.key_path }}" \
+            testflight-preflight \
+            --app-id "$ASC_APP_ID" \
+            --version "$IOS_MARKETING_VERSION" \
+            "${review_options[@]}"
 
       - name: Select next build number
         id: build
@@ -96,22 +145,28 @@ jobs:
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             CURRENT_PROJECT_VERSION="${{ steps.build.outputs.build_number }}"
 
-      - name: Export App Store package
+      - name: Verify intermediate archive layout
         run: |
           set -euo pipefail
+          # Automatic signing may use a development profile for this intermediate
+          # archive. Distribution signing is checked on the exported IPA below.
+          sh tools/ios/verify_archive.sh --layout-only "$RUNNER_TEMP/Adless.xcarchive"
+
+      - name: Export the branch-specific TestFlight package
+        run: |
+          set -euo pipefail
+          export_options=docs/app-store/ExportOptions-TestFlight-Internal.plist
+          if [[ "$GITHUB_REF" == "refs/heads/beta" ]]; then
+            export_options=docs/app-store/ExportOptions-TestFlight.plist
+          fi
           xcodebuild -exportArchive \
             -archivePath "$RUNNER_TEMP/Adless.xcarchive" \
-            -exportOptionsPlist docs/app-store/ExportOptions.plist \
+            -exportOptionsPlist "$export_options" \
             -exportPath "$RUNNER_TEMP/Adless-export" \
             -allowProvisioningUpdates \
             -authenticationKeyPath "${{ steps.credentials.outputs.key_path }}" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
-
-      - name: Verify archive layout and signed entitlements
-        run: |
-          set -euo pipefail
-          sh tools/ios/verify_archive.sh "$RUNNER_TEMP/Adless.xcarchive"
 
       - name: Verify archive dSYMs
         run: |
@@ -123,6 +178,9 @@ jobs:
           echo "Verified the app dSYM and no extension dSYMs in the archive."
 
       - name: Verify exported IPA contents
+        env:
+          ADLESS_EXPECTED_BUILD_NUMBER: ${{ steps.build.outputs.build_number }}
+          ADLESS_EXPECTED_MARKETING_VERSION: ${{ steps.version.outputs.marketing_version }}
         run: sh tools/ios/verify_ipa.sh "$RUNNER_TEMP/Adless-export/Adless.ipa"
 
       - name: Upload archive dSYMs to Sentry
@@ -137,10 +195,20 @@ jobs:
         run: |
           set -euo pipefail
           xcrun altool --validate-app \
-            "$RUNNER_TEMP/Adless-export/Adless.ipa" \
+            --file "$RUNNER_TEMP/Adless-export/Adless.ipa" \
             --type ios \
             --apiKey "$ASC_KEY_ID" \
             --apiIssuer "$ASC_ISSUER_ID"
+
+      - name: Authorize the validated build on the existing Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BUILD_NUMBER: ${{ steps.build.outputs.build_number }}
+        run: |
+          set -euo pipefail
+          # Update only the allowlist, not the Worker code, routes, or secrets.
+          python3 tools/dns-worker/testflight_builds.py add --build-number "$BUILD_NUMBER"
 
       - name: Upload package to TestFlight
         env:
@@ -165,7 +233,8 @@ jobs:
             --app-id "$ASC_APP_ID" \
             --build-number "${{ steps.build.outputs.build_number }}"
 
-      - name: Add build to internal TestFlight group
+      - name: Distribute only to the internal TestFlight group
+        if: github.ref == 'refs/heads/develop'
         run: |
           set -euo pipefail
           python3 tools/appstore/appstore_connect.py \
@@ -173,16 +242,49 @@ jobs:
             --issuer-id "$ASC_ISSUER_ID" \
             --key-path "${{ steps.credentials.outputs.key_path }}" \
             add-beta-build \
+            --require-internal \
+            --app-id "$ASC_APP_ID" \
             --group-id "$ASC_INTERNAL_BETA_GROUP_ID" \
+            --build-id "${{ steps.processed-build.outputs.build_id }}"
+
+      - name: Distribute to external TestFlight groups and submit beta review
+        if: github.ref == 'refs/heads/beta'
+        id: beta
+        run: |
+          set -euo pipefail
+          python3 tools/appstore/appstore_connect.py \
+            --key-id "$ASC_KEY_ID" \
+            --issuer-id "$ASC_ISSUER_ID" \
+            --key-path "${{ steps.credentials.outputs.key_path }}" \
+            distribute-beta \
+            --app-id "$ASC_APP_ID" \
+            --notes-file docs/app-store/testflight-notes.txt \
             --build-id "${{ steps.processed-build.outputs.build_id }}"
 
       - name: Publish summary
         env:
           BUILD_NUMBER: ${{ steps.build.outputs.build_number }}
+          IOS_MARKETING_VERSION: ${{ steps.version.outputs.marketing_version }}
+          EXTERNAL_STATE: ${{ steps.beta.outputs.external_state }}
         run: |
           {
             echo "## TestFlight upload"
             echo ""
-            echo "Build **$BUILD_NUMBER** was uploaded and processed by App Store Connect."
-            echo "The build is available in TestFlight after Apple's processing completes."
+            echo "Version **$IOS_MARKETING_VERSION ($BUILD_NUMBER)** was uploaded and processed."
+            if [[ "$GITHUB_REF" == "refs/heads/develop" ]]; then
+              echo "Distributed to the internal group only; this IPA cannot be distributed externally."
+            else
+              echo "Assigned to external groups. Beta status: $EXTERNAL_STATE. Testers are notified automatically once Apple permits testing."
+            fi
+            echo "The existing DNS Worker allowlist includes this build. No public App Store submission was made."
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove temporary Apple API key
+        if: always()
+        env:
+          KEY_PATH: ${{ steps.credentials.outputs.key_path }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$KEY_PATH" && "$KEY_PATH" == "$RUNNER_TEMP"/AuthKey_*.p8 ]]; then
+            rm -f -- "$KEY_PATH"
+          fi

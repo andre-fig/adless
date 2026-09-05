@@ -75,13 +75,13 @@ struct ContentView: View {
                     AdlessLogoView(size: 92)
 
                     VStack(spacing: 10) {
-                        Text(viewModel.isOn ? "Protection Active" : "Protection Off")
+                        Text(viewModel.isProtectionActive ? "Protection Active" : "Protection Off")
                             .font(.title.weight(.semibold))
                             .foregroundStyle(.primary)
 
                         Text(!viewModel.hasSubscription
                              ? "Block ads and trackers across your iPhone."
-                             : (viewModel.isOn
+                             : (viewModel.isProtectionActive
                                 ? "Adless is working quietly in the background."
                                 : "Your protection is paused."))
                             .font(.subheadline)
@@ -101,16 +101,16 @@ struct ContentView: View {
                     Image(systemName: "power")
                         .font(.system(size: 56, weight: .medium))
                         .frame(width: 144, height: 144)
-                        .foregroundStyle(viewModel.isOn
+                        .foregroundStyle(viewModel.isProtectionActive
                                          ? Color.white
                                          : inactiveButtonForeground)
-                        .background(viewModel.isOn
+                        .background(viewModel.isProtectionActive
                                     ? activeButtonBackground
                                     : inactiveButtonBackground)
                         .overlay {
                             Circle()
                                 .stroke(
-                                    viewModel.isOn
+                                    viewModel.isProtectionActive
                                         ? activeButtonBorder
                                         : inactiveButtonBorder,
                                     lineWidth: 1
@@ -118,16 +118,16 @@ struct ContentView: View {
                         }
                         .clipShape(Circle())
                         .shadow(
-                            color: viewModel.isOn
+                            color: viewModel.isProtectionActive
                                 ? Color.black.opacity(colorScheme == .dark ? 0.24 : 0.12)
                                 : Color.black.opacity(colorScheme == .dark ? 0.30 : 0.14),
-                            radius: viewModel.isOn && colorScheme == .dark ? 12 : 10,
+                            radius: viewModel.isProtectionActive && colorScheme == .dark ? 12 : 10,
                             x: 0,
-                            y: viewModel.isOn && colorScheme == .dark ? 7 : 6
+                            y: viewModel.isProtectionActive && colorScheme == .dark ? 7 : 6
                         )
                 }
                 .accessibilityLabel(viewModel.hasSubscription
-                                    ? (viewModel.isOn ? "Turn off blocking" : "Turn on blocking")
+                                    ? (viewModel.isProtectionActive ? "Turn off blocking" : "Turn on blocking")
                                     : "Subscribe to turn on blocking")
                 .accessibilityHint(viewModel.hasSubscription
                                    ? "Turns DNS blocking on or off"
@@ -159,14 +159,14 @@ struct ContentView: View {
 
                 if viewModel.hasSubscription {
                     VStack(spacing: 4) {
-                        Text(viewModel.isOn
+                        Text(viewModel.isProtectionActive
                              ? "Browse cleaner. Stay private."
                              : "Turn Adless back on to keep blocking.")
                             .font(.body.weight(.semibold))
                             .foregroundStyle(.primary)
                             .multilineTextAlignment(.center)
 
-                        Text(viewModel.isOn
+                        Text(viewModel.isProtectionActive
                              ? "Adless keeps working even after you close the app."
                              : "Your blocking history is saved while protection is paused.")
                             .font(.subheadline)
@@ -220,7 +220,7 @@ struct ContentView: View {
                     .zIndex(1)
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: viewModel.isOn)
+        .animation(.easeInOut(duration: 0.25), value: viewModel.isProtectionActive)
         .animation(.easeInOut(duration: 0.2), value: viewModel.isSubscriptionPresented)
         .animation(.easeInOut(duration: 0.2), value: viewModel.isPreparing)
         .contentShape(Rectangle())
@@ -238,7 +238,7 @@ struct ContentView: View {
             }
             Button("OK", role: .cancel) { }
         } message: {
-            Text("In the next screen, open VPN & Device Management, then DNS, and enable Adless. Return here; protection will be checked automatically.")
+            Text("Apple does not provide a public shortcut to DNS. In Settings, return to the main screen and follow General → VPN & Network (or VPN & Device Management) → DNS → Adless. Return here; protection will be checked automatically.")
         }
         .alert("Disable Adless in Settings", isPresented: $viewModel.isManualDisableAlertPresented) {
             Button("Open Settings") {

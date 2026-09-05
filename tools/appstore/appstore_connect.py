@@ -3,8 +3,8 @@
 
 The release workflow intentionally keeps the Apple API integration here instead
 of adding a third-party dependency to the repository. The script only handles
-release orchestration: it never reads or changes app metadata or subscription
-pricing.
+release orchestration, beta groups and testing notes. It does not invent review
+contact information or change subscription pricing or public store metadata.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ import argparse
 import base64
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -44,6 +45,7 @@ SAFE_SKIP_STATES = {
     "PENDING_DEVELOPER_RELEASE",
     "PENDING_APPLE_RELEASE",
     "READY_FOR_SALE",
+    "READY_FOR_DISTRIBUTION",
     "DEVELOPER_REMOVED_FROM_SALE",
     "PROCESSING_FOR_APP_STORE",
 }
@@ -121,10 +123,17 @@ def make_token(key_id: str, issuer_id: str, key_path: Path) -> str:
 
 class Client:
     def __init__(self, key_id: str, issuer_id: str, key_path: Path) -> None:
+        self.credentials = (key_id, issuer_id, key_path)
         self.token = make_token(key_id, issuer_id, key_path)
+        self.token_created_at = time.time()
 
     def request(self, method: str, path_or_url: str, body: dict[str, Any] | None = None) -> dict[str, Any]:
         url = path_or_url if path_or_url.startswith("http") else API_ROOT + path_or_url
+        if urllib.parse.urlsplit(url).netloc != "api.appstoreconnect.apple.com" or not url.startswith(API_ROOT + "/"):
+            raise ValueError("Refusing to send Apple credentials to an unexpected API origin")
+        if time.time() - self.token_created_at >= JWT_LIFETIME_SECONDS - 60:
+            self.token = make_token(*self.credentials)
+            self.token_created_at = time.time()
         request = urllib.request.Request(
             url,
             method=method,
@@ -139,8 +148,9 @@ class Client:
             with urllib.request.urlopen(request, timeout=30) as response:
                 raw = response.read()
         except urllib.error.HTTPError as error:
-            detail = error.read().decode("utf-8", errors="replace")
-            raise APIError(error.code, f"App Store Connect API {error.code}: {detail[:1000]}") from error
+            # API responses may echo submitted review/contact data. Do not log
+            # their bodies or request headers; inspect details in ASC instead.
+            raise APIError(error.code, f"App Store Connect API HTTP {error.code}; inspect the operation in App Store Connect") from None
         if not raw:
             return {}
         return json.loads(raw)
@@ -226,6 +236,136 @@ def command_next_build(client: Client, args: argparse.Namespace) -> None:
     write_output({"build_number": str(next_build)})
 
 
+def marketing_version_tuple(value: str) -> tuple[int, int, int]:
+    if not re.fullmatch(r"[0-9]+(?:\.[0-9]+){1,2}", value):
+        raise ValueError("Marketing version must have two or three numeric components")
+    components = [int(part) for part in value.split(".")]
+    return tuple((components + [0, 0, 0])[:3])
+
+
+def require_internal_group(client: Client, app_id: str, group_id: str) -> None:
+    group_path = f"/v1/betaGroups/{urllib.parse.quote(group_id, safe='')}"
+    group = client.request("GET", group_path)["data"]
+    app = client.request("GET", group_path + "/app")["data"]
+    if _attributes(group).get("isInternalGroup") is not True or app.get("id") != app_id:
+        raise RuntimeError("The beta group must be internal and belong to the requested app")
+
+
+def command_testflight_preflight(client: Client, args: argparse.Namespace) -> None:
+    requested = marketing_version_tuple(args.version)
+    app = client.request("GET", f"/v1/apps/{urllib.parse.quote(args.app_id, safe='')}")["data"]
+    if _attributes(app).get("bundleId") != "com.orbeworks.adless":
+        raise RuntimeError("The TestFlight app must have the production Adless bundle identifier")
+    require_internal_group(client, args.app_id, args.group_id)
+    closed_states = {
+        "READY_FOR_SALE", "READY_FOR_DISTRIBUTION", "REMOVED_FROM_SALE",
+        "DEVELOPER_REMOVED_FROM_SALE", "PENDING_DEVELOPER_RELEASE",
+        "PENDING_APPLE_RELEASE", "PROCESSING_FOR_APP_STORE",
+    }
+    versions = client.all_resources(
+        f"/v1/apps/{urllib.parse.quote(args.app_id, safe='')}/appStoreVersions?limit=200"
+    )
+    for version in versions:
+        attrs = _attributes(version)
+        if attrs.get("platform") == "IOS" and attrs.get("appStoreState") in closed_states:
+            if requested <= marketing_version_tuple(str(attrs.get("versionString", ""))):
+                raise RuntimeError(
+                    "Increase MARKETING_VERSION in the Xcode project: "
+                    "it must be newer than the approved App Store version"
+                )
+    if args.external:
+        require_beta_metadata(client, args.app_id)
+    print(f"TestFlight version {args.version} and requested distribution prerequisites verified (read-only)")
+
+
+def require_beta_metadata(client: Client, app_id: str) -> list[dict[str, Any]]:
+    app_path = f"/v1/apps/{urllib.parse.quote(app_id, safe='')}"
+    localizations = client.all_resources(app_path + "/betaAppLocalizations?limit=200")
+    if not localizations or any(
+        not _attributes(item).get(field)
+        for item in localizations for field in ("description", "feedbackEmail", "locale")
+    ):
+        raise RuntimeError("Complete TestFlight > Test Information: beta description and feedback email in every language")
+    detail = client.request("GET", app_path + "/betaAppReviewDetail").get("data") or {}
+    attrs = _attributes(detail)
+    if any(not attrs.get(field) for field in (
+        "contactEmail", "contactFirstName", "contactLastName", "contactPhone",
+    )):
+        raise RuntimeError("Complete TestFlight > Test Information > Beta App Review contact details")
+    if attrs.get("demoAccountRequired") and (
+        not attrs.get("demoAccountName") or not attrs.get("demoAccountPassword")
+    ):
+        raise RuntimeError("Resolve the beta review sign-in requirements in App Store Connect")
+    return localizations
+
+
+def command_distribute_beta(client: Client, args: argparse.Namespace) -> None:
+    # No public App Store submission in this command. Only external groups of
+    # this app receive the build; create an external group if none exists.
+    localizations = require_beta_metadata(client, args.app_id)
+    build_path = f"/v1/builds/{urllib.parse.quote(args.build_id, safe='')}"
+    build = client.request("GET", build_path)["data"]
+    app = client.request("GET", build_path + "/app")["data"]
+    attrs = _attributes(build)
+    if app.get("id") != args.app_id or attrs.get("processingState") != "VALID":
+        raise RuntimeError("The processed build must belong to the requested app")
+    if attrs.get("buildAudienceType") != "APP_STORE_ELIGIBLE" or attrs.get("expired"):
+        raise RuntimeError("External TestFlight requires a non-expired build exported without internal-only restrictions")
+    notes = args.notes_file.read_text(encoding="utf-8").strip()
+    if not notes or len(notes) > 4000:
+        raise ValueError("TestFlight testing notes must contain 1–4000 characters")
+    existing_notes = client.all_resources(build_path + "/betaBuildLocalizations?limit=200")
+    by_locale = {_attributes(item).get("locale"): item for item in existing_notes}
+    for localization in localizations:
+        locale = _attributes(localization)["locale"]
+        existing = by_locale.get(locale)
+        if existing and _attributes(existing).get("whatsNew") == notes:
+            continue
+        data = {"type": "betaBuildLocalizations", "attributes": {"whatsNew": notes}}
+        if existing:
+            data["id"] = existing["id"]
+            client.request("PATCH", f"/v1/betaBuildLocalizations/{existing['id']}", {"data": data})
+        else:
+            data["attributes"]["locale"] = locale
+            data["relationships"] = {"build": {"data": {"type": "builds", "id": args.build_id}}}
+            client.request("POST", "/v1/betaBuildLocalizations", {"data": data})
+
+    detail = client.request("GET", build_path + "/buildBetaDetail")["data"]
+    state = _attributes(detail).get("externalBuildState")
+    if state not in {"READY_FOR_BETA_SUBMISSION", "WAITING_FOR_BETA_REVIEW", "IN_BETA_REVIEW",
+                     "BETA_APPROVED", "IN_BETA_TESTING", "READY_FOR_BETA_TESTING"}:
+        raise RuntimeError(f"External TestFlight state {state} requires attention in App Store Connect")
+    client.request("PATCH", f"/v1/buildBetaDetails/{detail['id']}", {
+        "data": {"type": "buildBetaDetails", "id": detail["id"],
+                 "attributes": {"autoNotifyEnabled": True}},
+    })
+    groups = [group for group in client.all_resources(f"/v1/apps/{args.app_id}/betaGroups?limit=200")
+              if _attributes(group).get("isInternalGroup") is False]
+    if not groups:
+        group = client.request("POST", "/v1/betaGroups", {"data": {
+            "type": "betaGroups",
+            "attributes": {"name": "Adless Beta", "isInternalGroup": False,
+                           "publicLinkEnabled": False},
+            "relationships": {"app": {"data": {"type": "apps", "id": args.app_id}}},
+        }})["data"]
+        groups.append(group)
+    for group in groups:
+        command_add_beta_build(client, argparse.Namespace(group_id=group["id"], build_id=args.build_id))
+    # Reread: Apple may have advanced the review state while assigning groups.
+    state = _attributes(client.request("GET", build_path + "/buildBetaDetail")["data"]).get("externalBuildState")
+    if state == "READY_FOR_BETA_SUBMISSION":
+        client.request("POST", "/v1/betaAppReviewSubmissions", {"data": {
+            "type": "betaAppReviewSubmissions",
+            "relationships": {"build": {"data": {"type": "builds", "id": args.build_id}}},
+        }})
+        state = "WAITING_FOR_BETA_REVIEW"
+    elif state not in {"WAITING_FOR_BETA_REVIEW", "IN_BETA_REVIEW", "BETA_APPROVED",
+                       "IN_BETA_TESTING", "READY_FOR_BETA_TESTING"}:
+        raise RuntimeError(f"External TestFlight state changed to {state}; inspect in App Store Connect")
+    print(f"Build assigned to {len(groups)} TestFlight groups; external status: {state}. Invitations automatic when Apple permits testing.")
+    write_output({"external_state": state})
+
+
 def command_wait_build(client: Client, args: argparse.Namespace) -> None:
     for attempt in range(1, POLL_ATTEMPTS + 1):
         matches = [
@@ -251,6 +391,10 @@ def command_wait_build(client: Client, args: argparse.Namespace) -> None:
 
 
 def command_add_beta_build(client: Client, args: argparse.Namespace) -> None:
+    if getattr(args, "require_internal", False):
+        if not args.app_id:
+            raise ValueError("--app-id is required with --require-internal")
+        require_internal_group(client, args.app_id, args.group_id)
     group_path = f"/v1/betaGroups/{urllib.parse.quote(args.group_id)}/builds?limit=200"
     assigned_builds = client.all_resources(group_path)
     if any(resource.get("id") == args.build_id for resource in assigned_builds):
@@ -285,6 +429,14 @@ def command_attach_submit(client: Client, args: argparse.Namespace) -> None:
     if state in SAFE_SKIP_STATES:
         print(f"App Store version {args.version} became {state}; stopping without a second submission")
         return
+
+    if state not in RELEASEABLE_STATES:
+        raise RuntimeError(f"App Store version is no longer releaseable ({state})")
+
+    client.request("PATCH", f"/v1/appStoreVersions/{urllib.parse.quote(version_id)}", {
+        "data": {"type": "appStoreVersions", "id": version_id,
+                 "attributes": {"releaseType": "AFTER_APPROVAL"}},
+    })
 
     client.request(
         "PATCH",
@@ -325,7 +477,7 @@ def command_attach_submit(client: Client, args: argparse.Namespace) -> None:
             }
         },
     )
-    print(f"Review submission {submission_id} submitted for App Store version {args.version}")
+    print(f"App Store version {args.version} submitted; automatic production release AFTER Apple approval")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -343,6 +495,12 @@ def build_parser() -> argparse.ArgumentParser:
     next_build.add_argument("--app-id", required=True)
     next_build.add_argument("--minimum", required=True, type=int)
 
+    testflight = subparsers.add_parser("testflight-preflight")
+    testflight.add_argument("--app-id", required=True)
+    testflight.add_argument("--version", required=True)
+    testflight.add_argument("--group-id", required=True)
+    testflight.add_argument("--external", action="store_true")
+
     wait_build = subparsers.add_parser("wait-build")
     wait_build.add_argument("--app-id", required=True)
     wait_build.add_argument("--build-number", required=True)
@@ -350,6 +508,13 @@ def build_parser() -> argparse.ArgumentParser:
     add_beta_build = subparsers.add_parser("add-beta-build")
     add_beta_build.add_argument("--group-id", required=True)
     add_beta_build.add_argument("--build-id", required=True)
+    add_beta_build.add_argument("--require-internal", action="store_true")
+    add_beta_build.add_argument("--app-id")
+
+    distribute = subparsers.add_parser("distribute-beta")
+    distribute.add_argument("--app-id", required=True)
+    distribute.add_argument("--build-id", required=True)
+    distribute.add_argument("--notes-file", required=True, type=Path)
 
     attach = subparsers.add_parser("attach-submit")
     attach.add_argument("--app-id", required=True)
@@ -366,10 +531,14 @@ def main() -> int:
             command_preflight(client, args)
         elif args.command == "next-build":
             command_next_build(client, args)
+        elif args.command == "testflight-preflight":
+            command_testflight_preflight(client, args)
         elif args.command == "wait-build":
             command_wait_build(client, args)
         elif args.command == "add-beta-build":
             command_add_beta_build(client, args)
+        elif args.command == "distribute-beta":
+            command_distribute_beta(client, args)
         elif args.command == "attach-submit":
             command_attach_submit(client, args)
         else:

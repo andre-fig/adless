@@ -1,0 +1,1 @@
+Teste a compra e a restauração da assinatura no Sandbox, a ativação do DNS nos Ajustes, o bloqueio de anúncios e o contador. Confira também o retorno ao app e a continuidade da internet após expiração. Envie problemas pelo feedback do TestFlight, sem incluir tokens ou dados de navegação.

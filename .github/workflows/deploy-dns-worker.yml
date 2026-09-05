@@ -13,13 +13,14 @@ on:
 
 concurrency:
   group: adless-dns-worker-production
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -46,11 +47,25 @@ jobs:
           python3 tools/blocklists/validate_blocklist.py
           npm run build:dns-worker
 
-      - name: Deploy Worker
+      - name: Preserve the published TestFlight build allowlist
+        id: deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "CLOUDFLARE_API_TOKEN secret is missing" >&2; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "CLOUDFLARE_ACCOUNT_ID secret is missing" >&2; exit 1; }
-          npx --yes wrangler@4 deploy --config apps/dns-worker/wrangler.toml
+          python3 tools/dns-worker/testflight_builds.py merge-for-deploy \
+            --config apps/dns-worker/wrangler.toml
+
+      - name: Publish Worker preserving authorized TestFlight builds
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TESTFLIGHT_BUILDS: ${{ steps.deploy.outputs.builds }}
+        run: |
+          set -euo pipefail
+          test -n "$TESTFLIGHT_BUILDS"
+          npx --yes wrangler@4 deploy --config apps/dns-worker/wrangler.toml \
+            --var "APPLE_TESTFLIGHT_BUILD_VERSIONS:$TESTFLIGHT_BUILDS"
+          python3 tools/dns-worker/testflight_builds.py verify --builds "$TESTFLIGHT_BUILDS"

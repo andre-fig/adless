@@ -1,9 +1,9 @@
 import Foundation
 
 enum DNSCloudConfiguration {
-    static let dnsQueryPath = "dns-query"
-    static let statsPath = "/v1/stats"
-    static let authorizationPath = "/v1/authorization/register"
+    nonisolated static let dnsQueryPath = "dns-query"
+    nonisolated static let statsPath = "/v1/stats"
+    nonisolated static let authorizationPath = "/v1/authorization/register"
 
     nonisolated static var baseURL: URL {
         guard let url = URL(string: BuildEnvironment.dnsCloudBaseURL),

@@ -116,4 +116,84 @@ final class BlocklistTests: XCTestCase {
 
         XCTAssertTrue(error.errorDescription?.contains("Disable it manually in Settings") == true)
     }
+
+    func testAuthorizationPayloadIncludesVerifiedAppTransactionEvidence() throws {
+        let data = try JSONEncoder().encode(DNSAuthorizationRequest(
+            installationId: "11111111-1111-4111-8111-111111111111",
+            transactionJWS: "transaction-jws",
+            appTransactionJWS: "app-transaction-jws",
+            rotationNonce: String(repeating: "N", count: 43),
+            currentDnsToken: nil,
+            currentStatsToken: nil
+        ))
+        let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: String])
+
+        XCTAssertEqual(payload["appTransactionJWS"], "app-transaction-jws")
+        XCTAssertEqual(payload["rotationNonce"], String(repeating: "N", count: 43))
+        XCTAssertNil(payload["currentDnsToken"])
+        XCTAssertNil(payload["currentStatsToken"])
+    }
+
+    func testAuthorizationPayloadOmitsUnavailableAppTransactionEvidence() throws {
+        let data = try JSONEncoder().encode(DNSAuthorizationRequest(
+            installationId: "11111111-1111-4111-8111-111111111111",
+            transactionJWS: "transaction-jws",
+            appTransactionJWS: nil,
+            rotationNonce: String(repeating: "N", count: 43),
+            currentDnsToken: String(repeating: "D", count: 43),
+            currentStatsToken: String(repeating: "S", count: 43)
+        ))
+        let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: String])
+
+        XCTAssertNil(payload["appTransactionJWS"])
+        XCTAssertEqual(payload["currentDnsToken"], String(repeating: "D", count: 43))
+        XCTAssertEqual(payload["currentStatsToken"], String(repeating: "S", count: 43))
+    }
+
+    func testRestoreAlwaysReconcilesExistingCredentialsWithTheWorker() {
+        XCTAssertTrue(AppViewModel.authorizationIsRequired(
+            hasAccess: true,
+            hasCredentials: true,
+            source: .restore
+        ))
+        XCTAssertTrue(AppViewModel.authorizationIsRequired(
+            hasAccess: true,
+            hasCredentials: true,
+            source: .purchase
+        ))
+        XCTAssertTrue(AppViewModel.authorizationIsRequired(
+            hasAccess: true,
+            hasCredentials: true,
+            source: .transactionUpdate
+        ))
+        XCTAssertTrue(AppViewModel.authorizationIsRequired(hasAccess: true, hasCredentials: false))
+        XCTAssertFalse(AppViewModel.authorizationIsRequired(hasAccess: false, hasCredentials: false))
+    }
+
+    func testUIClaimsProtectionOnlyAfterSubscriptionCredentialsAndDNSAreConfirmed() {
+        XCTAssertTrue(AppViewModel.protectionIsConfirmed(
+            hasAccess: true,
+            hasCredentials: true,
+            authorizationRequired: false,
+            dnsState: .enabled
+        ))
+        XCTAssertFalse(AppViewModel.protectionIsConfirmed(
+            hasAccess: true,
+            hasCredentials: true,
+            authorizationRequired: true,
+            dnsState: .enabled
+        ))
+        XCTAssertFalse(AppViewModel.protectionIsConfirmed(
+            hasAccess: true,
+            hasCredentials: false,
+            authorizationRequired: false,
+            dnsState: .enabled
+        ))
+        XCTAssertFalse(AppViewModel.protectionIsConfirmed(
+            hasAccess: true,
+            hasCredentials: true,
+            authorizationRequired: false,
+            dnsState: .disabled
+        ))
+    }
 }

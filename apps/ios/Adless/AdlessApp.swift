@@ -21,7 +21,27 @@ struct AdlessApp: App {
 
 @MainActor
 final class AppViewModel: ObservableObject {
+    static func authorizationIsRequired(
+        hasAccess: Bool,
+        hasCredentials: Bool,
+        source: SubscriptionAuthorizationSource? = nil
+    ) -> Bool {
+        guard hasAccess else { return false }
+        guard hasCredentials else { return true }
+        return source != nil
+    }
+
+    static func protectionIsConfirmed(
+        hasAccess: Bool,
+        hasCredentials: Bool,
+        authorizationRequired: Bool,
+        dnsState: DNSSettingsState
+    ) -> Bool {
+        hasAccess && hasCredentials && !authorizationRequired && dnsState == .enabled
+    }
+
     @Published var isOn = false
+    @Published private(set) var isProtectionActive = false
     @Published var statusText: String = String(localized: "Off")
     @Published private(set) var isPreparing = true
     @Published private(set) var hasSubscription = false
@@ -40,12 +60,19 @@ final class AppViewModel: ObservableObject {
     private var dnsSettingsObserver: NSObjectProtocol?
     private var isAuthorizing = false
     private var authorizationRequired = false
+    private var needsStartupAuthorizationReconciliation = true
 
     init() {
         subscriptionManager.onEntitlementChanged = { [weak self] hasAccess in
             guard let self else { return }
             self.hasSubscription = hasAccess
-            self.authorizationRequired = true
+            self.authorizationRequired = Self.authorizationIsRequired(
+                hasAccess: hasAccess,
+                hasCredentials: InstallationTokenStore.shared.hasAuthorizedCredentials()
+            )
+            if self.authorizationRequired || !hasAccess {
+                self.isProtectionActive = false
+            }
             if hasAccess {
                 Task { @MainActor [weak self] in
                     await self?.ensureAuthorizationIfNeeded()
@@ -56,12 +83,25 @@ final class AppViewModel: ObservableObject {
                 await self?.disableIfSubscriptionExpired()
             }
         }
-        subscriptionManager.onPurchaseCompleted = { [weak self] transactionJWS in
+        subscriptionManager.onPurchaseCompleted = { [weak self] authorization, source in
             guard let self, self.subscriptionManager.hasActiveEntitlement else { return }
             self.hasSubscription = true
-            self.authorizationRequired = true
+            let hasCredentials = InstallationTokenStore.shared.hasAuthorizedCredentials()
+            self.authorizationRequired = Self.authorizationIsRequired(
+                hasAccess: true,
+                hasCredentials: hasCredentials,
+                source: source
+            )
+            if self.authorizationRequired {
+                self.isProtectionActive = false
+            }
             Task { @MainActor [weak self] in
-                await self?.authorizeAndActivate(transactionJWS: transactionJWS)
+                guard let self else { return }
+                if self.authorizationRequired {
+                    await self.authorizeAndActivate(authorization)
+                } else {
+                    await self.activateProtection()
+                }
             }
         }
 
@@ -100,7 +140,7 @@ final class AppViewModel: ObservableObject {
             return
         }
 
-        if isOn {
+        if isProtectionActive {
             let transaction = AdlessSentry.startTransaction(name: "protection.deactivate", operation: "dns-settings")
             defer { transaction?.finish() }
             do {
@@ -125,18 +165,18 @@ final class AppViewModel: ObservableObject {
         }
 
         if authorizationRequired || !InstallationTokenStore.shared.hasAuthorizedCredentials() {
-            guard let transactionJWS = await subscriptionManager.currentEntitlementJWS() else {
+            guard let authorization = await subscriptionManager.currentEntitlementAuthorization() else {
                 subscriptionManager.showAuthorizationFailure()
                 return
             }
-            await authorizeAndActivate(transactionJWS: transactionJWS)
+            await authorizeAndActivate(authorization)
             return
         }
 
         // Always reinstall the profile when activating. This also migrates a
         // previously saved, disabled profile to the current authorized DoH
-        // URL and credential.
-        isOn = false
+        // URL and credential. The real state is read back after save; do not
+        // optimistically change the UI before iOS confirms it.
         statusText = String(localized: "Connecting")
         let transaction = AdlessSentry.startTransaction(name: "protection.activate", operation: "dns-settings")
         defer { transaction?.finish() }
@@ -150,41 +190,33 @@ final class AppViewModel: ObservableObject {
             }
         } catch {
             AdlessSentry.capture(error, operation: "dns.settings.save")
-            isOn = false
-            statusText = String(localized: "Could not change blocking status")
-        }
-    }
-
-    /// Opens the root of the Settings app after the app has saved the profile.
-    /// iOS has no public URL for the DNS screen, so this is a best-effort use
-    /// of the undocumented root Settings URL. The user must still enable
-    /// Adless in Settings.
-    @MainActor
-    func openSystemDNSSettings() {
-        let settingsURLs = [
-            "App-Prefs:",
-            "prefs:"
-        ].compactMap(URL.init(string:))
-
-        openNextSettingsURL(settingsURLs, at: 0)
-    }
-
-    @MainActor
-    private func openNextSettingsURL(_ urls: [URL], at index: Int) {
-        guard urls.indices.contains(index) else { return }
-
-        UIApplication.shared.open(urls[index], options: [:]) { [weak self] didOpen in
-            guard !didOpen else { return }
-            Task { @MainActor [weak self] in
-                self?.openNextSettingsURL(urls, at: index + 1)
+            let state = await refreshStatus()
+            if state == .disabled {
+                isSystemApprovalAlertPresented = true
             }
         }
     }
 
+    /// Opens the app's Settings page using Apple's public URL. iOS does not
+    /// expose a public URL for the global DNS page, so the alert keeps the
+    /// visual navigation instructions for the user.
     @MainActor
-    func refreshStatus() async {
+    func openSystemDNSSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
+    }
+
+    @MainActor
+    @discardableResult
+    func refreshStatus() async -> DNSSettingsState {
         let state = await dnsSettingsManager.currentState()
-        isOn = state == .enabled
+        isOn = state.isSystemEnabled
+        isProtectionActive = Self.protectionIsConfirmed(
+            hasAccess: hasSubscription,
+            hasCredentials: InstallationTokenStore.shared.hasAuthorizedCredentials(),
+            authorizationRequired: authorizationRequired,
+            dnsState: state
+        )
         if isOn {
             // Returning from Settings triggers this refresh. Do not require
             // an extra confirmation tap once iOS reports the DNS setting as
@@ -197,7 +229,7 @@ final class AppViewModel: ObservableObject {
             statusText = state == .enabled
                 ? String(localized: "Protection is still active; disable Adless in Settings.")
                 : String(localized: "Premium access required")
-            return
+            return state
         }
 
         switch state {
@@ -205,9 +237,12 @@ final class AppViewModel: ObservableObject {
             statusText = String(localized: "Off")
         case .enabled:
             statusText = String(localized: "On")
+        case .staleEnabled:
+            statusText = String(localized: "Reconnect to update DNS protection")
         case .invalid:
             statusText = String(localized: "Invalid")
         }
+        return state
     }
 
     @MainActor
@@ -221,6 +256,11 @@ final class AppViewModel: ObservableObject {
     func applicationDidBecomeActive() async {
         await subscriptionManager.loadAndRefresh()
         hasSubscription = subscriptionManager.hasActiveEntitlement
+        if needsStartupAuthorizationReconciliation, hasSubscription {
+            authorizationRequired = true
+            isProtectionActive = false
+        }
+        needsStartupAuthorizationReconciliation = false
         await ensureAuthorizationIfNeeded()
         await disableIfSubscriptionExpired()
         await refreshStatus()
@@ -229,7 +269,7 @@ final class AppViewModel: ObservableObject {
     }
 
     private func refreshCloudStats() async {
-        guard hasSubscription else { return }
+        guard isProtectionActive else { return }
         do {
             let total = try await statsAPIClient.fetchBlockedTotal()
             let snapshot = blockingStatsStore.updateRemoteTotal(total)
@@ -245,32 +285,63 @@ final class AppViewModel: ObservableObject {
 
     private func ensureAuthorizationIfNeeded() async {
         guard hasSubscription, authorizationRequired || !InstallationTokenStore.shared.hasAuthorizedCredentials() else { return }
-        guard let transactionJWS = await subscriptionManager.currentEntitlementJWS() else {
+        guard let authorization = await subscriptionManager.currentEntitlementAuthorization() else {
             subscriptionManager.showAuthorizationFailure()
             return
         }
-        await authorizeAndActivate(transactionJWS: transactionJWS)
+        await authorizeAndActivate(authorization)
     }
 
-    private func authorizeAndActivate(transactionJWS: String) async {
+    private func authorizeAndActivate(_ authorization: SubscriptionAuthorization) async {
         guard hasSubscription, !isAuthorizing else { return }
         isAuthorizing = true
         defer { isAuthorizing = false }
+        authorizationRequired = true
+        isProtectionActive = false
         statusText = String(localized: "Authorizing")
+        var receivedCredentials = false
+        var attempt: InstallationAuthorizationAttempt?
         do {
+            let appTransactionJWS = await subscriptionManager.currentAppTransactionJWS()
             let installationId = try InstallationTokenStore.shared.installationID()
-            let credentials = try await authorizationAPIClient.authorize(
-                transactionJWS: transactionJWS,
-                installationId: installationId
+            let preparedAttempt = try InstallationTokenStore.shared.authorizationAttempt(
+                transactionId: authorization.transactionId
             )
-            try InstallationTokenStore.shared.save(credentials)
+            attempt = preparedAttempt
+            let credentials = try await authorizationAPIClient.authorize(
+                transactionJWS: authorization.transactionJWS,
+                appTransactionJWS: appTransactionJWS,
+                installationId: installationId,
+                rotationNonce: preparedAttempt.rotationNonce,
+                currentCredentials: preparedAttempt.currentCredentials
+            )
+            receivedCredentials = true
+            try InstallationTokenStore.shared.commit(
+                credentials,
+                transactionId: authorization.transactionId,
+                rotationNonce: preparedAttempt.rotationNonce
+            )
             authorizationRequired = false
             isSubscriptionPresented = false
             await activateProtection()
         } catch {
+            authorizationRequired = true
+            isProtectionActive = false
             AdlessSentry.capture(error, operation: "subscription.authorization")
             subscriptionManager.showAuthorizationFailure()
+            if receivedCredentials, attempt?.isPendingRotation == true {
+                await removeStaleDNSAfterFailedCredentialCommit()
+            }
             await refreshStatus()
+        }
+    }
+
+    private func removeStaleDNSAfterFailedCredentialCommit() async {
+        do {
+            try await dnsSettingsManager.remove()
+        } catch {
+            AdlessSentry.capture(error, operation: "dns.settings.remove_after_credential_commit_failure")
+            isManualDisableAlertPresented = true
         }
     }
 
@@ -294,11 +365,10 @@ final class AppViewModel: ObservableObject {
     private func disableIfSubscriptionExpired() async {
         guard !hasSubscription else { return }
         let state = await dnsSettingsManager.currentState()
-        guard state == .enabled || state == .disabled else { return }
+        guard state.isSystemEnabled || state == .disabled else { return }
         do {
             try await dnsSettingsManager.remove()
-            isOn = false
-            statusText = String(localized: "Premium access required")
+            await refreshStatus()
         } catch {
             AdlessSentry.capture(error, operation: "dns.settings.remove")
             await refreshStatus()

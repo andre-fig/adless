@@ -10,6 +10,17 @@ enum SubscriptionManagerState: Equatable {
     case unavailable
 }
 
+enum SubscriptionAuthorizationSource: Equatable {
+    case purchase
+    case restore
+    case transactionUpdate
+}
+
+struct SubscriptionAuthorization: Equatable, Sendable {
+    let transactionJWS: String
+    let transactionId: String
+}
+
 @MainActor
 final class SubscriptionManager: ObservableObject {
     @Published private(set) var products: [Product] = []
@@ -19,7 +30,7 @@ final class SubscriptionManager: ObservableObject {
     @Published private(set) var message: String?
 
     var onEntitlementChanged: ((Bool) -> Void)?
-    var onPurchaseCompleted: ((String) -> Void)?
+    var onPurchaseCompleted: ((SubscriptionAuthorization, SubscriptionAuthorizationSource) -> Void)?
 
     private let storage: SubscriptionStorage
     private var transactionUpdatesTask: Task<Void, Never>?
@@ -70,11 +81,14 @@ final class SubscriptionManager: ObservableObject {
                     message = String(localized: "The purchase could not be verified")
                     return
                 }
-                let transactionJWS = verificationResult.jwsRepresentation
+                let authorization = SubscriptionAuthorization(
+                    transactionJWS: verificationResult.jwsRepresentation,
+                    transactionId: String(transaction.id)
+                )
                 await transaction.finish()
                 await refreshEntitlement()
                 if hasActiveEntitlement {
-                    onPurchaseCompleted?(transactionJWS)
+                    onPurchaseCompleted?(authorization, .purchase)
                 }
             case .userCancelled:
                 break
@@ -111,8 +125,8 @@ final class SubscriptionManager: ObservableObject {
         do {
             try await AppStore.sync()
             await refreshEntitlement()
-            if hasActiveEntitlement, let transactionJWS = await currentEntitlementJWS() {
-                onPurchaseCompleted?(transactionJWS)
+            if hasActiveEntitlement, let authorization = await currentEntitlementAuthorization() {
+                onPurchaseCompleted?(authorization, .restore)
             }
         } catch {
             AdlessSentry.capture(error, operation: "subscription.restore")
@@ -296,16 +310,37 @@ final class SubscriptionManager: ObservableObject {
         return nil
     }
 
-    func currentEntitlementJWS() async -> String? {
+    func currentEntitlementAuthorization() async -> SubscriptionAuthorization? {
         for await result in Transaction.currentEntitlements {
             guard case .verified(let transaction) = result,
                   SubscriptionConfiguration.productIDs.contains(transaction.productID),
                   transaction.revocationDate == nil,
                   let expirationDate = transaction.expirationDate,
                   expirationDate > Date() else { continue }
-            return result.jwsRepresentation
+            return SubscriptionAuthorization(
+                transactionJWS: result.jwsRepresentation,
+                transactionId: String(transaction.id)
+            )
         }
         return nil
+    }
+
+    func currentEntitlementJWS() async -> String? {
+        await currentEntitlementAuthorization()?.transactionJWS
+    }
+
+    func currentAppTransactionJWS() async -> String? {
+        do {
+            let result = try await AppTransaction.shared
+            guard case .verified(let appTransaction) = result,
+                  appTransaction.bundleID == BuildEnvironment.bundleIdentifier else {
+                return nil
+            }
+            return result.jwsRepresentation
+        } catch {
+            os_log("App transaction unavailable: %{public}@", log: .default, type: .error, error.localizedDescription)
+            return nil
+        }
     }
 
     private func saveAndApply(_ snapshot: SubscriptionAccessSnapshot) {
@@ -350,11 +385,14 @@ final class SubscriptionManager: ObservableObject {
                 guard !Task.isCancelled, let self else { return }
                 switch result {
                 case .verified(let transaction):
-                    let transactionJWS = result.jwsRepresentation
+                    let authorization = SubscriptionAuthorization(
+                        transactionJWS: result.jwsRepresentation,
+                        transactionId: String(transaction.id)
+                    )
                     await transaction.finish()
                     await self.refreshEntitlement()
                     if self.hasActiveEntitlement {
-                        self.onPurchaseCompleted?(transactionJWS)
+                        self.onPurchaseCompleted?(authorization, .transactionUpdate)
                     }
                 case .unverified:
                     os_log("Unverified subscription transaction received", log: .default, type: .error)

@@ -49,7 +49,7 @@ interface RateEntry {
 }
 
 interface AuthorizationCacheEntry {
-  authorization: Extract<TokenAuthorization, { kind: "active" | "expired" }>;
+  authorization: Extract<TokenAuthorization, { kind: "active" | "passThrough" }>;
   staleAt: number;
 }
 
@@ -212,8 +212,9 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
         authorizationCache.delete(key);
         return authorization;
       }
-      // Only cache records with a server-provided expiry. This is a bounded
-      // availability window for known credentials, never a fail-open path.
+      // Only cache records with a server-provided expiry. The cache proves
+      // that a credential was known recently, but never preserves an active
+      // entitlement when its authoritative record cannot be read.
       if (Number.isSafeInteger(authorization.accessUntil)) {
         if (authorizationCache.size >= MAX_AUTHORIZATION_CACHE_ENTRIES && !authorizationCache.has(key)) {
           authorizationCache.delete(authorizationCache.keys().next().value as string);
@@ -230,12 +231,9 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
         authorizationCache.delete(key);
         throw error;
       }
-      if (cached.authorization.accessUntil <= timestamp) {
-        return role === "dns"
-          ? { kind: "expired", installationId: cached.authorization.installationId, accessUntil: cached.authorization.accessUntil }
-          : { kind: "rejected", reason: "forbidden" };
-      }
-      return cached.authorization;
+      return role === "dns"
+        ? { kind: "passThrough", installationId: cached.authorization.installationId, accessUntil: cached.authorization.accessUntil }
+        : { kind: "rejected", reason: "forbidden" };
     }
   };
 
@@ -350,7 +348,7 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
         } catch {
           return jsonResponse({ error: "temporarily unavailable" }, 503);
         }
-        if (authorization.kind === "rejected") return jsonResponse({ error: "unauthorized" }, 401);
+        if (authorization.kind !== "active") return jsonResponse({ error: "unauthorized" }, 401);
         if (!await allowedByRate(request, token)) return jsonResponse({ error: "rate limited" }, 429);
         return fetchStats(env, authorization.installationId);
       }
@@ -363,7 +361,9 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
         return new Response(null, { status: 503 });
       }
       if (authorization.kind === "rejected") return jsonResponse({ error: "unauthorized" }, 401);
-      if (!await allowedByRate(request, token)) return new Response(null, { status: 429, headers: { "retry-after": "60" } });
+      if (authorization.kind === "active" && !await allowedByRate(request, token)) {
+        return new Response(null, { status: 429, headers: { "retry-after": "60" } });
+      }
 
       let query: Uint8Array | undefined;
       if (request.method === "POST") {
@@ -385,10 +385,22 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
         if (error instanceof DNSFormatError) return dnsResponse(formErrorResponse(query), 400);
         return new Response(null, { status: 400 });
       }
+      if (authorization.kind === "passThrough") {
+        // A known installation without an active entitlement must keep DNS
+        // working, but it must not consult the blocklist, response cache, or
+        // stats Durable Object. Send every query directly to the upstreams so
+        // this state never depends on blocklist availability or stale policy.
+        try {
+          const result = await fetchAllowed(query, parsed);
+          return dnsResponse(result.response, 200, result.ttl);
+        } catch {
+          return dnsResponse(servfailResponse(parsed), 200, 1);
+        }
+      }
       try {
         const blocklist = await loadBlocklist();
         const question = parsed.questions[0];
-        if (authorization.kind === "active" && question.klass === 1 && blocklist.has(question.name)) {
+        if (question.klass === 1 && blocklist.has(question.name)) {
           context.waitUntil(recordBlocked(env, authorization.installationId));
           return dnsResponse(blockedResponse(parsed), 200, BLOCKED_RESPONSE_TTL);
         }

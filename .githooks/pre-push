@@ -27,8 +27,15 @@ needs_blocklist=false
 needs_worker=false
 needs_landing=false
 needs_ios=false
+needs_release=false
 
 while IFS= read -r path; do
+  case "$path" in
+    .github/workflows/**|tools/appstore/**|tools/ios/**|tools/dns-worker/testflight_builds.py|tools/dns-worker/tests/**|docs/app-store/ExportOptions*.plist|docs/app-store/testflight-notes.txt|.githooks/**)
+      needs_release=true
+      ;;
+  esac
+
   case "$path" in
     tools/blocklists/**)
       needs_blocklist=true
@@ -58,6 +65,10 @@ while IFS= read -r path; do
   esac
 done < "$changed_paths_file"
 
+if [ "$needs_release" = true ]; then
+  run_release_tests
+fi
+
 if [ "$needs_blocklist" = true ]; then
   run_blocklist_tests
 fi
@@ -75,7 +86,7 @@ if [ "$needs_ios" = true ]; then
 fi
 
 if [ "$needs_blocklist" = false ] && [ "$needs_worker" = false ] && \
-   [ "$needs_landing" = false ] && [ "$needs_ios" = false ]; then
+   [ "$needs_landing" = false ] && [ "$needs_ios" = false ] && [ "$needs_release" = false ]; then
   echo "Adless pre-push: no targeted checks for these paths."
 fi
 

@@ -17,7 +17,11 @@ fi
 
 app="$archive/Products/Applications/Adless.app"
 test -d "$app"
+app_count="$(find "$archive/Products/Applications" -mindepth 1 -maxdepth 1 -type d -name '*.app' -print | wc -l | tr -d '[:space:]')"
+test "$app_count" -eq 1
 test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")" = "com.orbeworks.adless"
+test "$(/usr/libexec/PlistBuddy -c 'Print :AdlessEnvironment' "$app/Info.plist")" = "production"
+test "$(/usr/libexec/PlistBuddy -c 'Print :AdlessDNSCloudBaseURL' "$app/Info.plist")" = "https://adless-dns.adless-production.workers.dev"
 
 if [ -d "$app/PlugIns" ]; then
   plugin_count="$(find "$app/PlugIns" -type d -name '*.appex' -print | wc -l | tr -d '[:space:]')"
@@ -30,14 +34,6 @@ if [ "$layout_only" = true ]; then
   exit 0
 fi
 
-temporary_directory="$(mktemp -d)"
-trap 'rm -rf "$temporary_directory"' EXIT
-entitlements="$temporary_directory/Adless.entitlements.plist"
-codesign -d --entitlements :- "$app" > "$entitlements" 2>/dev/null
-test -s "$entitlements"
-grep -q 'dns-settings' "$entitlements"
-if grep -Eq 'dns-proxy|packet-tunnel-provider|NEDNSProxy|NEPacketTunnel|NETunnelProvider|com\.orbeworks\.adless\.tunnel|application-groups' "$entitlements"; then
-  echo "Legacy networking entitlement found in signed archive" >&2
-  exit 1
-fi
+script_directory="$(CDPATH= cd "$(dirname "$0")" && pwd)"
+sh "$script_directory/verify_distribution_profile.sh" "$app"
 echo "Verified signed Adless.app archive with dns-settings and no embedded extensions."

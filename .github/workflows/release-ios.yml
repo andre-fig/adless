@@ -1,4 +1,4 @@
-name: Release Adless iOS to App Store Connect
+name: Release Adless iOS to production after Apple approval
 
 on:
   push:
@@ -15,6 +15,7 @@ on:
       - "apps/ios/Adless.xcodeproj/**"
       - "apps/ios/Configurations/**"
       - "apps/ios/Adless.storekit"
+      - "apps/ios/Shared/**"
       - "docs/app-store/ExportOptions.plist"
       - "tools/appstore/**"
       - "tools/ios/**"
@@ -23,8 +24,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: adless-ios-release
-  cancel-in-progress: true
+  group: adless-ios-distribution
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -41,11 +42,14 @@ env:
 
 jobs:
   release:
+    if: github.ref == 'refs/heads/main'
     runs-on: macos-latest
     timeout-minutes: 75
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Prepare App Store Connect API key
         id: credentials
@@ -65,7 +69,8 @@ jobs:
         id: version
         run: |
           set -euo pipefail
-          marketing_version="$(xcodebuild -project "$IOS_PROJECT" -scheme "$IOS_SCHEME" -configuration Release -showBuildSettings 2>/dev/null | awk -F ' = ' '$1 ~ /^[[:space:]]*MARKETING_VERSION$/ { print $2; exit }')"
+          xcodebuild -project "$IOS_PROJECT" -scheme "$IOS_SCHEME" -configuration Release -showBuildSettings > "$RUNNER_TEMP/Adless-build-settings.txt"
+          marketing_version="$(awk -F ' = ' '$1 ~ /^[[:space:]]*MARKETING_VERSION$/ { print $2; exit }' "$RUNNER_TEMP/Adless-build-settings.txt")"
           test -n "$marketing_version"
           echo "marketing_version=$marketing_version" >> "$GITHUB_OUTPUT"
           echo "Releasing marketing version $marketing_version"
@@ -84,8 +89,10 @@ jobs:
 
       - name: Explain skipped release
         if: steps.preflight.outputs.should_release != 'true'
+        env:
+          MESSAGE: ${{ steps.preflight.outputs.message }}
         run: |
-          echo "${{ steps.preflight.outputs.message }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "$MESSAGE" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Select next build number
         id: build
@@ -139,11 +146,11 @@ jobs:
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID"
 
-      - name: Verify archive layout and signed entitlements
+      - name: Verify intermediate archive layout
         if: steps.preflight.outputs.should_release == 'true'
         run: |
           set -euo pipefail
-          sh tools/ios/verify_archive.sh "$RUNNER_TEMP/Adless.xcarchive"
+          sh tools/ios/verify_archive.sh --layout-only "$RUNNER_TEMP/Adless.xcarchive"
 
       - name: Verify archive dSYMs
         if: steps.preflight.outputs.should_release == 'true'
@@ -157,6 +164,9 @@ jobs:
 
       - name: Verify exported IPA contents
         if: steps.preflight.outputs.should_release == 'true'
+        env:
+          ADLESS_EXPECTED_BUILD_NUMBER: ${{ steps.build.outputs.build_number }}
+          ADLESS_EXPECTED_MARKETING_VERSION: ${{ steps.version.outputs.marketing_version }}
         run: sh tools/ios/verify_ipa.sh "$RUNNER_TEMP/Adless-export/Adless.ipa"
 
       - name: Upload archive dSYMs to Sentry
@@ -167,16 +177,20 @@ jobs:
 
       - name: Validate package with Apple
         if: steps.preflight.outputs.should_release == 'true'
+        env:
+          API_PRIVATE_KEYS_DIR: ${{ runner.temp }}
         run: |
           set -euo pipefail
           xcrun altool --validate-app \
-            "$RUNNER_TEMP/Adless-export/Adless.ipa" \
+            --file "$RUNNER_TEMP/Adless-export/Adless.ipa" \
             --type ios \
             --apiKey "$ASC_KEY_ID" \
             --apiIssuer "$ASC_ISSUER_ID"
 
       - name: Upload package to App Store Connect
         if: steps.preflight.outputs.should_release == 'true'
+        env:
+          API_PRIVATE_KEYS_DIR: ${{ runner.temp }}
         run: |
           set -euo pipefail
           xcrun altool --upload-app \
@@ -198,7 +212,7 @@ jobs:
             --app-id "$ASC_APP_ID" \
             --build-number "${{ steps.build.outputs.build_number }}"
 
-      - name: Submit processed build for review
+      - name: Submit for review with automatic production release after approval
         if: steps.preflight.outputs.should_release == 'true'
         run: |
           set -euo pipefail
@@ -210,3 +224,21 @@ jobs:
             --app-id "$ASC_APP_ID" \
             --version "${{ steps.version.outputs.marketing_version }}" \
             --build-id "${{ steps.processed_build.outputs.build_id }}"
+
+      - name: Publish summary
+        if: steps.preflight.outputs.should_release == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.marketing_version }}
+          BUILD_NUMBER: ${{ steps.build.outputs.build_number }}
+        run: |
+          echo "App Store $VERSION ($BUILD_NUMBER) submitted for review; production release is automatic AFTER Apple approval, not immediate." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove temporary Apple API key
+        if: always()
+        env:
+          KEY_PATH: ${{ steps.credentials.outputs.key_path }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$KEY_PATH" && "$KEY_PATH" == "$RUNNER_TEMP"/AuthKey_*.p8 ]]; then
+            rm -f -- "$KEY_PATH"
+          fi

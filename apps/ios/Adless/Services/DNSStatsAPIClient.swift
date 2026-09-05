@@ -73,9 +73,13 @@ final class DNSStatsAPIClient: @unchecked Sendable {
     }
 }
 
-private struct DNSAuthorizationRequest: Encodable {
+struct DNSAuthorizationRequest: Encodable {
     let installationId: String
     let transactionJWS: String
+    let appTransactionJWS: String?
+    let rotationNonce: String
+    let currentDnsToken: String?
+    let currentStatsToken: String?
 }
 
 private struct DNSAuthorizationResponse: Decodable {
@@ -121,10 +125,25 @@ final class DNSAuthorizationAPIClient: @unchecked Sendable {
         session.invalidateAndCancel()
     }
 
-    func authorize(transactionJWS: String, installationId: String) async throws -> InstallationCredentials {
+    func authorize(
+        transactionJWS: String,
+        appTransactionJWS: String?,
+        installationId: String,
+        rotationNonce: String,
+        currentCredentials: InstallationCredentials?
+    ) async throws -> InstallationCredentials {
         guard UUID(uuidString: installationId) != nil,
               !transactionJWS.isEmpty,
-              transactionJWS.utf8.count <= 128 * 1024 else {
+              transactionJWS.utf8.count <= 128 * 1024,
+              appTransactionJWS?.isEmpty != true,
+              (appTransactionJWS?.utf8.count ?? 0) <= 128 * 1024,
+              InstallationTokenStore.isValid(rotationNonce),
+              currentCredentials?.installationId == installationId || currentCredentials == nil,
+              currentCredentials.map({
+                  InstallationTokenStore.isValid($0.dnsToken)
+                      && InstallationTokenStore.isValid($0.statsToken)
+                      && $0.dnsToken != $0.statsToken
+              }) != false else {
             throw DNSAuthorizationAPIError.invalidResponse
         }
 
@@ -134,7 +153,14 @@ final class DNSAuthorizationAPIClient: @unchecked Sendable {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.httpBody = try JSONEncoder().encode(
-            DNSAuthorizationRequest(installationId: installationId, transactionJWS: transactionJWS)
+            DNSAuthorizationRequest(
+                installationId: installationId,
+                transactionJWS: transactionJWS,
+                appTransactionJWS: appTransactionJWS,
+                rotationNonce: rotationNonce,
+                currentDnsToken: currentCredentials?.dnsToken,
+                currentStatsToken: currentCredentials?.statsToken
+            )
         )
 
         let (data, response) = try await session.data(for: request)

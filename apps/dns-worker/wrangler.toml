@@ -11,6 +11,13 @@ enabled = false
 DEPLOYMENT_ENV = "production"
 APPLE_BUNDLE_ID = "com.orbeworks.adless"
 APPLE_APP_ID = "6803552143"
+# Ordinary registrations in this public deployment accept Production only.
+# Sandbox is an isolated TestFlight exception that additionally requires an
+# Apple-signed AppTransaction for one of these uploaded CFBundleVersion values.
+APPLE_ALLOWED_ENVIRONMENTS = "Production"
+APPLE_NOTIFICATION_ENVIRONMENTS = "Production,Sandbox"
+APPLE_TESTFLIGHT_BUILD_VERSIONS = "2,6"
+# AUTH_TOKEN_DERIVATION_SECRET is configured as a Worker secret, never a var.
 
 [[kv_namespaces]]
 binding = "AUTH"
@@ -18,6 +25,12 @@ id = "f248f98bbd0c4f859978ef78cc7f0cda"
 
 [[durable_objects.bindings]]
 name = "STATS"
+class_name = "StatsDurableObject"
+
+# Same existing Durable Object class/namespace, addressed with subscription-
+# scoped IDs. This is a second binding, not a new Worker or DO migration.
+[[durable_objects.bindings]]
+name = "AUTHORITY"
 class_name = "StatsDurableObject"
 
 [[migrations]]

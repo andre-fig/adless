@@ -65,6 +65,13 @@ run_blocklist_tests() {
   python3 -m unittest discover -s "$REPO_ROOT/tools/blocklists/tests" -v
 }
 
+run_release_tests() {
+  require_command python3 "install Python 3"
+  python3 -B -m unittest discover -s "$REPO_ROOT/tools/appstore/tests" -v
+  python3 -B -m unittest discover -s "$REPO_ROOT/tools/dns-worker/tests" -v
+  run_actionlint
+}
+
 run_worker_checks() {
   require_command npm "install Node.js 20 or newer"
   npm --prefix "$REPO_ROOT" run test:dns-worker
