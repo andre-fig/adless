@@ -174,7 +174,10 @@ class WorkflowContractTests(unittest.TestCase):
     def test_three_branch_guards_and_shared_build_number_lock(self):
         beta = (ROOT / ".github/workflows/testflight-ios.yml").read_text()
         production = (ROOT / ".github/workflows/release-ios.yml").read_text()
-        self.assertIn("branches:\n      - develop\n      - beta", beta)
+        self.assertIn("on:\n  workflow_dispatch:", beta)
+        self.assertNotIn("\n  push:", beta)
+        self.assertIn("on:\n  workflow_dispatch:", production)
+        self.assertNotIn("\n  push:", production)
         self.assertIn("if: github.ref == 'refs/heads/develop'", beta)
         self.assertIn("if: github.ref == 'refs/heads/beta'", beta)
         self.assertIn("if: github.ref == 'refs/heads/main'", production)
