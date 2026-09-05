@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3EB23F76CFD2401E89E6E97D /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = 16D53242EC7B41E58FC5AB0B /* Sentry */; };
+		3EB23F76CFD2401E89E6E97D /* SentrySPM in Frameworks */ = {isa = PBXBuildFile; productRef = 16D53242EC7B41E58FC5AB0B /* SentrySPM */; };
 		E10000000000000000000052 /* Shared/BuildEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10000000000000000000050 /* Shared/BuildEnvironment.swift */; };
 /* End PBXBuildFile section */
 
@@ -64,7 +64,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3EB23F76CFD2401E89E6E97D /* Sentry in Frameworks */,
+				3EB23F76CFD2401E89E6E97D /* SentrySPM in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -138,7 +138,7 @@
 			);
 			name = Adless;
 			packageProductDependencies = (
-				16D53242EC7B41E58FC5AB0B /* Sentry */,
+				16D53242EC7B41E58FC5AB0B /* SentrySPM */,
 			);
 			productName = Adless;
 			productReference = A432D6DD2EF4DE1800F87DE0 /* Adless.app */;
@@ -440,6 +440,11 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.1;
 				MARKETING_VERSION = 1.0.1;
+				OTHER_SWIFT_FLAGS = (
+					"$(inherited)",
+					"-module-alias",
+					"Sentry=SentrySwift",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(ADLESS_APP_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -488,6 +493,11 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.1;
 				MARKETING_VERSION = 1.0.1;
+				OTHER_SWIFT_FLAGS = (
+					"$(inherited)",
+					"-module-alias",
+					"Sentry=SentrySwift",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(ADLESS_APP_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -523,6 +533,11 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				MARKETING_VERSION = 1.0.1;
+				OTHER_SWIFT_FLAGS = (
+					"$(inherited)",
+					"-module-alias",
+					"Sentry=SentrySwift",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(ADLESS_APP_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -557,6 +572,11 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				MARKETING_VERSION = 1.0.1;
+				OTHER_SWIFT_FLAGS = (
+					"$(inherited)",
+					"-module-alias",
+					"Sentry=SentrySwift",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "$(ADLESS_APP_BUNDLE_IDENTIFIER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -689,10 +709,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		16D53242EC7B41E58FC5AB0B /* Sentry */ = {
+		16D53242EC7B41E58FC5AB0B /* SentrySPM */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 9B500F1780064714961ACC7D /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
-			productName = Sentry;
+			productName = SentrySPM;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
