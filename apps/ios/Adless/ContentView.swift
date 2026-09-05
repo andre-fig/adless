@@ -229,7 +229,7 @@ struct ContentView: View {
             viewModel.isSubscriptionPresented = false
         }
         .onChange(of: scenePhase) { _, phase in
-            guard phase == .active else { return }
+            guard phase == .active, !viewModel.isPreparing else { return }
             Task { await viewModel.applicationDidBecomeActive() }
         }
         .alert("Enable DNS protection in Settings", isPresented: $viewModel.isSystemApprovalAlertPresented) {

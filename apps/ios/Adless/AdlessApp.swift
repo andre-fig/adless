@@ -80,6 +80,10 @@ final class AppViewModel: ObservableObject {
             if self.authorizationRequired || !hasAccess {
                 self.isProtectionActive = false
             }
+            // The initial foreground pass performs this reconciliation itself.
+            // Avoid racing it with the entitlement callback while startup state
+            // is still being established.
+            guard !self.needsStartupAuthorizationReconciliation else { return }
             if hasAccess {
                 Task { @MainActor [weak self] in
                     await self?.ensureAuthorizationIfNeeded()
@@ -169,7 +173,13 @@ final class AppViewModel: ObservableObject {
 
     @MainActor
     func activateProtection() async {
-        guard !isPreparing, hasSubscription else {
+        await activateProtection(allowDuringPreparation: false)
+    }
+
+    @MainActor
+    private func activateProtection(allowDuringPreparation: Bool) async {
+        guard allowDuringPreparation || !isPreparing else { return }
+        guard hasSubscription else {
             isSubscriptionPresented = true
             return
         }
@@ -181,7 +191,8 @@ final class AppViewModel: ObservableObject {
             }
             await authorizeAndActivate(
                 authorization,
-                shouldActivateAfterAuthorization: true
+                shouldActivateAfterAuthorization: true,
+                allowActivationDuringPreparation: allowDuringPreparation
             )
             return
         }
@@ -325,13 +336,15 @@ final class AppViewModel: ObservableObject {
             shouldActivateAfterAuthorization: Self.shouldActivateAfterAuthorization(
                 explicitlyRequested: false,
                 previousDNSState: previousDNSState
-            )
+            ),
+            allowActivationDuringPreparation: isPreparing
         )
     }
 
     private func authorizeAndActivate(
         _ authorization: SubscriptionAuthorization,
-        shouldActivateAfterAuthorization: Bool
+        shouldActivateAfterAuthorization: Bool,
+        allowActivationDuringPreparation: Bool = false
     ) async {
         guard hasSubscription, !isAuthorizing else { return }
         isAuthorizing = true
@@ -364,7 +377,7 @@ final class AppViewModel: ObservableObject {
             authorizationRequired = false
             isSubscriptionPresented = false
             if shouldActivateAfterAuthorization {
-                await activateProtection()
+                await activateProtection(allowDuringPreparation: allowActivationDuringPreparation)
             } else {
                 await refreshStatus()
             }
@@ -392,16 +405,18 @@ final class AppViewModel: ObservableObject {
     private func beginPreparation() {
         let preparationStartedAt = Date()
         let minimumPreparationDuration: TimeInterval = 0.35
-        let elapsed = Date().timeIntervalSince(preparationStartedAt)
-        let remaining = max(0, minimumPreparationDuration - elapsed)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + remaining) { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.hasSubscription = self.subscriptionManager.hasActiveEntitlement
-                self.isPreparing = false
-                await self.applicationDidBecomeActive()
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.hasSubscription = self.subscriptionManager.hasActiveEntitlement
+            await self.applicationDidBecomeActive()
+
+            let elapsed = Date().timeIntervalSince(preparationStartedAt)
+            let remaining = max(0, minimumPreparationDuration - elapsed)
+            if remaining > 0 {
+                try? await Task.sleep(for: .seconds(remaining))
             }
+            self.isPreparing = false
         }
     }
 
