@@ -131,6 +131,7 @@ jobs:
             -authenticationKeyPath "${{ steps.credentials.outputs.key_path }}" \
             -authenticationKeyID "$ASC_KEY_ID" \
             -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            CODE_SIGNING_ALLOWED=NO \
             CURRENT_PROJECT_VERSION="${{ steps.build.outputs.build_number }}"
 
       - name: Export App Store package
