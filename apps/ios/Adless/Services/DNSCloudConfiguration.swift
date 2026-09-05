@@ -3,6 +3,7 @@ import Foundation
 enum DNSCloudConfiguration {
     nonisolated static let dnsQueryPath = "dns-query"
     nonisolated static let statsPath = "/v1/stats"
+    nonisolated static let blockingPath = "/v1/blocking"
     nonisolated static let authorizationPath = "/v1/authorization/register"
 
     nonisolated static var baseURL: URL {
@@ -28,6 +29,10 @@ enum DNSCloudConfiguration {
 
     nonisolated static var statsURL: URL {
         baseURL.appendingPathComponent(statsPath)
+    }
+
+    nonisolated static var blockingURL: URL {
+        baseURL.appendingPathComponent(blockingPath)
     }
 
     nonisolated static var authorizationURL: URL {

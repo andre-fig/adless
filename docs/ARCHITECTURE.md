@@ -12,8 +12,8 @@ iPhone / DNS escolhido pelo iOS
       → reconhecer credencial no KV AUTH
       → resolver autorização no DO AUTHORITY, quando aplicável
       ├─ desconhecida / papel errado: rejeitar antes de DO, cache DNS e upstream
-      ├─ conhecida sem acesso: Cloudflare DoH → Quad9 em falha (pass-through)
-      └─ ativa: blocklist/cache
+      ├─ conhecida sem acesso ou bloqueio pausado em STATS: Cloudflare DoH → Quad9 (pass-through)
+      └─ assinatura e bloqueio ativos: blocklist/cache
            ├─ bloqueada: resposta local + incremento best effort em STATS
            ├─ cache válido: resposta com transaction ID atual
            └─ permitida sem cache: Cloudflare DoH → Quad9 em falha
@@ -50,7 +50,7 @@ autorização. Tráfego geral de sites, vídeos, mensagens e downloads não atra
 | [handler.ts](../apps/dns-worker/src/handler.ts) | Endpoints, autorização, rate limit, blocklist/cache, fallback e stats |
 | [dns.ts](../apps/dns-worker/src/dns.ts) / [blocklist.ts](../apps/dns-worker/src/blocklist.ts) | Wire format DNS, TTL/ID e matching por nome/sufixo |
 | [authorization.ts](../apps/dns-worker/src/authorization.ts) / [apple-jws.ts](../apps/dns-worker/src/apple-jws.ts) | Verificação JWS, emissão, replay, migração e estados de assinatura |
-| [stats.ts](../apps/dns-worker/src/stats.ts) | `StatsDurableObject`: contadores **e**, em objetos separados, autoridade da assinatura |
+| [stats.ts](../apps/dns-worker/src/stats.ts) | `StatsDurableObject`: contadores/preferência de bloqueio por instalação **e**, em objetos separados, autoridade da assinatura |
 | [Gerador](../tools/blocklists/generate_blocklist.py) / [preparador](../tools/dns-worker/prepare_blocklist.py) | Fonte OISD Small, allowlist, artefatos validados e cópia edge |
 
 ## DNS e estado apresentado pelo iOS
@@ -60,12 +60,13 @@ permitido é `dns-settings`. O manager usa `matchDomains = [""]` e
 `matchDomainsNoSearch = true`. Salvar não equivale a habilitar: `isEnabled` é
 somente leitura e a aprovação final pertence ao usuário em Ajustes.
 
-`AppViewModel.protectionIsConfirmed` exige assinatura, credenciais locais
-confirmadas, ausência de autorização pendente e `DNSSettingsState.enabled`.
+`AppViewModel.protectionIsConfirmed` exige assinatura, credenciais locais,
+bloqueio habilitado no Worker, ausência de autorização pendente e
+`DNSSettingsState.enabled`.
 Esse estado exige o endpoint das credenciais atuais; um perfil Adless antigo
 habilitado é `staleEnabled` e não confirma proteção. Primeiro plano, notificações
-de configuração e retorno das operações provocam nova leitura. Expiração
-percebida pelo app leva à tentativa de remoção; falha exige orientação manual.
+de configuração e retorno das operações provocam nova leitura. Pausar ou perder
+acesso preserva o perfil DNS; o Worker encaminha consultas sem aplicar a lista.
 Esse critério local não mede disponibilidade ou bloqueio real do serviço remoto.
 
 O app guarda UUID de instalação, nonce aleatório e credenciais no Keychain

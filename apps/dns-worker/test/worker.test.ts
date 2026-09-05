@@ -624,6 +624,22 @@ test("stores only an aggregate blocked total in the stats object", async () => {
   assert.deepEqual([...values.keys()].sort(), ["blockedTotal", "updatedAt"]);
 });
 
+test("stores blocking preference separately and defaults it to enabled", async () => {
+  const storage = new MemoryDOStorage();
+  const object = new StatsDurableObject({ storage }, {});
+
+  const initial = await object.fetch(new Request("https://stats/blocking"));
+  assert.deepEqual(await initial.json(), { blockingEnabled: true });
+
+  const paused = await object.fetch(new Request("https://stats/blocking", {
+    method: "PUT",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ blockingEnabled: false }),
+  }));
+  assert.deepEqual(await paused.json(), { blockingEnabled: false });
+  assert.equal(storage.values.get("blockingEnabled"), false);
+});
+
 test("authenticates stats with the installation token", async () => {
   const namespace = {
     idFromName(name: string) {
@@ -683,7 +699,80 @@ test("a valid authorized installation blocks DNS and records stats by installati
   }), env, context());
   assert.equal(statsResult.status, 200);
   assert.equal((await statsResult.json() as { blockedTotal: number }).blockedTotal, 1);
-  assert.equal(stats.idCalls, 2);
+  assert.equal(stats.idCalls, 3);
+});
+
+test("pausing blocking keeps DNS enabled as upstream pass-through and resumes immediately", async () => {
+  const kv = new MemoryKV();
+  const credentials = await registerTestInstallation(kv);
+  const stats = statsNamespace(INSTALLATION_ID);
+  let upstreamCalls = 0;
+  const worker = createDNSWorker("ads.example.com\n", metadata("ads.example.com\n"), {
+    now: () => AUTH_NOW,
+    fetch: async (_url, init) => {
+      upstreamCalls += 1;
+      return new Response(binaryBody(response(new Uint8Array(init?.body as ArrayBuffer))), {
+        headers: { "content-type": "application/dns-message" },
+      });
+    },
+  });
+  const env = { ...environmentForAuthorization(kv), STATS: stats };
+
+  const wrongRole = await worker.fetch(new Request("https://worker.example.test/v1/blocking", {
+    method: "PUT",
+    headers: {
+      authorization: `Bearer ${credentials.dnsToken}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ blockingEnabled: false }),
+  }), env, context());
+  assert.equal(wrongRole.status, 401);
+
+  const pause = await worker.fetch(new Request("https://worker.example.test/v1/blocking", {
+    method: "PUT",
+    headers: {
+      authorization: `Bearer ${credentials.statsToken}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ blockingEnabled: false }),
+  }), env, context());
+  assert.equal(pause.status, 200);
+  assert.deepEqual(await pause.json(), { blockingEnabled: false });
+  const persistedPause = await worker.fetch(new Request("https://worker.example.test/v1/blocking", {
+    headers: { authorization: `Bearer ${credentials.statsToken}` },
+  }), env, context());
+  assert.deepEqual(await persistedPause.json(), { blockingEnabled: false });
+
+  const pausedContext = context();
+  const passThrough = await worker.fetch(
+    requestForToken(query("ads.example.com"), credentials.dnsToken),
+    env,
+    pausedContext,
+  );
+  assert.equal(passThrough.status, 200);
+  assert.equal(upstreamCalls, 1);
+  assert.equal(pausedContext.pending.length, 0, "paused blocking must not increment statistics");
+
+  const resume = await worker.fetch(new Request("https://worker.example.test/v1/blocking", {
+    method: "PUT",
+    headers: {
+      authorization: `Bearer ${credentials.statsToken}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ blockingEnabled: true }),
+  }), env, context());
+  assert.equal(resume.status, 200);
+
+  const activeContext = context();
+  const blocked = await worker.fetch(
+    requestForToken(query("ads.example.com"), credentials.dnsToken),
+    env,
+    activeContext,
+  );
+  assert.equal(blocked.status, 200);
+  assert.equal(upstreamCalls, 1, "resumed blocking must apply the blocklist without reinstalling DNS");
+  await Promise.all(activeContext.pending);
+  assert.equal(stats.values.get("blockedTotal"), 1);
 });
 
 test("malformed StoreKit JWS cannot issue authorization credentials", async () => {
@@ -739,7 +828,7 @@ test("unknown tokens are rejected before cache, Durable Object, and upstream", a
   assert.equal(result.status, 401);
   assert.equal(upstreamCalls, 1, "an unknown token must be rejected before the populated DNS cache and upstream");
   assert.equal(kv.authority.idCalls, authorityCallsBeforeUnknown, "an unknown token must be rejected before authority DO lookup");
-  assert.equal(stats.idCalls, 0);
+  assert.equal(stats.idCalls, 0, "an unknown token must not read blocking state");
 });
 
 test("KV outages degrade known credentials to DNS pass-through and deny stats", async () => {
@@ -763,7 +852,7 @@ test("KV outages degrade known credentials to DNS pass-through and deny stats", 
     headers: { authorization: `Bearer ${credentials.statsToken}` },
   }), env, context());
   assert.equal(availableStats.status, 200);
-  assert.equal(stats.idCalls, 1);
+  assert.equal(stats.idCalls, 2);
 
   kv.unavailable = true;
   clock = AUTH_NOW + 500;
@@ -772,13 +861,13 @@ test("KV outages degrade known credentials to DNS pass-through and deny stats", 
   assert.equal(passThrough.status, 200);
   assert.equal(upstreamCalls, 2, "a cached known token must use the upstream instead of retaining active blocking");
   assert.equal(passThroughContext.pending.length, 0);
-  assert.equal(stats.idCalls, 1, "DNS pass-through must not increment statistics");
+  assert.equal(stats.idCalls, 2, "DNS pass-through must not read blocking state or increment statistics");
 
   const unavailableStats = await worker.fetch(new Request("https://worker.example.test/v1/stats", {
     headers: { authorization: `Bearer ${credentials.statsToken}` },
   }), env, context());
   assert.equal(unavailableStats.status, 401, "cached active authorization must not expose stats during a KV outage");
-  assert.equal(stats.idCalls, 1);
+  assert.equal(stats.idCalls, 2);
 
   const unknown = await worker.fetch(requestForToken(query("safe.example.com"), "u".repeat(43)), env, context());
   assert.equal(unknown.status, 503);

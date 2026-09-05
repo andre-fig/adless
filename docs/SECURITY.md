@@ -117,7 +117,7 @@ existente ou health 200 não prova a configuração do App Store Connect.
 | Keychain iOS / `InstallationTokenStore` | UUID, tokens DNS/stats, nonce e estado da autorização pendente/corrente | `AfterFirstUnlockThisDeviceOnly`; não prometer migração para outro aparelho nem apagar para contornar erro |
 | KV `AUTH`, `AuthorizationRecord` | UUID, hashes tokens/nonce, IDs Apple de assinatura/transação/último registro, produto, ambiente, estado, expiração, grace/retry, timestamps e clocks de transação/notificação | Registro schema v2; leitura/migração v1; sem TTL/rotina de limpeza nesses registros |
 | KV mappings/índices/claims | Hash token → UUID/papel; IDs Apple/ambiente → UUIDs; marcador de UUID de notificação | Apenas marcador tem TTL de 45 dias; mappings substituídos permanecem |
-| DO via `STATS` | `blockedTotal` e `updatedAt`, objeto nomeado por UUID da instalação | Sem histórico de domínio; incremento best effort e sem política de expurgo implementada |
+| DO via `STATS` | `blockedTotal`, `updatedAt` e `blockingEnabled`, objeto nomeado por UUID da instalação | Sem histórico de domínio; preferência controla blocklist/pass-through; sem política de expurgo implementada |
 | DO via `AUTHORITY` | `authority:chain`, eventos imutáveis e `authority:latest`: IDs Apple, origem/reason, produto, ambiente, estado, período, grace/retry e datas | Nome do objeto usa hash do original transaction e ambiente; **conteúdo** conserva IDs Apple em claro; sem expurgo implementado |
 | Memória do isolate / `handler.ts` | Cache de pacotes DNS por instalação, prova recente de autorização por papel/hash, hash token + hash IP no limitador, estado do circuit breaker | Estruturas limitadas e voláteis; não são armazenamento histórico persistente |
 

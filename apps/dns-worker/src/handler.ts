@@ -316,6 +316,41 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
     }
   };
 
+  const blockingPreference = async (
+    env: WorkerEnvironment,
+    installationId: string,
+    enabled?: boolean,
+  ): Promise<Response> => {
+    if (!env.STATS) return jsonResponse({ error: "temporarily unavailable" }, 503);
+    try {
+      const id = env.STATS.idFromName(installationId);
+      const response = await env.STATS.get(id).fetch("https://stats/blocking", enabled === undefined ? undefined : {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ blockingEnabled: enabled }),
+      });
+      if (!response.ok) return jsonResponse({ error: "temporarily unavailable" }, 503);
+      const payload = await response.json() as { blockingEnabled?: unknown };
+      if (typeof payload.blockingEnabled !== "boolean") {
+        return jsonResponse({ error: "temporarily unavailable" }, 503);
+      }
+      return jsonResponse({ blockingEnabled: payload.blockingEnabled });
+    } catch {
+      return jsonResponse({ error: "temporarily unavailable" }, 503);
+    }
+  };
+
+  const blockingIsEnabled = async (env: WorkerEnvironment, installationId: string): Promise<boolean> => {
+    // STATS is optional in unit-level worker environments. Production declares
+    // it in wrangler.toml; an unavailable configured object fails open to
+    // upstream DNS so a control-plane error cannot strand connectivity.
+    if (!env.STATS) return true;
+    const response = await blockingPreference(env, installationId);
+    if (!response.ok) return false;
+    const payload = await response.json() as { blockingEnabled: boolean };
+    return payload.blockingEnabled;
+  };
+
   return {
     async fetch(request: Request, env: WorkerEnvironment, context: WorkerExecutionContext): Promise<Response> {
       const url = new URL(request.url);
@@ -352,6 +387,35 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
         if (!await allowedByRate(request, token)) return jsonResponse({ error: "rate limited" }, 429);
         return fetchStats(env, authorization.installationId);
       }
+      if (url.pathname === "/v1/blocking") {
+        if (request.method !== "GET" && request.method !== "PUT") {
+          return new Response(null, { status: 405, headers: { allow: "GET, PUT" } });
+        }
+        const token = bearerToken(request);
+        if (!token) return jsonResponse({ error: "unauthorized" }, 401);
+        let authorization: TokenAuthorization;
+        try {
+          authorization = await authorizeWithAvailability(env, token, "stats", now(), authorizeToken);
+        } catch {
+          return jsonResponse({ error: "temporarily unavailable" }, 503);
+        }
+        if (authorization.kind !== "active") return jsonResponse({ error: "unauthorized" }, 401);
+        if (!await allowedByRate(request, token)) return jsonResponse({ error: "rate limited" }, 429);
+        if (request.method === "GET") return blockingPreference(env, authorization.installationId);
+        const body = await requestBody(request);
+        if (body.error) return body.error;
+        let payload: unknown;
+        try {
+          payload = JSON.parse(new TextDecoder().decode(body.data));
+        } catch {
+          return jsonResponse({ error: "invalid request" }, 400);
+        }
+        const blockingEnabled = payload && typeof payload === "object"
+          ? (payload as { blockingEnabled?: unknown }).blockingEnabled
+          : undefined;
+        if (typeof blockingEnabled !== "boolean") return jsonResponse({ error: "invalid request" }, 400);
+        return blockingPreference(env, authorization.installationId, blockingEnabled);
+      }
       const token = tokenFromPath(url.pathname);
       if (!token) return new Response(null, { status: 404 });
       let authorization: TokenAuthorization;
@@ -361,7 +425,9 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
         return new Response(null, { status: 503 });
       }
       if (authorization.kind === "rejected") return jsonResponse({ error: "unauthorized" }, 401);
-      if (authorization.kind === "active" && !await allowedByRate(request, token)) {
+      const shouldBlock = authorization.kind === "active"
+        && await blockingIsEnabled(env, authorization.installationId);
+      if (shouldBlock && !await allowedByRate(request, token)) {
         return new Response(null, { status: 429, headers: { "retry-after": "60" } });
       }
 
@@ -385,11 +451,10 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
         if (error instanceof DNSFormatError) return dnsResponse(formErrorResponse(query), 400);
         return new Response(null, { status: 400 });
       }
-      if (authorization.kind === "passThrough") {
-        // A known installation without an active entitlement must keep DNS
-        // working, but it must not consult the blocklist, response cache, or
-        // stats Durable Object. Send every query directly to the upstreams so
-        // this state never depends on blocklist availability or stale policy.
+      if (!shouldBlock) {
+        // A paused installation or one without an active entitlement must keep
+        // DNS working without consulting the blocklist, response cache, or
+        // blocked-query counter. Send every query directly to the upstreams.
         try {
           const result = await fetchAllowed(query, parsed);
           return dnsResponse(result.response, 200, result.ttl);

@@ -34,6 +34,7 @@ arbitrária, listener UDP/TCP ou configuração CORS no Worker.
 | `/{dnsToken}/dns-query` | POST | Pacote em corpo `application/dns-message`; token Base64URL de 43 caracteres no pathname |
 | `/{dnsToken}/dns-query` | GET | Pacote Base64URL sem padding no parâmetro `dns`; mesmo papel de token |
 | `/v1/stats` | GET | Bearer stats corrente e assinatura ativa; retorna `blockedTotal`, `updatedAt` |
+| `/v1/blocking` | GET, PUT | Bearer stats corrente e assinatura ativa; lê/altera `blockingEnabled` por instalação |
 | `/v1/authorization/register` | POST | JSON com JWS/instalação/nonce; retorna o par de tokens; contrato em [SECURITY.md](SECURITY.md) |
 | `/v1/notifications/apple` | POST | JSON com `signedPayload` Apple V2, verificado novamente no servidor |
 
@@ -48,15 +49,16 @@ Autorização não se resume a uma leitura KV.
 requisição DoH
   → KV AUTH: mapping hash + papel + instalação
   → AUTHORITY: estado efetivo, se token corrente conhecido
+  → STATS: preferência de bloqueio por instalação, se a assinatura está ativa
   → validação de método/tamanho/pacote
-  → ativo: blocklist → cache DNS → Cloudflare DoH → Quad9 em falha
-  → conhecido sem direito: Cloudflare DoH → Quad9 em falha
+  → assinatura + bloqueio ativos: blocklist → cache DNS → Cloudflare DoH → Quad9 em falha
+  → pausado ou conhecido sem direito: Cloudflare DoH → Quad9 em falha
   → desconhecido: rejeição; sem DO/cache/upstream
 ```
 
-Rate limit ocorre antes da leitura do pacote para DNS ativo e stats, após a
-autorização. Pass-through não consulta blocklist, cache DNS nem objeto de
-contadores, e não usa o rate limit. Tokens DNS substituídos não precisam da
+Rate limit ocorre antes da leitura do pacote para DNS com bloqueio ativo e para
+stats/controle, após a autorização. Pass-through não consulta blocklist, cache
+DNS nem contador, e não usa o rate limit. Tokens DNS substituídos não precisam da
 autoridade; permanecem pass-through. Apple e Railway não são consultados por
 requisição DNS. Estados e falhas KV/DO estão detalhados em
 [segurança](SECURITY.md).

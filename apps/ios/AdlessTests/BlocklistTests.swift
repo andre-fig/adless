@@ -193,7 +193,37 @@ final class BlocklistTests: XCTestCase {
             hasAccess: true,
             hasCredentials: true,
             authorizationRequired: false,
+            blockingIsEnabled: false,
+            dnsState: .enabled
+        ))
+        XCTAssertFalse(AppViewModel.protectionIsConfirmed(
+            hasAccess: true,
+            hasCredentials: true,
+            authorizationRequired: false,
             dnsState: .disabled
+        ))
+    }
+
+    func testStartupAuthorizationOnlyReinstallsAnAlreadyEnabledDNSProfile() {
+        XCTAssertFalse(AppViewModel.shouldActivateAfterAuthorization(
+            explicitlyRequested: false,
+            previousDNSState: .notConfigured
+        ))
+        XCTAssertFalse(AppViewModel.shouldActivateAfterAuthorization(
+            explicitlyRequested: false,
+            previousDNSState: .disabled
+        ))
+        XCTAssertTrue(AppViewModel.shouldActivateAfterAuthorization(
+            explicitlyRequested: false,
+            previousDNSState: .enabled
+        ))
+        XCTAssertTrue(AppViewModel.shouldActivateAfterAuthorization(
+            explicitlyRequested: false,
+            previousDNSState: .staleEnabled
+        ))
+        XCTAssertTrue(AppViewModel.shouldActivateAfterAuthorization(
+            explicitlyRequested: true,
+            previousDNSState: .disabled
         ))
     }
 }
