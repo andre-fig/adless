@@ -97,8 +97,7 @@ permanecem **Pending** até inspeção autorizada do estado remoto.
 | [deploy-dns-worker.yml](../.github/workflows/deploy-dns-worker.yml) | `main` com filtros de caminho; manual | Prepara/valida lista, compila e publica Worker. Não executa suíte Worker nem smoke após deploy. Filtros não incluem pacote/lock da raiz. Runbook: [dns-cloud.md](dns-cloud.md). |
 | [deploy-landing.yml](../.github/workflows/deploy-landing.yml) | `main` com filtros de caminho; manual | Build e envio Railway, sem lint/typecheck/smoke. Filtros não incluem pacote da raiz, Tailwind, PostCSS nem todos os assets públicos. CLI recebe `apps/landing-page --path-as-root`; confirmar ambiente de instalação remoto separadamente. |
 | [update-blocklist.yml](../.github/workflows/update-blocklist.yml) | Domingo 03:17 UTC; manual | Testa/gera/valida e faz commit/push de seis artefatos; não publica Worker ou Railway diretamente. |
-| [testflight-ios.yml](../.github/workflows/testflight-ios.yml) | `develop` e `beta` com filtros; manual nas mesmas branches | `develop`: TestFlight interno, IPA internal-only. `beta`: externo com beta review. Ambas validam IPA, autorizam o número no Worker e fazem upload. Não executa XCTest. |
-| [release-ios.yml](../.github/workflows/release-ios.yml) | `main` com filtros; manual na `main` | Preflight da versão, archive/export, validação/upload, espera processamento e `attach-submit` com liberação automática para produção após aprovação Apple. Não executa XCTest. |
+| Xcode Cloud | `develop`, `beta` e `main`, configurados no App Store Connect | `develop`: TestFlight interno. `beta`: TestFlight externo com beta review. `main`: App Store com liberação após aprovação. |
 
 Os dois workflows iOS usam o scheme `Adless`, não `Adless Dev`; detalhes,
 comandos App Store Connect e diferenças entre upload/revisão/disponibilidade

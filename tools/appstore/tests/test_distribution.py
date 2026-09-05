@@ -171,25 +171,9 @@ class WorkflowContractTests(unittest.TestCase):
                 self.assertIs(config["manageAppVersionAndBuildNumber"], False)
                 self.assertEqual(config["method"], "app-store-connect")
 
-    def test_three_branch_guards_and_shared_build_number_lock(self):
-        beta = (ROOT / ".github/workflows/testflight-ios.yml").read_text()
-        production = (ROOT / ".github/workflows/release-ios.yml").read_text()
-        self.assertIn("on:\n  workflow_dispatch:", beta)
-        self.assertNotIn("\n  push:", beta)
-        self.assertIn("on:\n  workflow_dispatch:", production)
-        self.assertNotIn("\n  push:", production)
-        self.assertIn("if: github.ref == 'refs/heads/develop'", beta)
-        self.assertIn("if: github.ref == 'refs/heads/beta'", beta)
-        self.assertIn("if: github.ref == 'refs/heads/main'", production)
-        for workflow in (beta, production):
-            self.assertIn("group: adless-ios-distribution\n  cancel-in-progress: false", workflow)
-            self.assertIn("API_PRIVATE_KEYS_DIR:", workflow)
-            self.assertIn("--validate-app \\\n            --file", workflow)
-            self.assertIn("ADLESS_EXPECTED_BUILD_NUMBER:", workflow)
-        self.assertNotIn("attach-submit", beta)
-        self.assertNotIn("distribute-beta", production)
-        self.assertIn("testflight_builds.py add", beta)
-        self.assertNotIn("wrangler", beta)
+    def test_github_ios_workflows_are_removed_for_xcode_cloud(self):
+        self.assertFalse((ROOT / ".github/workflows/testflight-ios.yml").exists())
+        self.assertFalse((ROOT / ".github/workflows/release-ios.yml").exists())
 
     def test_cross_origin_apple_request_is_rejected_before_network(self):
         with patch.object(asc, "make_token", return_value="not-a-real-credential"), patch.object(asc.urllib.request, "urlopen") as network:
@@ -197,17 +181,6 @@ class WorkflowContractTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 client.request("GET", "https://example.invalid/page")
             network.assert_not_called()
-
-    def test_preflight_shell_array_works_with_macos_bash_and_nounset(self):
-        workflow = (ROOT / ".github/workflows/testflight-ios.yml").read_text()
-        fragment = workflow.split("          review_options=", 1)[1].split("          python3 tools/appstore/", 1)[0]
-        fragment = "review_options=" + fragment
-        for branch, expected in (("develop", "--group-id fixture-group\n"),
-                                 ("beta", "--group-id fixture-group --external\n")):
-            script = "set -euo pipefail\nASC_INTERNAL_BETA_GROUP_ID=fixture-group\nGITHUB_REF=refs/heads/" + branch + "\n" + fragment + '\nprintf "%s\\n" "${review_options[*]}"'
-            result = subprocess.run(["/bin/bash", "-c", script], capture_output=True, text=True, check=True)
-            self.assertEqual(result.stdout, expected)
-
 
 if __name__ == "__main__":
     unittest.main()

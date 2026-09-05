@@ -161,7 +161,6 @@ autorizá-lo inclui envio dos fontes associados, não só símbolos.
 Checks de manutenção existentes, sem escrever bytecode no repositório:
 
 ```sh
-actionlint .github/workflows/testflight-ios.yml .github/workflows/release-ios.yml
 sh -n tools/ios/verify_archive.sh
 sh -n tools/ios/verify_ipa.sh
 sh -n tools/ios/verify_distribution_profile.sh
@@ -171,9 +170,8 @@ python3 tools/appstore/appstore_connect.py --help
 
 ## Automação de distribuição
 
-**Implemented:** push relevante em `develop` ou `beta` inicia
-[testflight-ios.yml](../.github/workflows/testflight-ios.yml); push relevante em
-`main` inicia [release-ios.yml](../.github/workflows/release-ios.yml).
+**Implemented:** Xcode Cloud inicia os workflows configurados para `develop`,
+`beta` e `main`; GitHub Actions não possui mais workflows iOS automáticos.
 Execução manual respeita os mesmos guards de branch.
 A política operacional é develop → beta → main, mas o código não
 comprova proteção de branches ou revisão obrigatória. Disparar workflow ou push

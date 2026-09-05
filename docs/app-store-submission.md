@@ -15,7 +15,7 @@ parte de uma revisão documental.
 | Item | Fonte e estado |
 | --- | --- |
 | Bundle ID `com.orbeworks.adless` | **Implemented:** [Production.xcconfig](../apps/ios/Configurations/Production.xcconfig) |
-| App ID numérico ASC | **Implemented:** `ASC_APP_ID` dos [workflows iOS](../.github/workflows/release-ios.yml) e `APPLE_APP_ID` do [Worker](../apps/dns-worker/wrangler.toml); conferir correspondência no portal |
+| App ID numérico ASC | **Implemented:** configuração do Xcode Cloud e `APPLE_APP_ID` do [Worker](../apps/dns-worker/wrangler.toml); conferir correspondência no portal |
 | Team ID | **Implemented:** `DEVELOPMENT_TEAM` do [projeto](../apps/ios/Adless.xcodeproj/project.pbxproj) e `teamID` de [ExportOptions.plist](app-store/ExportOptions.plist); verificar profile/certificado reais |
 | Versão | **Implemented:** `MARKETING_VERSION` no projeto; o build number do workflow é escolhido dinamicamente |
 | Nome comercial `Adless: Clean Web` | **Pending:** registro documental anterior; não confirma o nome salvo no portal. O display name local é `Adless` |
