@@ -196,4 +196,27 @@ final class BlocklistTests: XCTestCase {
             dnsState: .disabled
         ))
     }
+
+    func testStartupAuthorizationOnlyReinstallsAnAlreadyEnabledDNSProfile() {
+        XCTAssertFalse(AppViewModel.shouldActivateAfterAuthorization(
+            explicitlyRequested: false,
+            previousDNSState: .notConfigured
+        ))
+        XCTAssertFalse(AppViewModel.shouldActivateAfterAuthorization(
+            explicitlyRequested: false,
+            previousDNSState: .disabled
+        ))
+        XCTAssertTrue(AppViewModel.shouldActivateAfterAuthorization(
+            explicitlyRequested: false,
+            previousDNSState: .enabled
+        ))
+        XCTAssertTrue(AppViewModel.shouldActivateAfterAuthorization(
+            explicitlyRequested: false,
+            previousDNSState: .staleEnabled
+        ))
+        XCTAssertTrue(AppViewModel.shouldActivateAfterAuthorization(
+            explicitlyRequested: true,
+            previousDNSState: .disabled
+        ))
+    }
 }

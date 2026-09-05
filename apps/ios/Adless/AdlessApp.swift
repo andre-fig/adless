@@ -40,6 +40,13 @@ final class AppViewModel: ObservableObject {
         hasAccess && hasCredentials && !authorizationRequired && dnsState == .enabled
     }
 
+    static func shouldActivateAfterAuthorization(
+        explicitlyRequested: Bool,
+        previousDNSState: DNSSettingsState
+    ) -> Bool {
+        explicitlyRequested || previousDNSState.isSystemEnabled
+    }
+
     @Published var isOn = false
     @Published private(set) var isProtectionActive = false
     @Published var statusText: String = String(localized: "Off")
@@ -98,7 +105,10 @@ final class AppViewModel: ObservableObject {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 if self.authorizationRequired {
-                    await self.authorizeAndActivate(authorization)
+                    await self.authorizeAndActivate(
+                        authorization,
+                        shouldActivateAfterAuthorization: true
+                    )
                 } else {
                     await self.activateProtection()
                 }
@@ -169,7 +179,10 @@ final class AppViewModel: ObservableObject {
                 subscriptionManager.showAuthorizationFailure()
                 return
             }
-            await authorizeAndActivate(authorization)
+            await authorizeAndActivate(
+                authorization,
+                shouldActivateAfterAuthorization: true
+            )
             return
         }
 
@@ -306,10 +319,20 @@ final class AppViewModel: ObservableObject {
             subscriptionManager.showAuthorizationFailure()
             return
         }
-        await authorizeAndActivate(authorization)
+        let previousDNSState = await dnsSettingsManager.currentState()
+        await authorizeAndActivate(
+            authorization,
+            shouldActivateAfterAuthorization: Self.shouldActivateAfterAuthorization(
+                explicitlyRequested: false,
+                previousDNSState: previousDNSState
+            )
+        )
     }
 
-    private func authorizeAndActivate(_ authorization: SubscriptionAuthorization) async {
+    private func authorizeAndActivate(
+        _ authorization: SubscriptionAuthorization,
+        shouldActivateAfterAuthorization: Bool
+    ) async {
         guard hasSubscription, !isAuthorizing else { return }
         isAuthorizing = true
         defer { isAuthorizing = false }
@@ -340,7 +363,11 @@ final class AppViewModel: ObservableObject {
             )
             authorizationRequired = false
             isSubscriptionPresented = false
-            await activateProtection()
+            if shouldActivateAfterAuthorization {
+                await activateProtection()
+            } else {
+                await refreshStatus()
+            }
         } catch {
             authorizationRequired = true
             isProtectionActive = false
