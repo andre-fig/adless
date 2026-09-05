@@ -1,26 +1,6 @@
 name: Release Adless iOS to production after Apple approval
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "apps/ios/Adless/*.swift"
-      - "apps/ios/Adless/Managers/**"
-      - "apps/ios/Adless/Services/**"
-      - "apps/ios/Adless/Resources/Assets.xcassets/**"
-      - "apps/ios/Adless/Resources/Adless.entitlements"
-      - "apps/ios/Adless/Resources/Info.plist"
-      - "apps/ios/Adless/Resources/Localizable.xcstrings"
-      - "apps/ios/Adless.xcodeproj/**"
-      - "apps/ios/Configurations/**"
-      - "apps/ios/Adless.storekit"
-      - "apps/ios/Shared/**"
-      - "docs/app-store/ExportOptions.plist"
-      - "tools/appstore/**"
-      - "tools/ios/**"
-      - "tools/sentry/**"
-      - ".github/workflows/release-ios.yml"
   workflow_dispatch:
 
 concurrency:

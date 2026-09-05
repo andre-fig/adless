@@ -1,27 +1,6 @@
 name: Upload Adless to TestFlight
 
 on:
-  push:
-    branches:
-      - develop
-      - beta
-    paths:
-      - "apps/ios/Adless/*.swift"
-      - "apps/ios/Adless/Managers/**"
-      - "apps/ios/Adless/Services/**"
-      - "apps/ios/Adless/Resources/**"
-      - "apps/ios/Adless.xcodeproj/**"
-      - "apps/ios/Configurations/**"
-      - "apps/ios/Adless.storekit"
-      - "apps/ios/Shared/**"
-      - "docs/app-store/ExportOptions-TestFlight.plist"
-      - "docs/app-store/ExportOptions-TestFlight-Internal.plist"
-      - "docs/app-store/testflight-notes.txt"
-      - "tools/appstore/**"
-      - "tools/ios/**"
-      - "tools/sentry/**"
-      - "tools/dns-worker/testflight_builds.py"
-      - ".github/workflows/testflight-ios.yml"
   workflow_dispatch:
 
 concurrency:
