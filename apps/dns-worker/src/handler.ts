@@ -8,6 +8,7 @@ import {
   minimumTTL,
   parseDNSMessage,
   servfailResponse,
+  withMaximumTTL,
   withRemainingTTL,
   withTransactionID,
   DNSFormatError,
@@ -340,15 +341,18 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
     }
   };
 
-  const blockingIsEnabled = async (env: WorkerEnvironment, installationId: string): Promise<boolean> => {
+  const blockingState = async (
+    env: WorkerEnvironment,
+    installationId: string,
+  ): Promise<"enabled" | "paused" | "unavailable"> => {
     // STATS is optional in unit-level worker environments. Production declares
     // it in wrangler.toml; an unavailable configured object fails open to
     // upstream DNS so a control-plane error cannot strand connectivity.
-    if (!env.STATS) return true;
+    if (!env.STATS) return "enabled";
     const response = await blockingPreference(env, installationId);
-    if (!response.ok) return false;
+    if (!response.ok) return "unavailable";
     const payload = await response.json() as { blockingEnabled: boolean };
-    return payload.blockingEnabled;
+    return payload.blockingEnabled ? "enabled" : "paused";
   };
 
   return {
@@ -425,8 +429,11 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
         return new Response(null, { status: 503 });
       }
       if (authorization.kind === "rejected") return jsonResponse({ error: "unauthorized" }, 401);
-      const shouldBlock = authorization.kind === "active"
-        && await blockingIsEnabled(env, authorization.installationId);
+      const currentBlockingState = authorization.kind === "active"
+        ? await blockingState(env, authorization.installationId)
+        : "unavailable";
+      const shouldBlock = authorization.kind === "active" && currentBlockingState === "enabled";
+      const shouldLimitPassThroughTTL = authorization.kind === "active" && currentBlockingState === "paused";
       if (shouldBlock && !await allowedByRate(request, token)) {
         return new Response(null, { status: 429, headers: { "retry-after": "60" } });
       }
@@ -457,7 +464,13 @@ export function createDNSWorker(blocklistText: string, metadata: BlocklistMetada
         // blocked-query counter. Send every query directly to the upstreams.
         try {
           const result = await fetchAllowed(query, parsed);
-          return dnsResponse(result.response, 200, result.ttl);
+          const response = shouldLimitPassThroughTTL
+            ? withMaximumTTL(result.response, BLOCKED_RESPONSE_TTL)
+            : result.response;
+          const ttl = shouldLimitPassThroughTTL
+            ? Math.min(result.ttl, BLOCKED_RESPONSE_TTL)
+            : result.ttl;
+          return dnsResponse(response, 200, ttl);
         } catch {
           return dnsResponse(servfailResponse(parsed), 200, 1);
         }

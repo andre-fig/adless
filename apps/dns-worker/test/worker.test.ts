@@ -213,8 +213,17 @@ function query(name = "www.example.com", type = 1, id = 0x1234, withEDNS = false
 function response(request: Uint8Array, type = 1, rcode = 0, ttl = 60): Uint8Array {
   const parsed = parseDNSMessage(request, 0);
   const question = parsed.questions[0].raw;
-  const answer = type === 1
-    ? Uint8Array.from([0xc0, 0x0c, 0, 1, 0, 1, ttl >> 24, (ttl >> 16) & 0xff, (ttl >> 8) & 0xff, ttl & 0xff, 0, 4, 1, 2, 3, 4])
+  const address = type === 1
+    ? Uint8Array.from([1, 2, 3, 4])
+    : type === 28
+      ? Uint8Array.from([0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
+      : undefined;
+  const answer = address
+    ? Uint8Array.from([
+      0xc0, 0x0c, type >> 8, type & 0xff, 0, 1,
+      ttl >> 24, (ttl >> 16) & 0xff, (ttl >> 8) & 0xff, ttl & 0xff,
+      address.length >> 8, address.length & 0xff, ...address,
+    ])
     : new Uint8Array();
   const result = new Uint8Array(12 + question.length + answer.length);
   result.set(Uint8Array.from([
@@ -702,7 +711,7 @@ test("a valid authorized installation blocks DNS and records stats by installati
   assert.equal(stats.idCalls, 3);
 });
 
-test("pausing blocking keeps DNS enabled as upstream pass-through and resumes immediately", async () => {
+test("active and paused transitions cap pass-through A/AAAA TTLs without stale cache or stats", async () => {
   const kv = new MemoryKV();
   const credentials = await registerTestInstallation(kv);
   const stats = statsNamespace(INSTALLATION_ID);
@@ -711,12 +720,59 @@ test("pausing blocking keeps DNS enabled as upstream pass-through and resumes im
     now: () => AUTH_NOW,
     fetch: async (_url, init) => {
       upstreamCalls += 1;
-      return new Response(binaryBody(response(new Uint8Array(init?.body as ArrayBuffer))), {
+      const incoming = new Uint8Array(init?.body as ArrayBuffer);
+      const type = parseDNSMessage(incoming, 0).questions[0].type;
+      const ttl = type === 28 ? 600 : 300;
+      return new Response(binaryBody(response(incoming, type, 0, ttl)), {
         headers: { "content-type": "application/dns-message" },
       });
     },
   });
   const env = { ...environmentForAuthorization(kv), STATS: stats };
+
+  const activeAllowed = await worker.fetch(
+    requestForToken(query("allowed.example.com", 1, 0x1111), credentials.dnsToken),
+    env,
+    context(),
+  );
+  assert.equal(parseDNSMessage(new Uint8Array(await activeAllowed.arrayBuffer()), 1).records[0].ttl, 300,
+    "active allowed responses must retain the upstream TTL");
+  const cachedAllowed = await worker.fetch(
+    requestForToken(query("allowed.example.com", 1, 0x2222), credentials.dnsToken),
+    env,
+    context(),
+  );
+  assert.equal(parseDNSMessage(new Uint8Array(await cachedAllowed.arrayBuffer()), 1).id, 0x2222);
+  assert.equal(upstreamCalls, 1, "active allowed A responses should use the internal cache");
+
+  const activeAllowedAAAA = await worker.fetch(
+    requestForToken(query("allowed.example.com", 28, 0x1112), credentials.dnsToken),
+    env,
+    context(),
+  );
+  assert.equal(parseDNSMessage(new Uint8Array(await activeAllowedAAAA.arrayBuffer()), 1).records[0].ttl, 600,
+    "active allowed AAAA responses must retain the upstream TTL");
+  const cachedAllowedAAAA = await worker.fetch(
+    requestForToken(query("allowed.example.com", 28, 0x2223), credentials.dnsToken),
+    env,
+    context(),
+  );
+  assert.equal(parseDNSMessage(new Uint8Array(await cachedAllowedAAAA.arrayBuffer()), 1).id, 0x2223);
+  assert.equal(upstreamCalls, 2, "active allowed AAAA responses should use the internal cache");
+
+  const initiallyBlockedContext = context();
+  await worker.fetch(
+    requestForToken(query("ads.example.com", 1, 0x3001), credentials.dnsToken),
+    env,
+    initiallyBlockedContext,
+  );
+  await worker.fetch(
+    requestForToken(query("ads.example.com", 28, 0x3002), credentials.dnsToken),
+    env,
+    initiallyBlockedContext,
+  );
+  await Promise.all(initiallyBlockedContext.pending);
+  assert.equal(stats.values.get("blockedTotal"), 2);
 
   const wrongRole = await worker.fetch(new Request("https://worker.example.test/v1/blocking", {
     method: "PUT",
@@ -743,15 +799,38 @@ test("pausing blocking keeps DNS enabled as upstream pass-through and resumes im
   }), env, context());
   assert.deepEqual(await persistedPause.json(), { blockingEnabled: false });
 
-  const pausedContext = context();
-  const passThrough = await worker.fetch(
-    requestForToken(query("ads.example.com"), credentials.dnsToken),
+  const pausedAContext = context();
+  const passThroughA = await worker.fetch(
+    requestForToken(query("ads.example.com", 1, 0x4001), credentials.dnsToken),
     env,
-    pausedContext,
+    pausedAContext,
   );
-  assert.equal(passThrough.status, 200);
-  assert.equal(upstreamCalls, 1);
-  assert.equal(pausedContext.pending.length, 0, "paused blocking must not increment statistics");
+  const parsedA = parseDNSMessage(new Uint8Array(await passThroughA.arrayBuffer()), 1);
+  assert.equal(parsedA.id, 0x4001);
+  assert.equal(parsedA.records[0].type, 1);
+  assert.equal(parsedA.records[0].ttl, BLOCKED_RESPONSE_TTL);
+  assert.equal(pausedAContext.pending.length, 0, "paused A queries must not increment statistics");
+
+  const repeatedPausedA = await worker.fetch(
+    requestForToken(query("ads.example.com", 1, 0x4002), credentials.dnsToken),
+    env,
+    context(),
+  );
+  assert.equal(parseDNSMessage(new Uint8Array(await repeatedPausedA.arrayBuffer()), 1).id, 0x4002);
+
+  const pausedAAAAContext = context();
+  const passThroughAAAA = await worker.fetch(
+    requestForToken(query("ads.example.com", 28, 0x4003), credentials.dnsToken),
+    env,
+    pausedAAAAContext,
+  );
+  const parsedAAAA = parseDNSMessage(new Uint8Array(await passThroughAAAA.arrayBuffer()), 1);
+  assert.equal(parsedAAAA.id, 0x4003);
+  assert.equal(parsedAAAA.records[0].type, 28);
+  assert.equal(parsedAAAA.records[0].ttl, BLOCKED_RESPONSE_TTL);
+  assert.equal(pausedAAAAContext.pending.length, 0, "paused AAAA queries must not increment statistics");
+  assert.equal(upstreamCalls, 5, "paused A/AAAA queries must bypass the internal response cache");
+  assert.equal(stats.values.get("blockedTotal"), 2);
 
   const resume = await worker.fetch(new Request("https://worker.example.test/v1/blocking", {
     method: "PUT",
@@ -764,15 +843,21 @@ test("pausing blocking keeps DNS enabled as upstream pass-through and resumes im
   assert.equal(resume.status, 200);
 
   const activeContext = context();
-  const blocked = await worker.fetch(
-    requestForToken(query("ads.example.com"), credentials.dnsToken),
+  const blockedA = await worker.fetch(
+    requestForToken(query("ads.example.com", 1, 0x5001), credentials.dnsToken),
     env,
     activeContext,
   );
-  assert.equal(blocked.status, 200);
-  assert.equal(upstreamCalls, 1, "resumed blocking must apply the blocklist without reinstalling DNS");
+  const blockedAAAA = await worker.fetch(
+    requestForToken(query("ads.example.com", 28, 0x5002), credentials.dnsToken),
+    env,
+    activeContext,
+  );
+  assert.equal(parseDNSMessage(new Uint8Array(await blockedA.arrayBuffer()), 1).id, 0x5001);
+  assert.equal(parseDNSMessage(new Uint8Array(await blockedAAAA.arrayBuffer()), 1).id, 0x5002);
+  assert.equal(upstreamCalls, 5, "resumed blocking must apply to A/AAAA without using paused responses");
   await Promise.all(activeContext.pending);
-  assert.equal(stats.values.get("blockedTotal"), 1);
+  assert.equal(stats.values.get("blockedTotal"), 4);
 });
 
 test("malformed StoreKit JWS cannot issue authorization credentials", async () => {
