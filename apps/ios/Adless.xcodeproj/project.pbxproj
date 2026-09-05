@@ -179,6 +179,7 @@
 				TargetAttributes = {
 					A432D6DC2EF4DE1800F87DE0 = {
 						CreatedOnToolsVersion = 26.2;
+						ProvisioningStyle = Automatic;
 					};
 					B10000000000000000000018 = {
 						CreatedOnToolsVersion = 26.2;
