@@ -73,6 +73,69 @@ final class DNSStatsAPIClient: @unchecked Sendable {
     }
 }
 
+private struct DNSBlockingResponse: Decodable {
+    let blockingEnabled: Bool
+}
+
+final class DNSBlockingAPIClient: @unchecked Sendable {
+    private let session: URLSession
+
+    init(session: URLSession? = nil) {
+        if let session {
+            self.session = session
+        } else {
+            let configuration = URLSessionConfiguration.ephemeral
+            configuration.urlCache = nil
+            configuration.httpCookieStorage = nil
+            configuration.urlCredentialStorage = nil
+            configuration.httpShouldSetCookies = false
+            configuration.waitsForConnectivity = false
+            configuration.timeoutIntervalForRequest = 4
+            configuration.timeoutIntervalForResource = 4
+            self.session = URLSession(configuration: configuration)
+        }
+    }
+
+    deinit {
+        session.invalidateAndCancel()
+    }
+
+    func blockingIsEnabled() async throws -> Bool {
+        try await request(method: "GET", blockingEnabled: nil)
+    }
+
+    func setBlockingEnabled(_ enabled: Bool) async throws -> Bool {
+        try await request(method: "PUT", blockingEnabled: enabled)
+    }
+
+    private func request(method: String, blockingEnabled: Bool?) async throws -> Bool {
+        let token: String
+        do {
+            token = try InstallationTokenStore.shared.statsToken()
+        } catch {
+            throw DNSStatsAPIError.authorizationRequired
+        }
+        var request = URLRequest(url: DNSCloudConfiguration.blockingURL)
+        request.httpMethod = method
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let blockingEnabled {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONEncoder().encode(["blockingEnabled": blockingEnabled])
+        }
+
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse,
+              (200..<300).contains(http.statusCode),
+              data.count <= 4 * 1024,
+              let payload = try? JSONDecoder().decode(DNSBlockingResponse.self, from: data) else {
+            throw DNSStatsAPIError.invalidResponse
+        }
+        return payload.blockingEnabled
+    }
+}
+
 struct DNSAuthorizationRequest: Encodable {
     let installationId: String
     let transactionJWS: String

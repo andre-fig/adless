@@ -21,6 +21,8 @@ struct AdlessApp: App {
 
 @MainActor
 final class AppViewModel: ObservableObject {
+    private static let blockingPreferenceKey = "adless.blocking-enabled"
+
     static func authorizationIsRequired(
         hasAccess: Bool,
         hasCredentials: Bool,
@@ -35,9 +37,10 @@ final class AppViewModel: ObservableObject {
         hasAccess: Bool,
         hasCredentials: Bool,
         authorizationRequired: Bool,
+        blockingIsEnabled: Bool = true,
         dnsState: DNSSettingsState
     ) -> Bool {
-        hasAccess && hasCredentials && !authorizationRequired && dnsState == .enabled
+        hasAccess && hasCredentials && !authorizationRequired && blockingIsEnabled && dnsState == .enabled
     }
 
     static func shouldActivateAfterAuthorization(
@@ -52,6 +55,9 @@ final class AppViewModel: ObservableObject {
     @Published var statusText: String = String(localized: "Off")
     @Published private(set) var isPreparing = true
     @Published private(set) var hasSubscription = false
+    @Published private(set) var blockingIsEnabled = UserDefaults.standard.object(
+        forKey: AppViewModel.blockingPreferenceKey
+    ) == nil || UserDefaults.standard.bool(forKey: AppViewModel.blockingPreferenceKey)
     @Published var isSubscriptionPresented = false
     @Published var isSystemApprovalAlertPresented = false
     @Published var isManualDisableAlertPresented = false
@@ -63,6 +69,7 @@ final class AppViewModel: ObservableObject {
     private let dnsSettingsManager = DNSSettingsManager()
     private let blockingStatsStore = BlockingStatsStore()
     private let statsAPIClient = DNSStatsAPIClient()
+    private let blockingAPIClient = DNSBlockingAPIClient()
     private let authorizationAPIClient = DNSAuthorizationAPIClient()
     private var dnsSettingsObserver: NSObjectProtocol?
     private var isAuthorizing = false
@@ -111,7 +118,8 @@ final class AppViewModel: ObservableObject {
                 if self.authorizationRequired {
                     await self.authorizeAndActivate(
                         authorization,
-                        shouldActivateAfterAuthorization: true
+                        shouldActivateAfterAuthorization: true,
+                        enableBlockingAfterAuthorization: self.blockingIsEnabled
                     )
                 } else {
                     await self.activateProtection()
@@ -155,16 +163,9 @@ final class AppViewModel: ObservableObject {
         }
 
         if isProtectionActive {
-            let transaction = AdlessSentry.startTransaction(name: "protection.deactivate", operation: "dns-settings")
+            let transaction = AdlessSentry.startTransaction(name: "protection.deactivate", operation: "blocking-preference")
             defer { transaction?.finish() }
-            do {
-                try await dnsSettingsManager.remove()
-                await refreshStatus()
-            } catch {
-                AdlessSentry.capture(error, operation: "dns.settings.remove")
-                await refreshStatus()
-                isManualDisableAlertPresented = true
-            }
+            _ = await updateBlockingPreference(false)
             return
         }
 
@@ -178,6 +179,17 @@ final class AppViewModel: ObservableObject {
 
     @MainActor
     private func activateProtection(allowDuringPreparation: Bool) async {
+        await activateProtection(
+            allowDuringPreparation: allowDuringPreparation,
+            enableBlocking: true
+        )
+    }
+
+    @MainActor
+    private func activateProtection(
+        allowDuringPreparation: Bool,
+        enableBlocking: Bool
+    ) async {
         guard allowDuringPreparation || !isPreparing else { return }
         guard hasSubscription else {
             isSubscriptionPresented = true
@@ -192,18 +204,32 @@ final class AppViewModel: ObservableObject {
             await authorizeAndActivate(
                 authorization,
                 shouldActivateAfterAuthorization: true,
-                allowActivationDuringPreparation: allowDuringPreparation
+                allowActivationDuringPreparation: allowDuringPreparation,
+                enableBlockingAfterAuthorization: enableBlocking
             )
             return
         }
 
-        // Always reinstall the profile when activating. This also migrates a
-        // previously saved, disabled profile to the current authorized DoH
-        // URL and credential. The real state is read back after save; do not
-        // optimistically change the UI before iOS confirms it.
+        // A paused profile that is still enabled only needs its server-side
+        // blocking preference changed. Reinstall only when the system profile
+        // is missing, disabled, or points to stale credentials.
         statusText = String(localized: "Connecting")
         let transaction = AdlessSentry.startTransaction(name: "protection.activate", operation: "dns-settings")
         defer { transaction?.finish() }
+
+        if enableBlocking {
+            guard await updateBlockingPreference(true) else {
+                await refreshStatus()
+                return
+            }
+        }
+
+        let currentState = await dnsSettingsManager.currentState()
+        if currentState == .enabled {
+            await refreshStatus()
+            await refreshCloudStats()
+            return
+        }
 
         do {
             let state = try await dnsSettingsManager.install()
@@ -256,6 +282,7 @@ final class AppViewModel: ObservableObject {
             hasAccess: hasSubscription,
             hasCredentials: InstallationTokenStore.shared.hasAuthorizedCredentials(),
             authorizationRequired: authorizationRequired,
+            blockingIsEnabled: blockingIsEnabled,
             dnsState: state
         )
         if isOn {
@@ -267,9 +294,7 @@ final class AppViewModel: ObservableObject {
         AdlessSentry.event("dns.settings.status_change", state: state.rawValue)
 
         if !hasSubscription {
-            statusText = state == .enabled
-                ? String(localized: "Protection is still active; disable Adless in Settings.")
-                : String(localized: "Premium access required")
+            statusText = String(localized: "Premium access required")
             return state
         }
 
@@ -277,7 +302,7 @@ final class AppViewModel: ObservableObject {
         case .notConfigured, .disabled:
             statusText = String(localized: "Off")
         case .enabled:
-            statusText = String(localized: "On")
+            statusText = blockingIsEnabled ? String(localized: "On") : String(localized: "Off")
         case .staleEnabled:
             statusText = String(localized: "Reconnect to update DNS protection")
         case .invalid:
@@ -301,6 +326,7 @@ final class AppViewModel: ObservableObject {
             authorizationRequired = true
             isProtectionActive = false
         }
+        await refreshBlockingPreference()
         needsStartupAuthorizationReconciliation = false
         await ensureAuthorizationIfNeeded()
         await disableIfSubscriptionExpired()
@@ -337,14 +363,16 @@ final class AppViewModel: ObservableObject {
                 explicitlyRequested: false,
                 previousDNSState: previousDNSState
             ),
-            allowActivationDuringPreparation: isPreparing
+            allowActivationDuringPreparation: isPreparing,
+            enableBlockingAfterAuthorization: blockingIsEnabled
         )
     }
 
     private func authorizeAndActivate(
         _ authorization: SubscriptionAuthorization,
         shouldActivateAfterAuthorization: Bool,
-        allowActivationDuringPreparation: Bool = false
+        allowActivationDuringPreparation: Bool = false,
+        enableBlockingAfterAuthorization: Bool = true
     ) async {
         guard hasSubscription, !isAuthorizing else { return }
         isAuthorizing = true
@@ -377,7 +405,10 @@ final class AppViewModel: ObservableObject {
             authorizationRequired = false
             isSubscriptionPresented = false
             if shouldActivateAfterAuthorization {
-                await activateProtection(allowDuringPreparation: allowActivationDuringPreparation)
+                await activateProtection(
+                    allowDuringPreparation: allowActivationDuringPreparation,
+                    enableBlocking: enableBlockingAfterAuthorization
+                )
             } else {
                 await refreshStatus()
             }
@@ -402,6 +433,37 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    private func refreshBlockingPreference() async {
+        guard hasSubscription,
+              InstallationTokenStore.shared.hasAuthorizedCredentials() else { return }
+        do {
+            setConfirmedBlockingPreference(try await blockingAPIClient.blockingIsEnabled())
+        } catch {
+            // Retain the last confirmed value. DNS remains system-managed and
+            // the Worker fails open to upstream resolution if preference state
+            // cannot be read.
+            AdlessSentry.capture(error, operation: "blocking.preference.read")
+        }
+    }
+
+    @discardableResult
+    private func updateBlockingPreference(_ enabled: Bool) async -> Bool {
+        do {
+            setConfirmedBlockingPreference(try await blockingAPIClient.setBlockingEnabled(enabled))
+            await refreshStatus()
+            return blockingIsEnabled == enabled
+        } catch {
+            AdlessSentry.capture(error, operation: "blocking.preference.update")
+            await refreshStatus()
+            return false
+        }
+    }
+
+    private func setConfirmedBlockingPreference(_ enabled: Bool) {
+        blockingIsEnabled = enabled
+        UserDefaults.standard.set(enabled, forKey: Self.blockingPreferenceKey)
+    }
+
     private func beginPreparation() {
         let preparationStartedAt = Date()
         let minimumPreparationDuration: TimeInterval = 0.35
@@ -423,15 +485,9 @@ final class AppViewModel: ObservableObject {
     @MainActor
     private func disableIfSubscriptionExpired() async {
         guard !hasSubscription else { return }
-        let state = await dnsSettingsManager.currentState()
-        guard state.isSystemEnabled || state == .disabled else { return }
-        do {
-            try await dnsSettingsManager.remove()
-            await refreshStatus()
-        } catch {
-            AdlessSentry.capture(error, operation: "dns.settings.remove")
-            await refreshStatus()
-            isManualDisableAlertPresented = true
-        }
+        // The Worker already turns an expired known credential into DNS
+        // pass-through. Keep the system DNS profile intact so renewed access
+        // does not require another trip to Settings.
+        await refreshStatus()
     }
 }

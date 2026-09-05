@@ -193,6 +193,13 @@ final class BlocklistTests: XCTestCase {
             hasAccess: true,
             hasCredentials: true,
             authorizationRequired: false,
+            blockingIsEnabled: false,
+            dnsState: .enabled
+        ))
+        XCTAssertFalse(AppViewModel.protectionIsConfirmed(
+            hasAccess: true,
+            hasCredentials: true,
+            authorizationRequired: false,
             dnsState: .disabled
         ))
     }

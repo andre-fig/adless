@@ -129,11 +129,12 @@ completas nas evidências.
 | Compra mensal/anual, restauração e trial | StoreKit verificado, autorização Worker concluída, tokens persistidos; oferta só conforme elegibilidade; cancelamento não antecipa expiração |
 | Salvar sem habilitar em Ajustes | UI não indica proteção; mostra navegação manual para DNS |
 | Habilitar e voltar ao app | Estado real recarregado; endpoint atual + assinatura + credenciais + ausência de reconciliação pendente |
-| Desativar e remover manualmente | Nova leitura mostra desligado; Ativar pode recriar configuração |
+| Pausar e retomar pelo botão | DNS permanece habilitado; pausado resolve domínio bloqueado via upstream sem incrementar stats; retomar volta a bloquear sem abrir Ajustes |
+| Remover/desabilitar manualmente em Ajustes | Nova leitura mostra desligado; Ativar pode recriar configuração |
 | Falha ao salvar novo endpoint com perfil antigo ativo | `staleEnabled`; UI não confirma proteção; token antigo resolve em pass-through |
 | Worker indisponível no startup/restore | UI não confirma autorização só por possuir tokens; retry reaproveita nonce persistido |
 | Resposta recebida, commit Keychain falha | Token não confirmado não é instalado; tenta remover perfil antigo; falha de remoção mostra orientação manual |
-| Expiração/reembolso/revogação | UI não confirma proteção após reconciliação; remoção tentada; perfil residual resolve sem bloqueio e stats é negado |
+| Expiração/reembolso/revogação | UI não confirma proteção após reconciliação; perfil DNS permanece e resolve sem bloqueio; stats é negado |
 | Cancelamento/grace/billing recovery | Comparar prazo pago, grace e evento recebido no Worker; testar startup após expiração da transação durante grace |
 | Stats indisponível | Último total mantido sem reduzir contador ou desligar DNS |
 | Reboot, horas com tela bloqueada, app encerrado | DNS selecionado pelo iOS continua operando; ler novamente ao abrir o app |

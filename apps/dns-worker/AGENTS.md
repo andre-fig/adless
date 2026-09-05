@@ -15,7 +15,7 @@ Autorização, dados e ameaças: [segurança](../../docs/SECURITY.md).
   cadeia Apple; [src/stats.ts](src/stats.ts): contadores **e** autoridade da
   assinatura; [src/types.ts](src/types.ts): contratos dos bindings.
 - Endpoints públicos: `GET/HEAD /healthz`, `GET/POST /{dnsToken}/dns-query`,
-  `GET /v1/stats`, `POST /v1/authorization/register` e
+  `GET /v1/stats`, `GET/PUT /v1/blocking`, `POST /v1/authorization/register` e
   `POST /v1/notifications/apple`. Stats exige Bearer separado do token DNS.
 - Primeiro reconheça hash, papel e instalação no KV `AUTH`. Token desconhecido
   deve ser rejeitado **antes de qualquer Durable Object, cache DNS ou upstream**.
@@ -30,7 +30,8 @@ Autorização, dados e ameaças: [segurança](../../docs/SECURITY.md).
   pass-through com prova local recente de credencial conhecida; sem prova,
   retorna erro. Falha de `AUTHORITY` após reconhecer a instalação também remove
   bloqueio e nega stats. Não prometa internet em todas as falhas.
-- Para consulta ativa: valide wire, consulte blocklist e cache, depois Cloudflare
+- Para consulta ativa: leia a preferência de bloqueio da instalação; pausada usa
+  pass-through. Habilitada valida wire, consulta blocklist/cache e depois Cloudflare
   DoH primário e Quad9 sequencial. Preserve HTTPS, validação da resposta, timeout,
   SERVFAIL e transaction ID. Resposta DNS válida, inclusive NXDOMAIN, é final.
 - Cache é memória do isolate, por instalação e pacote sem transaction ID;
@@ -53,7 +54,7 @@ Autorização, dados e ameaças: [segurança](../../docs/SECURITY.md).
   DO, antes do marcador KV. Preserve períodos, correções terminais e recuperações
   oficiais; replay não pode desfazer refund/revoke/expiration.
 - Não persista nem registre token, nonce, JWS bruto, QNAME, pacote, IP ou URL
-  de consulta. `STATS` recebe só incremento numérico por instalação;
+  de consulta. `STATS` recebe incremento numérico e preferência booleana por instalação;
   `AUTHORITY` persiste metadados de assinatura. Não descreva todos os DO como
   “somente contadores”. Rate limit token/IP é hash em memória, por isolate.
 - [wrangler.toml](wrangler.toml) declara `AUTH`, `STATS`, `AUTHORITY` e migration

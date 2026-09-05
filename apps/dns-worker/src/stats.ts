@@ -7,6 +7,7 @@ import type {
 
 const AUTHORITY_CHAIN_KEY = "authority:chain";
 const AUTHORITY_LATEST_KEY = "authority:latest";
+const BLOCKING_ENABLED_KEY = "blockingEnabled";
 
 function isSafeIdentifier(value: unknown): value is string {
   return typeof value === "string" && value.length > 0 && value.length <= 128;
@@ -136,6 +137,31 @@ export class StatsDurableObject {
 
   async fetch(request: Request): Promise<Response> {
     const pathname = new URL(request.url).pathname;
+    if (pathname === "/blocking") {
+      if (request.method === "GET") {
+        const blockingEnabled = await this.state.storage.get<boolean>(BLOCKING_ENABLED_KEY) ?? true;
+        return new Response(JSON.stringify({ blockingEnabled }), {
+          headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+        });
+      }
+      if (request.method !== "PUT") {
+        return new Response(null, { status: 405, headers: { allow: "GET, PUT" } });
+      }
+      let payload: unknown;
+      try {
+        payload = await request.json();
+      } catch {
+        return new Response(null, { status: 400 });
+      }
+      const blockingEnabled = payload && typeof payload === "object"
+        ? (payload as { blockingEnabled?: unknown }).blockingEnabled
+        : undefined;
+      if (typeof blockingEnabled !== "boolean") return new Response(null, { status: 400 });
+      await this.state.storage.put(BLOCKING_ENABLED_KEY, blockingEnabled);
+      return new Response(JSON.stringify({ blockingEnabled }), {
+        headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+      });
+    }
     if (pathname === "/authority/latest") {
       if (request.method !== "GET") return new Response(null, { status: 405, headers: { allow: "GET" } });
       const event = await this.state.storage.get<SubscriptionAuthorityEvent>(AUTHORITY_LATEST_KEY);
