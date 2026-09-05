@@ -197,13 +197,30 @@ final class AppViewModel: ObservableObject {
         }
     }
 
-    /// Opens the app's Settings page using Apple's public URL. iOS does not
-    /// expose a public URL for the global DNS page, so the alert keeps the
-    /// visual navigation instructions for the user.
+    /// Opens the root of the Settings app after the app has saved the profile.
+    /// iOS has no public URL for the DNS screen, so this is a best-effort use
+    /// of the undocumented root Settings URL. The user must still enable
+    /// Adless in Settings.
     @MainActor
     func openSystemDNSSettings() {
-        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-        UIApplication.shared.open(url)
+        let settingsURLs = [
+            "App-Prefs:",
+            "prefs:"
+        ].compactMap(URL.init(string:))
+
+        openNextSettingsURL(settingsURLs, at: 0)
+    }
+
+    @MainActor
+    private func openNextSettingsURL(_ urls: [URL], at index: Int) {
+        guard urls.indices.contains(index) else { return }
+
+        UIApplication.shared.open(urls[index], options: [:]) { [weak self] didOpen in
+            guard !didOpen else { return }
+            Task { @MainActor [weak self] in
+                self?.openNextSettingsURL(urls, at: index + 1)
+            }
+        }
     }
 
     @MainActor
