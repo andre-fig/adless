@@ -1,46 +1,86 @@
-# App Privacy questionnaire notes
+# App Privacy: inventário para revisão
 
-This is the review packet for the App Store Connect App Privacy section. It is intentionally a guide, not a claim that the questionnaire has already been saved: the current App Store Connect API does not expose this form.
+Última verificação documental: 2026-09-04, código local. **Implemented** descreve
+o que o código faz; **Pending** identifica validação do binary, dos provedores
+ou do formulário. Nenhuma resposta do App Store Connect foi consultada ou salva.
+Este documento é o pacote de evidências para preencher o questionário, não uma
+afirmação de que as opções abaixo já foram aprovadas.
 
-Official Apple instructions: [Manage app privacy](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/).
+A Apple exige considerar dados do app e parceiros e distingue processamento
+transitório de retenção, finalidade e vínculo com a pessoa/dispositivo. Ausência
+de conta não basta para declarar dados sem vínculo. Aplicar os critérios de
+[App Privacy Details](https://developer.apple.com/app-store/app-privacy-details/)
+ao inventário real antes de salvar o formulário.
 
-## Recommended answers for the current binary
+## Evidências do código
 
-- Data collection: **Yes — diagnostics and aggregate app-usage statistics.**
-- Diagnostics: crash data, performance data, and other technical diagnostics sent to Sentry to improve reliability.
-- App usage statistics: an aggregate blocked total associated with an internal installation identifier; no domains, DNS packets, IP addresses, or query history. The service stores only one-way hashes of device-bound DNS/statistics credentials.
-- Tracking: **No**.
-- Data linked to the user: **Not linked to the user**; Adless does not create an account, set a Sentry user identity, or send custom identifiers.
-- Account creation or login: **None**.
-- Advertising or analytics SDK: **None**. Sentry is used only for crash and performance diagnostics.
-- Browsing history and DNS queries: **Not collected or retained as application
-  history by Orbe Works or sent to Sentry**. All DNS selected for Adless passes
-  through the Adless HTTPS service; blocked names are not sent to an upstream,
-  and permitted queries are sent to Cloudflare DNS or Quad9 solely to obtain DNS
-  answers.
-- Purchases: StoreKit presents the App Store subscription purchase flow; payment and subscription management are handled by Apple, not by an Adless account or backend.
+| Componente | Implemented: tratamento observado | Pending antes de responder |
+| --- | --- | --- |
+| iOS / Keychain | UUID interno, dois bearers, IDs de transação e nonces atual/pendente em blob ThisDeviceOnly | Não caracterizar token como anonimato ou vínculo criptográfico ao dispositivo; conferir comportamento real após reinstalação |
+| iOS / cache | Snapshot de assinatura e contadores numéricos em Application Support | Não confundir cache no dispositivo com retenção no backend |
+| Autorização Worker | Recebe JWS de transação/AppTransaction, UUID e nonce; na migração, prova com credenciais anteriores | Classificar identificadores e dados de compra usados para funcionalidade/antifraude |
+| KV `AUTH` | Registros de instalação e assinatura, produto/ambiente/status/prazos, IDs StoreKit, índices/replay e hashes de tokens/nonce | Não declarar que só existem hashes e um total; confirmar retenção e controles remotos |
+| Durable Objects | `STATS` guarda agregado; `AUTHORITY` guarda autoridade de assinatura e ordenação de eventos | Considerar todos os objetos persistidos, não apenas o contador |
+| Resolução DNS | Worker processa consultas; permitidas seguem para Cloudflare DoH ou Quad9. Não há histórico de consultas em KV/DO | Cache de respostas e infraestrutura podem reter dados temporários/metadados; verificar políticas e configuração efetiva |
+| Sentry | Crash/performance e eventos técnicos; sem identidade de usuário definida pelo app | Rever SDK incluído no binary, identificadores/metadados padrão e configuração do projeto Sentry |
+| Railway | Landing estática e páginas legais; o app atual não baixa manifesto/blocklist | Rever metadados do acesso ao site separadamente; não descrevê-lo como downloader iOS |
 
-Adless makes HTTPS requests to the public Railway landing service to retrieve a
-manifest and a static list. It also sends DNS wire queries over HTTPS to the
-Adless DNS service, which applies the blocklist and forwards permitted queries
-to Cloudflare DNS or Quad9. The service stores only aggregate blocked totals by
-internal installation identifier, not domains or query history. These requests are
-not associated with an account and are not used for tracking. Cloudflare may
-process technical request metadata under its infrastructure/logging systems;
-the Adless application does not enable request logs or send DNS wire data,
-domains, URLs, IP addresses, or either credential to Sentry. Sentry is
-configured with default PII collection disabled, network tracking disabled, and
-no screenshots or view hierarchy attachments. Recheck these answers against
-the final binary and the providers' current privacy terms before submitting.
+Fontes: [InstallationTokenStore](../apps/ios/Adless/Services/InstallationTokenStore.swift),
+[clientes HTTP](../apps/ios/Adless/Services/DNSStatsAPIClient.swift),
+[authorization.ts](../apps/dns-worker/src/authorization.ts),
+[stats.ts](../apps/dns-worker/src/stats.ts),
+[SentryConfiguration](../apps/ios/Adless/Services/SentryConfiguration.swift).
+Arquitetura e dados persistidos: [ARCHITECTURE](ARCHITECTURE.md);
+modelo de ameaças e privacidade: [SECURITY](SECURITY.md);
+limites de cache/logs remotos: [dns-cloud](dns-cloud.md).
 
-## Privacy policy
+## Como classificar sem inventar garantias
 
-Use:
+- **Implemented:** há diagnósticos, agregado de uso e metadados persistidos de
+  autorização. Não selecionar “nenhuma coleta” com base na ausência de login.
+- **Pending:** revisar as categorias de diagnósticos, uso, identificadores e
+  compras contra os campos atuais da Apple. Pagamento/cartão é tratado pela
+  Apple; o backend Adless ainda armazena informações de assinatura/transação.
+- **Pending:** avaliar vínculo por categoria; UUID da instalação, relação com
+  transações e hashes associados permitem correlação. “Not linked to the user”
+  não é conclusão demonstrada pelo código. Finalidade observada é funcionalidade
+  e confiabilidade; não confundir essa classificação com rastreamento publicitário.
+- **Implemented:** não há conta, login, SDK de anúncios ou código de associação
+  para publicidade no app. **Pending:** confirmar também práticas dos parceiros
+  antes de marcar “Tracking: No” como resposta final.
+- **Implemented:** não há histórico de navegação/consultas em KV ou DO; isso não
+  significa que nenhum QNAME ou pacote passe pela infraestrutura. O cache DNS
+  contém respostas temporárias. Token DNS no path e pacote no parâmetro de GET
+  DoH tornam URL completa sensível. Cloudflare e os upstreams processam dados
+  para resolver consultas; confirmar retenção/logs remotos antes de responder
+  sobre browsing history e metadados.
 
-<https://landing-production-9feb.up.railway.app/privacy>
+`AdlessSentry.start()` desabilita PII padrão, network tracking/breadcrumbs,
+failed requests, auto breadcrumbs, screenshots, view hierarchy e tracing de
+interações; traces têm amostragem configurada. `capture` sanitiza URLs, hosts e
+IPs da descrição. Isso não prova ausência universal de dados identificáveis:
+`SubscriptionManager` também usa `os_log` com descrições de erro, e o SDK e o
+projeto remoto precisam de revisão. Nunca introduzir credenciais/JWS/nonce nos
+erros, tags, logs ou comandos exibidos. **Pending:** confirmar descarte de IP,
+retenção e acesso ao projeto Sentry. O upload opcional de dSYM inclui fontes,
+conforme [ios-release](ios-release.md).
 
-The policy is part of the landing-page build and is also recorded in `docs/app-store-submission.md`.
+## Divergências de políticas e checklist final
 
-## Important verification
+**Pending no produto:** `SubscriptionView.swift` e o conteúdo legal da landing
+ainda descrevem persistência como apenas agregado e hashes, sem todo o estado de
+autorização/assinatura. O catálogo PT/EN/ES contém chave legal anterior que não
+corresponde ao literal atual do Swift. A política web também atribui ao app um
+download de blocklist que não existe. Essas divergências foram registradas;
+nenhum texto do código-fonte foi alterado nesta auditoria.
 
-Before saving the questionnaire, compare these notes with the final App Store Connect questions and the production binary. Also verify in Sentry project settings that IP-address storage is disabled if that is the intended privacy posture. If a future version adds analytics, login, or any account feature, this questionnaire must be reviewed again.
+Antes da submissão, conferir política pública, texto embutido e traduções com
+este inventário e o binary assinado, revisar definições/políticas vigentes dos
+provedores e só então salvar App Privacy mediante autorização. Registrar evidência
+de validação sem payloads, dados de conta, identificadores de instalação ou
+credenciais. Não há endpoint de exclusão de credenciais no Worker; não prometer
+que desinstalar o app apaga estado no backend.
+
+URL candidata da Privacy Policy e metadata: [app-store-submission](app-store-submission.md).
+Instruções oficiais para salvar respostas:
+[Manage app privacy](https://developer.apple.com/help/app-store-connect/manage-app-information/manage-app-privacy/).

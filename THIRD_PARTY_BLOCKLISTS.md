@@ -1,19 +1,29 @@
-# Third-party blocklists
+# Fontes de blocklist de terceiros
 
-The MVP uses one enabled source: **OISD Small**.
+Fonte canônica de atribuição. O funcionamento do pipeline pertence a
+[tools/blocklists/README.md](tools/blocklists/README.md).
 
-- Original source: <https://small.oisd.nl/>
-- Project homepage: <https://oisd.nl>
-- Maintainer: Stephan van Ruth
-- License: GNU General Public License v3.0, as published by OISD at <https://github.com/sjhgvr/oisd/blob/main/LICENSE>
-- Included-list information: <https://oisd.nl/includedlists/small>
+**Implemented:** [sources.json](tools/blocklists/sources.json) habilita uma
+única fonte, **OISD Small**, em [small.oisd.nl](https://small.oisd.nl/), formato
+`adblock`. O projeto de origem é [OISD](https://oisd.nl/); a relação das listas
+incluídas é publicada em [included lists / small](https://oisd.nl/includedlists/small).
 
-The source is an Adblock Plus filter list. The generator extracts only exact
-domain rules in the `||domain^` form and publishes one canonical ASCII/Punycode
-domain per line. Executable filter syntax is never shipped to or evaluated by
-the iOS app.
+**Verified:** o arquivo [LICENSE do repositório oficial OISD](https://github.com/sjhgvr/oisd/blob/main/LICENSE)
+publica GNU General Public License versão 3. Isso identifica o texto da licença
+consultado; não estabelece, por si só, a conformidade comercial do Adless.
 
-The OISD license and the paid App Store distribution model must be reviewed by
-the project owner/legal counsel before commercial release. Any future source
-must be documented here with its original URL, maintainer, and license before it
-is enabled in `tools/blocklists/sources.json`.
+**Pending:** a documentação anterior atribuía a manutenção a Stephan van Ruth.
+Essa atribuição histórica é preservada aqui, mas não foi reconfirmada nas páginas
+consultadas. Confirmar o responsável e os termos aplicáveis à fonte distribuída
+antes de atualizar a atribuição pública.
+
+O gerador extrai domínios de regras `||domain^` e também aceita domínios simples,
+produzindo texto ASCII/Punycode ordenado. Não transporta sintaxe executável nem
+inclui a lista no app iOS: distribui artefatos estáticos pela landing e uma cópia
+embutida no Worker.
+
+**Pending:** o responsável pelo produto deve concluir a revisão da licença,
+atribuições e obrigações de redistribuição para a publicação comercial na App
+Store. Não existe comprovação dessa revisão no código. Antes de habilitar nova
+fonte, registrar aqui URL original, responsável, licença e decisão de revisão;
+preservar a proveniência e manter a saída reproduzível.

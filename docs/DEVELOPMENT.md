@@ -1,89 +1,119 @@
-# Desenvolvimento
+# Desenvolvimento e automação
 
-## Requisitos
+Fonte canônica de setup, scripts e efeitos das ferramentas. Para arquitetura,
+leia [ARCHITECTURE.md](ARCHITECTURE.md); a ordem completa de validação e cobertura
+está em [TESTING.md](TESTING.md). Resultados datados ficam em
+[REPOSITORY_AUDIT.md](REPOSITORY_AUDIT.md), sem transformar o estado local em remoto.
 
-- macOS com Xcode e iPhone para validar o DNS efetivo;
-- Node.js 20+ e npm;
-- Python 3.12+ para o pipeline de blocklist;
-- conta Cloudflare somente para deploy do Worker.
+## Requisitos e instalação
 
-## iOS
+- Node.js 20+ conforme [package.json](../package.json); npm declarado em
+  `packageManager`. O lockfile da raiz é a referência para JavaScript.
+- Python 3.12 é a versão declarada pelos workflows; o pipeline usa biblioteca
+  padrão e não tem instalação pip.
+- macOS/Xcode para build e XCTest do iOS; iPhone para DNS real. Schemes,
+  configurações, assinatura e diferenças StoreKit pertencem ao
+  [README iOS](../apps/ios/README.md).
+- Credenciais Cloudflare, Railway e Apple não são requisito para lint,
+  typecheck, testes mockados e build de simulador sem assinatura.
 
-O projeto `apps/ios/Adless.xcodeproj` tem os targets `Adless` e `AdlessTests`.
-Os schemes são:
-
-| Scheme | Configuração | Bundle ID | Endpoint | Nome |
-| --- | --- | --- | --- | --- |
-| `Adless Dev` | `Debug Dev` / `Release Dev` | `com.orbeworks.adless.dev` | `https://adless-dns.adless-production.workers.dev` | Adless Dev |
-| `Adless` | `Debug` / `Release` | `com.orbeworks.adless` | `https://adless-dns.adless-production.workers.dev` | Adless |
-
-O app requer a capability Network Extension `dns-settings`. Não há target
-adicional, embedding, App Group ou perfil gerido. O App ID e os profiles de
-ambos os ambientes devem ser atualizados no Apple Developer portal antes de um
-archive assinado.
-
-```sh
-xcodebuild -project apps/ios/Adless.xcodeproj -scheme Adless \
-  -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build
-xcodebuild -project apps/ios/Adless.xcodeproj -scheme AdlessTests \
-  -destination 'platform=iOS Simulator,name=iPhone 16' CODE_SIGNING_ALLOWED=NO test
-```
-
-`NEDNSSettingsManager` persiste a configuração DoH e carrega o estado real.
-`saveToPreferences` não força a ativação: o usuário precisa aprovar/habilitar
-Adless em Ajustes. O app reflete `isEnabled`, trata remoção manual e atualiza ao
-voltar ao primeiro plano. A proteção continua quando o app não está aberto,
-pois é gerida pelo iOS.
-
-## StoreKit
-
-O código preserva os produtos `com.orbeworks.adless.pro.monthly` e
-`com.orbeworks.adless.pro.yearly`, no mesmo Subscription Group. Trial de sete
-dias e preços são configuração do App Store Connect. O arquivo
-`Adless.storekit` serve apenas ao desenvolvimento; TestFlight usa Sandbox e a
-versão publicada usa os produtos reais.
-
-## Worker
+Em setup autorizado de uma cópia de trabalho:
 
 ```sh
 npm ci
-npm run build:dns-worker
-npm run test:dns-worker
-python3 tools/dns-worker/prepare_blocklist.py
-npx --yes wrangler@4 deploy --config apps/dns-worker/wrangler.toml
 ```
 
-O Worker exige `dns-token` no caminho DoH e `stats-token` no Bearer da API de
-stats. A autorização server-side valida o JWS do StoreKit 2 e mantém somente
-hashes no KV da Cloudflare. O Worker usa apenas HTTPS para upstream e não é um
-proxy de tráfego. Existe
-somente o Worker remoto de produção, publicado em `workers.dev`; os testes
-locais usam mocks. Deployment, rollback, secrets, métricas, custo e incidentes
-estão em [`dns-cloud.md`](dns-cloud.md).
+Esse comando instala dependências e executa `prepare`, que chama
+[install-git-hooks.sh](../tools/dev/install-git-hooks.sh) e escreve
+`core.hooksPath=.githooks` na configuração Git local. O script pula essa escrita
+se `CI=true`. `npm run setup:hooks` faz a mesma configuração explicitamente.
+Não executar instalação ou configuração de hooks numa tarefa restrita a
+Markdown. `npm install` pode modificar o lockfile; não usá-lo como substituto
+silencioso do setup reproduzível.
 
-## Blocklist
+A raiz declara somente `apps/landing-page` como workspace. Os scripts do Worker
+usam `npm --prefix apps/dns-worker` e compilador de `node_modules` da raiz; o
+Worker não é um segundo workspace. As dependências JWS/X.509 também estão no
+`package.json` da raiz. Não deduzir que o pacote do Worker se instala sozinho.
 
-O pipeline usa apenas a biblioteca padrão Python. As fontes ficam em
-`tools/blocklists/sources.json`, com allowlist em `allowlist.txt`. A saída
-publicada é `apps/landing-page/public/blocklists/`; a saída para o Worker é
-`apps/dns-worker/data/`.
+## Comandos e efeitos locais
 
-```sh
-python3 -m unittest discover -s tools/blocklists/tests -v
-python3 tools/blocklists/generate_blocklist.py --sync-worker
-python3 tools/dns-worker/prepare_blocklist.py
-python3 tools/blocklists/validate_blocklist.py
-```
+Comandos abaixo partem da raiz. **Implemented:** nomes e encaminhamentos
+confirmados nos arquivos `package.json`.
 
-Nunca edite artefatos gerados. Um aumento acima do limite precisa de revisão e
-de `--allow-large-change`. O workflow gera em candidato, valida e permite
-rollback para o deployment anterior.
+| Comando | Escopo e efeito |
+| --- | --- |
+| `npm run dev:landing` | Servidor Vite local da landing |
+| `npm run lint` | ESLint somente da landing, sem `--fix` |
+| `npm run typecheck` | TypeScript app e ferramentas da landing, `--noEmit` |
+| `npm run build` / `npm run build:landing` | Build Vite da landing; gera `apps/landing-page/dist/` |
+| `npm run preview:landing` | Serve a build existente da landing |
+| `npm run build:dns-worker` | TypeScript do Worker com `noEmit`; não cria bundle de deploy nem publica |
+| `npm run test:dns-worker` | Compila testes em `apps/dns-worker/dist-test/` e usa `node --test` |
+| `npm run prepare:dns-blocklist` | Regrava texto/metadata da blocklist no Worker |
+| `python3 -B -m unittest discover -s tools/blocklists/tests -v` | Testes Python, temporários fora do repositório; `-B` evita bytecode |
+| `python3 -B tools/blocklists/validate_blocklist.py` | Lê e valida artefatos existentes, sem regenerar |
 
-## Hooks e higiene
+Não há `npm test` na raiz, suíte automatizada da landing nem comando npm para
+XCTest. Não usar `npm run build` como prova de compilação de todo o monorepo.
+O gerador de blocklist acessa a rede e altera artefatos; comandos e limites
+estão no [pipeline](../tools/blocklists/README.md). Build/archive/export Xcode
+produzem arquivos e podem acessar a rede; `-allowProvisioningUpdates` também
+pode alterar profiles remotos, exigindo autorização para essa operação.
 
-Depois de clonar, execute `npm run setup:hooks`. O pre-commit permanece rápido e
-faz as validações de diff, sintaxe e lint aplicáveis. O pre-push roda os checks
-direcionados: XCTest para qualquer alteração em `apps/ios/**`, testes e build do
-Worker para alterações de edge, testes de blocklist e typecheck/build da landing
-page quando aplicável. Não use segredos no código, não registre domínio, pacote
-DNS, token ou IP e não faça alterações em produção sem revisão.
+## Hooks existentes
+
+[common.sh](../.githooks/common.sh) contém os checks chamados pelos hooks.
+Eles ajudam o desenvolvimento local, mas não constituem a CI inteira.
+
+| Hook | O que realmente executa |
+| --- | --- |
+| [pre-commit](../.githooks/pre-commit) | `git diff --cached --check`; actionlint ao tocar workflows; sintaxe Python em blocklists/appstore/dns-worker; lint quando landing ou pacote/lock da raiz entra no stage |
+| [pre-push](../.githooks/pre-push) | Testes Python blocklists; testes/build Worker; typecheck/build landing; XCTest para iOS; testes offline de distribuição/allowlist e actionlint para workflows/scripts/exports/hooks; lockfile seleciona Worker e landing |
+
+O pre-push escolhe o primeiro simulador iPhone disponível e usa DerivedData
+em diretório temporário. Num ref remoto novo, inspeciona todos os caminhos da
+árvore. Alterações de Markdown dentro de aplicações podem selecionar checks
+pelo caminho mesmo sem mudança de código. Os checks leem o working tree,
+não uma cópia isolada do conteúdo staged: preserve e relate alterações locais.
+
+**Pending:** pre-commit não cobre sintaxe de todos os scripts Python/shell;
+pre-push não inclui lint da landing nem verifica IPA/archive, e
+mudanças só em `tools/blocklists` não selecionam automaticamente a suíte Worker.
+Seguir [TESTING.md](TESTING.md) para dependências entre áreas. Não rodar hooks
+via commit/push apenas para validar: chamar os comandos relevantes diretamente.
+
+## Workflows declarados e limites
+
+**Implemented:** todos os cinco workflows têm `concurrency`,
+`cancel-in-progress`, timeout e permissões de conteúdo explícitas. Quatro usam
+`contents: read`; atualização de blocklist usa `contents: write`.
+Não há `pull_request` nem job de testes geral nesses arquivos. Os YAMLs não
+referenciam GitHub Environments com aprovação; proteções e secrets remotos
+permanecem **Pending** até inspeção autorizada do estado remoto.
+
+| Workflow | Gatilho declarado | Ação e lacuna observável |
+| --- | --- | --- |
+| [deploy-dns-worker.yml](../.github/workflows/deploy-dns-worker.yml) | `main` com filtros de caminho; manual | Prepara/valida lista, compila e publica Worker. Não executa suíte Worker nem smoke após deploy. Filtros não incluem pacote/lock da raiz. Runbook: [dns-cloud.md](dns-cloud.md). |
+| [deploy-landing.yml](../.github/workflows/deploy-landing.yml) | `main` com filtros de caminho; manual | Build e envio Railway, sem lint/typecheck/smoke. Filtros não incluem pacote da raiz, Tailwind, PostCSS nem todos os assets públicos. CLI recebe `apps/landing-page --path-as-root`; confirmar ambiente de instalação remoto separadamente. |
+| [update-blocklist.yml](../.github/workflows/update-blocklist.yml) | Domingo 03:17 UTC; manual | Testa/gera/valida e faz commit/push de seis artefatos; não publica Worker ou Railway diretamente. |
+| [testflight-ios.yml](../.github/workflows/testflight-ios.yml) | `develop` e `beta` com filtros; manual nas mesmas branches | `develop`: TestFlight interno, IPA internal-only. `beta`: externo com beta review. Ambas validam IPA, autorizam o número no Worker e fazem upload. Não executa XCTest. |
+| [release-ios.yml](../.github/workflows/release-ios.yml) | `main` com filtros; manual na `main` | Preflight da versão, archive/export, validação/upload, espera processamento e `attach-submit` com liberação automática para produção após aprovação Apple. Não executa XCTest. |
+
+Os dois workflows iOS usam o scheme `Adless`, não `Adless Dev`; detalhes,
+comandos App Store Connect e diferenças entre upload/revisão/disponibilidade
+estão em [ios-release.md](ios-release.md). `tools/appstore/appstore_connect.py`
+possui comandos que escrevem no App Store Connect; `tools/sentry/upload-dsyms.sh`
+envia dados remotamente. Não chamar esses scripts como smoke local genérico.
+
+**Pending:** o workflow da blocklist usa checkout sem token alternativo e não
+faz dispatch dos deploys. Com `GITHUB_TOKEN`, o push do workflow não dispara
+novos workflows de `push`; portanto commit gerado não comprova atualização da
+edge/site. Confirmar execução e deployment separadamente, conforme a
+[documentação oficial de gatilhos GitHub](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow).
+
+Não disparar workflows, deploy, upload, submissão, commit ou push sem
+explicitamente autorizar seus efeitos. Um futuro push autorizado a `main` ou
+`develop` pode acionar publicação conforme os filtros acima; revisar isso antes
+da operação. Datas de execução, IDs de deployment e verificações de secrets
+não devem ser inferidos da existência do YAML.

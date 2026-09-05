@@ -1,85 +1,93 @@
-# Preparação da submissão do Adless
+# Preparação manual da submissão
 
-Última revisão do código: 26/08/2026.
+Última verificação documental: 2026-09-04. **Implemented:** identidades e URLs
+abaixo estão no código/configuração citados. **Pending:** confirmação de todos
+os valores efetivamente salvos no App Store Connect e do binary distribuído.
+Não houve consulta autenticada ao portal nesta auditoria.
+
+Este documento concentra metadata e texto de revisão. Capability, profiles,
+produtos/trial, Sandbox, notificações V2, archive/IPA e gates de distribuição têm
+fonte canônica em [ios-release](ios-release.md); não execute publicação como
+parte de uma revisão documental.
 
 ## Identidade
 
-- App Store Connect app ID: `6803552143`;
-- Bundle ID: `com.orbeworks.adless`;
-- SKU: `ADLESS-IOS-ORBEWORKS-001`;
-- Team ID: `J728Z86KY5`;
-- nome: `Adless: Clean Web`;
-- versão configurada: `1.0`.
+| Item | Fonte e estado |
+| --- | --- |
+| Bundle ID `com.orbeworks.adless` | **Implemented:** [Production.xcconfig](../apps/ios/Configurations/Production.xcconfig) |
+| App ID numérico ASC | **Implemented:** `ASC_APP_ID` dos [workflows iOS](../.github/workflows/release-ios.yml) e `APPLE_APP_ID` do [Worker](../apps/dns-worker/wrangler.toml); conferir correspondência no portal |
+| Team ID | **Implemented:** `DEVELOPMENT_TEAM` do [projeto](../apps/ios/Adless.xcodeproj/project.pbxproj) e `teamID` de [ExportOptions.plist](app-store/ExportOptions.plist); verificar profile/certificado reais |
+| Versão | **Implemented:** `MARKETING_VERSION` no projeto; o build number do workflow é escolhido dinamicamente |
+| Nome comercial `Adless: Clean Web` | **Pending:** registro documental anterior; não confirma o nome salvo no portal. O display name local é `Adless` |
+| SKU `ADLESS-IOS-ORBEWORKS-001` | **Pending:** registro documental anterior, sem confirmação em configuração funcional ou evidência remota |
 
-## URLs públicas
+IDs não secretos de configuração devem ser obtidos da fonte acima, sem copiar
+identificadores de instalações, testers ou transações para o relatório.
 
-- <https://landing-production-9feb.up.railway.app/>;
-- <https://landing-production-9feb.up.railway.app/privacy>;
-- <https://landing-production-9feb.up.railway.app/terms>;
-- <https://landing-production-9feb.up.railway.app/support>;
-- <https://landing-production-9feb.up.railway.app/blocklists/manifest.json>.
+## URLs públicas esperadas
 
-As páginas são estáticas. O app não tem conta, login ou cadastro.
+Origem configurada da landing: `https://landing-production-9feb.up.railway.app`.
+As rotas existem na [aplicação web](../apps/landing-page/src/App.tsx);
+existência local não confirma conteúdo publicado ou acessibilidade:
 
-## StoreKit
+| Finalidade | URL candidata para conferir antes da submissão |
+| --- | --- |
+| Marketing | [Landing](https://landing-production-9feb.up.railway.app/) |
+| Privacy Policy | [Privacidade](https://landing-production-9feb.up.railway.app/privacy) |
+| Termos | [Termos](https://landing-production-9feb.up.railway.app/terms) |
+| Support URL | [Suporte](https://landing-production-9feb.up.railway.app/support) |
+| Artefato público, não formulário Apple | [Manifesto](https://landing-production-9feb.up.railway.app/blocklists/manifest.json) |
 
-O grupo `Adless Pro` contém:
+As páginas são estáticas; não há conta, login ou cadastro no app. O app embute
+seus textos legais em `SubscriptionView.swift`; não busca manifesto ou lista
+nessas URLs. Conteúdo da landing e do app precisa representar a mesma prática
+real. Divergências de persistência e privacidade:
+[questionário](app-store-privacy-questionnaire.md).
 
-| Plano | Product ID | Oferta |
-| --- | --- | --- |
-| Mensal | `com.orbeworks.adless.pro.monthly` | 7 dias para novos assinantes elegíveis |
-| Anual | `com.orbeworks.adless.pro.yearly` | 7 dias para novos assinantes elegíveis |
+## Checklist do portal
 
-Preços, disponibilidade, trial, screenshots de revisão e contratos são
-configuração externa do App Store Connect e não são alterados pelo código.
+Cada item é **Pending** até verificação manual documentada. Salvar ou modificar
+qualquer campo remoto exige autorização explícita.
+
+- Conferir identidade, versão, categoria, classificação etária, territórios,
+  disponibilidade e opção de lançamento; preparar metadata e screenshots que
+  correspondam ao binary e aos idiomas suportados.
+- Conferir contatos de suporte/revisão, acordos, informações fiscais/bancárias
+  exigidas e URLs públicas funcionando. Não registrar dados pessoais de conta
+  ou credenciais de teste na documentação versionada.
+- Conferir produtos, grupo, oferta/elegibilidade, preços e informações de
+  revisão de assinaturas conforme [ios-release](ios-release.md).
+- Conferir Version 2 e URLs Sandbox/Production de Server Notifications,
+  capacidade DNS Settings e profiles do build conforme o mesmo runbook.
+- Revisar App Privacy com o [inventário atual](app-store-privacy-questionnaire.md),
+  inclusive autorização StoreKit persistida e políticas efetivas dos provedores.
+- Conferir declaração de criptografia no portal contra o artefato final.
+  **Implemented:** `Info.plist` declara `ITSAppUsesNonExemptEncryption=false`;
+  isso é uma declaração do projeto, não aprovação Apple ou conclusão jurídica.
+- Executar os gates local → artefato assinado → Sandbox → TestFlight interno →
+  externo → App Store; incluir testes de trial inelegível, perda de acesso,
+  recuperação de credenciais e indisponibilidade DNS/KV.
+- Selecionar o build processado correto. Upload anterior não comprova o binary
+  atual; sucesso do workflow não comprova publicação pública.
 
 ## Texto de revisão sugerido
 
+Ajustar somente depois de testar o build candidato; não salvar no portal sem
+autorização. A orientação abaixo descreve o fluxo implementado, sujeito aos
+gates e limitações do [README iOS](../apps/ios/README.md).
+
 > Adless configures Apple’s encrypted DNS settings to block known ad and tracker
 > domains. Only DNS queries use the Adless service; websites, videos, messages,
-> and downloads go directly to their destinations. No account is required. To
-> test the main flow, install the app, complete a Sandbox subscription, tap the
-> central button, and approve/enable Adless in the iOS DNS settings if asked.
-> Return to the app to see the protected state. The same button disables the
-> configuration. Restore Purchases is available in the subscription sheet.
+> and downloads go directly to their destinations. No account is required.
+> Complete an Apple Sandbox subscription or restore an existing entitlement,
+> then use the central button to install DNS protection. Approve and enable
+> Adless in Settings if requested. The app provides the navigation steps because
+> iOS does not provide a public shortcut to the specific DNS screen. Return to
+> Adless to check the protection state. The central button removes the
+> configuration when protection is active. Restore Purchase is available in the
+> subscription sheet; terms and privacy information are available there too.
 
-Não prometa anonimato, ocultação de IP ou que uma configuração Apple sempre
-prevalecerá sobre Private Relay, outra VPN, outro perfil DNS ou política da
-rede.
-
-## Build e criptografia
-
-```sh
-xcodebuild archive \
-  -project apps/ios/Adless.xcodeproj \
-  -scheme Adless \
-  -configuration Release \
-  -destination 'generic/platform=iOS' \
-  -archivePath /tmp/Adless.xcarchive
-sh tools/ios/verify_archive.sh /tmp/Adless.xcarchive
-```
-
-O bundle precisa ser assinado com `com.apple.developer.networking.networkextension`
-contendo `dns-settings`. O archive deve conter apenas `Adless.app`, sem
-extensão ou App Group. Após exportar, rode `tools/ios/verify_ipa.sh` antes da
-validação/upload Apple. `ITSAppUsesNonExemptEncryption` permanece `false` para
-o uso de HTTPS do sistema e SHA-256, sem criptografia proprietária.
-
-Antes do upload, no Apple Developer, mantenha no App ID apenas a capability
-`dns-settings` necessária para este target e remova capabilities antigas de
-DNS Proxy, Packet Tunnel e App Groups. Regenere os profiles depois dessa
-alteração. A lista de capabilities autorizadas em um profile antigo não é o
-mesmo que o entitlement efetivo extraído por `codesign`, mas um profile antigo
-não deve ser usado para distribuição.
-
-O build anterior registrado no App Store Connect não é evidência do binary
-atual; cada release deve repetir archive, inspeção de entitlements e inspeção
-do IPA. Sem Team/profile válidos no ambiente local, só é possível provar
-compilação e layout sem assinatura.
-
-## Privacidade
-
-Use <https://landing-production-9feb.up.railway.app/privacy> e confira a seção
-[`docs/app-store-privacy-questionnaire.md`](app-store-privacy-questionnaire.md)
-contra o binary e as políticas atuais da Apple, Cloudflare e Quad9. A alteração
-para DNS Cloud deve ser refletida na resposta de App Privacy antes da submissão.
+Não prometer anonimato, ocultação de IP, ausência de processamento de metadados,
+trial para assinantes inelegíveis ou prevalência sobre Private Relay, outra VPN,
+DNS próprio de um app ou política da rede. Não oferecer bypass de autorização
+para revisão: validar a política Sandbox com o build candidato.

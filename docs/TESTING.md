@@ -1,126 +1,178 @@
-# Testes
+# Testes e critérios de validação
 
-## Suite local
+Este é o roteiro canônico de testes. **Implemented** significa teste existente;
+**Verified** deve identificar uma execução e seu ambiente; **Pending** identifica
+validação ainda necessária. Resultados desta auditoria ficam no
+[relatório operacional](REPOSITORY_AUDIT.md), não são garantia da próxima revisão.
+
+## Ordem oficial
+
+Depois de conferir o workspace e as instruções de cada escopo:
 
 ```sh
 git diff --check
-python3 -m unittest discover -s tools/blocklists/tests -v
+python3 -B -m unittest discover -s tools/blocklists/tests -v
 npm run test:dns-worker
 npm run lint
 npm run typecheck
 npm run build:landing
 npm run build:dns-worker
+python3 -B tools/blocklists/validate_blocklist.py
+git status --short --branch
 ```
 
-Os testes do Worker usam mocks e cobrem:
+Pré-requisitos e instalação estão em [DEVELOPMENT](DEVELOPMENT.md). Não há
+`npm test` na raiz. `lint` e `typecheck` cobrem somente a landing;
+`build:dns-worker` é `tsc --noEmit`, não bundle/deploy. `test:dns-worker` compila
+para `apps/dns-worker/dist-test/` e executa `node --test`; Vite gera `dist/`.
+Mudanças somente Markdown exigem validar links, caminhos, comandos, secrets e
+diff; não regenerar blocklists, instalar hooks ou produzir artefatos no repositório.
+Se testes complementares forem executados, direcione saídas para diretório temporário.
 
-- POST e GET RFC 8484, content type, tamanho, método e Base64URL;
-- uma pergunta, contagens, nomes comprimidos, EDNS0 e transaction ID;
-- A, AAAA, HTTPS, SVCB, CNAME, TXT, MX, NS, PTR, SOA e SRV;
-- bloqueio exato e por subdomínio, nome semelhante e allowlist;
-- ausência de upstream para bloqueados;
-- NXDOMAIN válido sem fallback;
-- timeout/falha de transporte, HTTP inválido, corpo vazio ou DNS inválido com
-  fallback Cloudflare→Quad9;
-- SERVFAIL quando os dois falham;
-- cache limitado ao TTL, concorrência, rate limiting e integridade da lista;
-- ausência de resolver em texto puro, domínio e IP em logs de aplicação.
+## Cobertura automatizada existente
 
-A suíte Python testa download HTTPS, normalização IDN, allowlist, ordenação,
-deduplicação, gzip determinístico, checksum, contagem e rejeição de alteração
-grande.
+| Componente / fonte | Implemented: o que os testes demonstram | O que não demonstram |
+| --- | --- | --- |
+| [Worker](../apps/dns-worker/test/worker.test.ts) | Wire DNS, autorização, migrações, estados e falhas com dependências simuladas | Runtime Cloudflare, propagação real do KV, credenciais Apple válidas ou versão publicada |
+| [Blocklists](../tools/blocklists/tests/test_blocklists.py) | Parsing/IDN, hosts/Adblock/domínios, deduplicação, allowlist, gzip/checksum, determinismo, rejeição de lista vazia/HTML/variação grande e matriz de domínios | Disponibilidade de download HTTPS real, integridade publicada e aceitabilidade de cada bloqueio |
+| [BlocklistTests.swift](../apps/ios/AdlessTests/BlocklistTests.swift) | Helpers de domínio, política de acesso/grace, formatter de oferta, persistência/contador, URLs/payload, gate de proteção e restore | Filtragem DNS no iPhone; elegibilidade real de oferta ou compra Apple |
+| [InstallationTokenStoreTests.swift](../apps/ios/AdlessTests/InstallationTokenStoreTests.swift) | Blob único, nonce persistido ao preparar a tentativa, retry após falha de commit, migração antiga e troca de tentativa pendente | POST integrado e acessibilidade real do Keychain após reboot/reinstalação |
+| [DNSSettingsManagerTests.swift](../apps/ios/AdlessTests/DNSSettingsManagerTests.swift) | Reload após save falhar; perfil antigo habilitado distinto do endpoint atual | Consentimento, instalação e seleção real do DNS pelo iOS |
+| Landing ESLint/TypeScript/Vite | Qualidade estática e compilação | Não há suíte própria de UI, navegação, acessibilidade ou E2E configurada |
 
-## XCTest e build
+### Worker: invariantes já exercitados
+
+A suíte usa KV em memória, DO simulado, relógio/fetch injetados e verificadores
+JWS substituídos na maioria dos testes de negócio. Preservar:
+
+- GET/POST, content type, tamanho/método, wire inválido, tipos A/AAAA/HTTPS/SVCB/
+  CNAME/TXT/MX/NS/PTR/SOA/SRV, ID, EDNS, matching exato/sufixos/IDN e concorrência.
+- Cache com expiração TTL, reescrita do ID e isolamento por instalação;
+  NXDOMAIN válido sem fallback; falha de transporte/content type/payload primário
+  com Quad9; falha de ambos com SERVFAIL; ausência de upstream em texto puro.
+- Token desconhecido recusado **antes** de DO e upstream;
+  papéis DNS/stats separados; ausência do secret de derivação não emite tokens.
+- Cancelamento válido até o fim pago; grace e billing retry; expiração,
+  reembolso e revogação em pass-through sem blocklist, cache DNS, stats ou
+  rate limit ativo; stats negado. São testes de política, não eventos Apple reais.
+- Retry exato recupera o par; nonce diferente na mesma transação é rejeitado;
+  schema v1 da mesma transação exige prova das duas credenciais; falha antes do commit KV conserva
+  credenciais anteriores; perda da resposta após commit permite recuperação.
+- Migração v1/v2 e autoridade legada para DO vazio; índice perdido em concorrência;
+  projeção KV antiga não desfaz revogação; evento de período anterior não vence
+  renovação; watermarks de transação/notificação independentes; `REFUND_REVERSED`,
+  `RESUBSCRIBE` e `BILLING_RECOVERY`; isolamento de Production/Sandbox.
+- KV indisponível: credencial recentemente conhecida degrada e desconhecida
+  não resolve. DO indisponível/timeout: conhecida resolve em pass-through;
+  stats/registro/notificação não obtêm autorização ativa.
+
+### Pending: lacunas que não podem ser tratadas como testes aprovados
+
+- JWS Apple válido com cadeia real: só há caso negativo do verificador real;
+  testes positivos de autorização injetam payloads verificados.
+- KV entre regiões, limites/concorrência no runtime Cloudflare, migrações e
+  notificações reais, failover real TLS/HTTP e interrupção dos provedores.
+- O teste `unknown tokens are rejected before cache, Durable Object, and upstream`
+  pretende aquecer o cache, mas não injeta `now` no Worker: a fixture de
+  assinatura já expirou perante o relógio real e a consulta inicial faz
+  pass-through. A asserção de uma chamada upstream não comprova cache populado.
+  Ajustar a fixture e comprovar cache ativo em tarefa de testes separada.
+- Vencimento exato da janela de dez minutos de reconhecimento: teste atual
+  avança 62 segundos; não cobre expiração completa dessa memória.
+- Timeout temporizado dos upstreams e circuit breaker: mock lança erro chamado
+  timeout, mas isso não testa o AbortController. O timeout do DO tem caso específico.
+- Resposta upstream vazia/HTTP não-2xx como casos dedicados, falha de stats e
+  concorrência de incrementos, e checksum SHA-256 adulterado no carregamento
+  assíncrono do Worker. O teste com “checksum” no nome altera a contagem.
+- HTTP real dos clientes Swift e ciclo completo StoreKit/Keychain/NetworkExtension.
+- Grace após `transaction.expirationDate`, divergência entre oferta anunciada e
+  elegibilidade e textos/localizações: limitações em [README iOS](../apps/ios/README.md).
+- Provar ausência de dados sensíveis exige inspeção de código e configurações
+  do provedor; a suíte não é um scanner completo de logs/privacidade.
+
+Mudanças no caminho DNS devem acrescentar a cobertura relevante **antes de serem
+aprovadas**, incluindo credencial desconhecida sem fail-open e continuidade de
+resolução de instalação conhecida após perda de assinatura/rotação. Não provoque
+falhas destruindo bindings/dados de produção. Use mocks e ambiente de teste
+previamente autorizado; lacunas atuais não são autorização para criar serviços.
+
+## XCTest e build iOS
+
+Escolha um simulador instalado com `xcodebuild -showdestinations` antes de testar:
 
 ```sh
+xcodebuild -project apps/ios/Adless.xcodeproj -scheme AdlessTests -showdestinations
 xcodebuild -project apps/ios/Adless.xcodeproj -scheme AdlessTests \
   -destination 'platform=iOS Simulator,name=iPhone 16' \
   -derivedDataPath /tmp/adless-ios-test-derived-data \
   CODE_SIGNING_ALLOWED=NO test
-
 xcodebuild -project apps/ios/Adless.xcodeproj -scheme Adless \
   -sdk iphonesimulator -configuration Debug \
-  -derivedDataPath /tmp/adless-ios-build \
-  CODE_SIGNING_ALLOWED=NO build
+  -derivedDataPath /tmp/adless-ios-build CODE_SIGNING_ALLOWED=NO build
 ```
 
-Os testes iOS verificam regras de domínio, StoreKit/política de acesso,
-persistência local do último total, não diminuição do contador e configuração
-de ambiente. A configuração nativa DoH usa `NEDNSSettingsManager`; sua
-ativação efetiva não pode ser simulada completamente no Simulator.
+Substitua o nome de exemplo por um destino listado que suporte o target mínimo
+do projeto Xcode. Os schemes são explicados no [runbook iOS](ios-release.md). Build/simulador não comprovam
+interceptação DNS. `Adless.storekit` simula StoreKit no Xcode; não comprova JWS
+aceito pela raiz Apple do Worker. TestFlight usa Sandbox; distribuição pública
+precisa repetir a validação com os produtos/ambiente reais.
 
-## Matriz manual em iPhone
+## Matriz manual no iPhone
 
-Depois de uma assinatura Sandbox ativa:
+**Pending até registrar evidências por build/dispositivo/ambiente.** Partir de
+uma assinatura de teste aceita e seguir o tutorial visual do
+[README iOS](../apps/ios/README.md). Não arquivar tokens, JWS, QNAMEs ou URLs
+completas nas evidências.
 
-1. toque em Ativar;
-2. aprove o Adless em Ajustes → Geral → VPN e Rede → DNS, quando o iOS solicitar;
-3. volte ao app e confirme que o estado só fica protegido quando
-   `isEnabled == true`;
-4. toque em Desativar e confirme que o estado real volta a desligado;
-5. remova a configuração manualmente em Ajustes e confirme que o app não diz
-   estar protegido;
-6. reinicie o iPhone e bloqueie a tela por várias horas;
-7. alterne Wi‑Fi, 5G e modo avião;
-8. teste IPv4/IPv6, Safari e outro navegador, além de apps que usam DNS;
-9. entre e saia do paywall, compre mensal/anual, restaure a compra, cancele e
-   deixe expirar;
-10. confirme que a API de stats atualiza ao entrar em primeiro plano e que a
-    falha da API preserva o último número sem erro invasivo;
-11. confira layouts de iPhone e iPad, tamanhos de texto e localizações.
-
-| Cenário | Resultado esperado |
+| Cenário | Critério objetivo de aprovação |
 | --- | --- |
-| Assinatura válida + configuração habilitada | UI protegida e DNS usa o endpoint salvo |
-| Configuração salva, mas não habilitada | UI desligada e instrução para Ajustes |
-| Configuração removida manualmente | UI desligada; Ativar pode recriar a configuração |
-| Assinatura expirada | configuração removida e UI não afirma proteção |
-| API de stats indisponível | último total permanece; DNS não é desligado |
-| Rede alterada/tela bloqueada | iOS decide a disponibilidade; app não precisa ficar aberto |
-| Modo avião/captive portal/DoH bloqueado | resolução pode falhar; sem fallback para DNS sem criptografia |
+| Compra mensal/anual, restauração e trial | StoreKit verificado, autorização Worker concluída, tokens persistidos; oferta só conforme elegibilidade; cancelamento não antecipa expiração |
+| Salvar sem habilitar em Ajustes | UI não indica proteção; mostra navegação manual para DNS |
+| Habilitar e voltar ao app | Estado real recarregado; endpoint atual + assinatura + credenciais + ausência de reconciliação pendente |
+| Desativar e remover manualmente | Nova leitura mostra desligado; Ativar pode recriar configuração |
+| Falha ao salvar novo endpoint com perfil antigo ativo | `staleEnabled`; UI não confirma proteção; token antigo resolve em pass-through |
+| Worker indisponível no startup/restore | UI não confirma autorização só por possuir tokens; retry reaproveita nonce persistido |
+| Resposta recebida, commit Keychain falha | Token não confirmado não é instalado; tenta remover perfil antigo; falha de remoção mostra orientação manual |
+| Expiração/reembolso/revogação | UI não confirma proteção após reconciliação; remoção tentada; perfil residual resolve sem bloqueio e stats é negado |
+| Cancelamento/grace/billing recovery | Comparar prazo pago, grace e evento recebido no Worker; testar startup após expiração da transação durante grace |
+| Stats indisponível | Último total mantido sem reduzir contador ou desligar DNS |
+| Reboot, horas com tela bloqueada, app encerrado | DNS selecionado pelo iOS continua operando; ler novamente ao abrir o app |
+| Wi-Fi/celular, IPv4/IPv6, modo avião e retorno | Recuperação de resolução nas redes suportadas; nenhuma afirmação de disponibilidade em modo avião |
+| Safari, outro navegador e apps | Bloqueio de domínio de teste conhecido e nome permitido resolvido; validar resposta DNS, não apenas animação da UI |
+| Private Relay, Limitar Rastreamento de Endereço IP, outra VPN/perfil e captive portal | Registrar interferências e seleção real do sistema; não prometer precedência |
+| PT/EN/ES, iPhone/iPad, texto ampliado | Tutorial e estados legíveis, sem chaves/literais não traduzidos |
 
-## Interferências conhecidas
+Perda de ambos os upstreams ou do Worker pode interromper DNS. O teste esperado
+é SERVFAIL/erro coerente e recuperação ao restabelecer o serviço, não internet
+ininterrupta nem fallback silencioso para DNS em texto puro.
 
-Teste com iCloud Private Relay, “Limitar Rastreamento de Endereço IP”, outro
-perfil DNS, outra VPN, DNS da rede e captive portal. O sistema pode selecionar
-outra configuração, bloquear DoH ou exigir novo consentimento. O Adless não
-promete prevalência, anonimato, ocultação de IP nem que o provedor não possa
-inferir destinos.
+## Smoke remoto e limites
 
-## Archive, entitlements e IPA
-
-O archive de distribuição requer Team, App ID e profile com
-`com.apple.developer.networking.networkextension = dns-settings`. Não é possível
-provar a assinatura de distribuição sem credenciais da equipe Apple. Quando
-disponível:
-
-```sh
-xcodebuild archive -project apps/ios/Adless.xcodeproj -scheme Adless \
-  -configuration Release -destination 'generic/platform=iOS' \
-  -archivePath /tmp/Adless.xcarchive -allowProvisioningUpdates
-sh tools/ios/verify_archive.sh /tmp/Adless.xcarchive
-xcodebuild -exportArchive -archivePath /tmp/Adless.xcarchive \
-  -exportOptionsPlist docs/app-store/ExportOptions.plist \
-  -exportPath /tmp/Adless-export
-sh tools/ios/verify_ipa.sh /tmp/Adless-export/Adless.ipa
-```
-
-Os verificadores falham se o archive/IPA não tiver `Adless.app`, se houver
-qualquer `.appex`, se faltar `dns-settings` no bundle assinado ou se existir
-entitlement legado. A inspeção do IPA deve ser feita antes do upload.
-Também confira no Apple Developer que o profile usado não é um profile gerenciado
-antigo que ainda autoriza App Groups ou providers removidos; o profile precisa
-ser regenerado depois da limpeza do App ID.
-
-## Smoke real opcional
-
-Após o deploy de produção, use um token descartável:
+Executar somente contra alvo/credenciais de teste apropriados. Para o Worker,
+`ADLESS_DNS_TOKEN` e `ADLESS_STATS_TOKEN` precisam estar injetados com segurança no
+ambiente, sem valores na linha de comando, histórico ou saída:
 
 ```sh
-ADLESS_DNS_TOKEN='...' ADLESS_STATS_TOKEN='...' \
-  python3 tools/dns/smoke_worker.py --url https://adless-dns.adless-production.workers.dev
+python3 -B tools/dns/smoke_worker.py --url https://adless-dns.adless-production.workers.dev
+python3 -B tools/dns/smoke_doh.py
 ```
 
-O token não deve aparecer em logs ou shell history. O smoke test valida TLS do
-sistema, POST, GET, wire response e stats; não registra o domínio sintético,
-token ou IP. Não faça testes com `curl -k`.
+[smoke_worker.py](../tools/dns/smoke_worker.py) usa TLS do sistema e verifica
+POST/GET, content type, QR/transaction ID e formato de stats. **SERVFAIL pode
+passar esse smoke**: ele não afirma resposta útil, host bloqueado, replay,
+expiração ou migração. [smoke_doh.py](../tools/dns/smoke_doh.py) consulta os
+provedores diretamente e também não testa autorização/roteamento do Worker.
+Nenhum deles prova operação no iPhone. Nunca use `curl -k`.
+
+Health check sem credenciais prova somente resposta HTTP daquele handler.
+Deployment ID, bindings, estado remoto, smoke após publicação e rollback estão
+em [dns-cloud](dns-cloud.md). Não mostrar dumps KV/DO ou exportar tráfego real.
+
+## Gates de distribuição
+
+Para mudanças iOS, seguir [ios-release](ios-release.md): XCTest, build, archive,
+`verify_archive.sh`, `verify_distribution_profile.sh`, exportação e
+`verify_ipa.sh`, depois revisão Apple e testes físicos por etapa. O comando
+`-allowProvisioningUpdates` pode modificar recursos Apple e exige autorização.
+A existência de um verificador ou workflow não prova que foi executado nem que
+capabilities/profiles remotos correspondem ao binário atual.

@@ -1,125 +1,162 @@
 # Arquitetura do Adless
 
-## Topologia
+**Implemented — código local.** Este documento descreve responsabilidades e
+invariantes. A revisão publicada e os recursos remotos precisam de evidência
+separada em [dns-cloud](dns-cloud.md) e [ios-release](ios-release.md).
+
+## Dois fluxos independentes
 
 ```text
-iPhone
-  │ NEDNSSettingsManager + NEDNSOverHTTPSSettings
-  ▼
-https://adless-dns.adless-production.workers.dev/<dns-token>/dns-query
-  │ Cloudflare Worker, blocklist em memória
-  ├─ token desconhecido/revogado → rejeição antes de cache, DO e upstream
-  ├─ token expirado → Cloudflare DoH sem bloqueio e sem estatística
-  ├─ bloqueado → resposta DNS sintetizada, sem upstream
-  └─ token ativo permitido → Cloudflare DoH
-                   └─ falha transitória → Quad9 DoH
+iPhone / DNS escolhido pelo iOS
+  → Cloudflare Worker
+      → reconhecer credencial no KV AUTH
+      → resolver autorização no DO AUTHORITY, quando aplicável
+      ├─ desconhecida / papel errado: rejeitar antes de DO, cache DNS e upstream
+      ├─ conhecida sem acesso: Cloudflare DoH → Quad9 em falha (pass-through)
+      └─ ativa: blocklist/cache
+           ├─ bloqueada: resposta local + incremento best effort em STATS
+           ├─ cache válido: resposta com transaction ID atual
+           └─ permitida sem cache: Cloudflare DoH → Quad9 em falha
+
+StoreKit → Transaction JWS + AppTransaction JWS quando disponível
+  → POST /v1/authorization/register
+  → verificar assinatura/cadeia Apple, produto, bundle, ambiente, datas e replay
+  → ordenar estado no DO AUTHORITY → derivar tokens DNS/stats
+  → KV AUTH (hashes, vínculo de instalação e estado da assinatura)
+  → par de tokens na resposta → commit Keychain → configuração DNS do iOS
+
+App Store Server Notifications V2 → POST /v1/notifications/apple
+  → verificar JWS → ordenar evento no DO AUTHORITY → projetar estado no KV AUTH
 ```
 
-O iOS gerencia o DNS criptografado; o app não cria interface de rede, não
-instala rota e não encaminha HTTP, HTTPS, vídeo, mensagens ou downloads. A
-configuração usa o domínio completo (`matchDomains = [""]`) e o Worker é um
-endpoint RFC 8484, não um proxy HTTP genérico.
+Os dois provedores upstream usam HTTPS. Cloudflare é primário; Quad9 é fallback
+sequencial, não consulta paralela. DNS válido, inclusive NXDOMAIN, encerra a
+tentativa. Se ambos falham, o Worker retorna SERVFAIL. Não há fallback em texto
+puro nem garantia de internet quando toda a infraestrutura DNS está indisponível.
 
-## iOS
+Railway serve a landing e os artefatos públicos de blocklist. O gerador prepara
+a cópia embutida no Worker antes da publicação; nem o Worker nem o app baixam
+essa lista durante uma consulta. Railway não participa da resolução nem da
+autorização. Tráfego geral de sites, vídeos, mensagens e downloads não atravessa Adless.
 
-O projeto contém apenas os targets `Adless` e `AdlessTests`. O app usa a
-capability `com.apple.developer.networking.networkextension` com o valor
-`dns-settings`. Não há extensão, App Group, `.mobileconfig`, entitlement de
-tráfego ou API privada.
+## Responsabilidades e fontes
 
-`DNSSettingsManager` sempre chama `loadFromPreferences` antes de ler ou
-alterar o estado. `saveToPreferences` cria/atualiza a configuração DoH e
-`removeFromPreferences` a remove; `isEnabled` é somente leitura porque a
-ativação final é autorizada pelo usuário em Ajustes. O app nunca usa um
-booleano persistido como fonte de verdade. A notificação de alteração, o
-primeiro plano e o estado real recarregado mantêm a UI coerente após reinício,
-troca de rede ou remoção manual.
+| Componente | Símbolos e responsabilidade |
+| --- | --- |
+| [AdlessApp.swift](../apps/ios/Adless/AdlessApp.swift) | `AppViewModel`: concilia StoreKit, autorização, DNS real e apresentação |
+| [SubscriptionManager.swift](../apps/ios/Adless/Services/SubscriptionManager.swift) | Produtos, compras, restauração, entitlement e transações verificadas |
+| [InstallationTokenStore.swift](../apps/ios/Adless/Services/InstallationTokenStore.swift) | UUID de instalação, nonce persistido e commit atômico de credenciais no Keychain |
+| [DNSSettingsManager.swift](../apps/ios/Adless/Managers/DNSSettingsManager.swift) | Instalar, reler e remover `NEDNSOverHTTPSSettings` com `NEDNSSettingsManager` |
+| [handler.ts](../apps/dns-worker/src/handler.ts) | Endpoints, autorização, rate limit, blocklist/cache, fallback e stats |
+| [dns.ts](../apps/dns-worker/src/dns.ts) / [blocklist.ts](../apps/dns-worker/src/blocklist.ts) | Wire format DNS, TTL/ID e matching por nome/sufixo |
+| [authorization.ts](../apps/dns-worker/src/authorization.ts) / [apple-jws.ts](../apps/dns-worker/src/apple-jws.ts) | Verificação JWS, emissão, replay, migração e estados de assinatura |
+| [stats.ts](../apps/dns-worker/src/stats.ts) | `StatsDurableObject`: contadores **e**, em objetos separados, autoridade da assinatura |
+| [Gerador](../tools/blocklists/generate_blocklist.py) / [preparador](../tools/dns-worker/prepare_blocklist.py) | Fonte OISD Small, allowlist, artefatos validados e cópia edge |
 
-O app mantém um `installationId` UUID e dois tokens opacos de 32 bytes,
-`dns-token` e `stats-token`, no Keychain com
-`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`; não deriva de identidade,
-IDFA, IDFV ou conta Apple. Após compra/restauração, envia somente o
-`Transaction.jwsRepresentation` ao endpoint de autorização e grava os tokens
-retornados. O Worker nunca grava os valores originais, apenas seus hashes.
+## DNS e estado apresentado pelo iOS
 
-O endpoint de autorização valida a cadeia X.509 e a assinatura ES256 do JWS
-StoreKit 2, confere bundle ID, produto e ambiente, e registra a instalação no
-KV `AUTH`. O endpoint de notificações valida App Store Server Notifications V2
-e atualiza renovação, expiração, reembolso, revogação, billing retry e grace
-period. Nenhum desses endpoints é consultado no caminho de cada query DNS.
+O Xcode tem somente `Adless` e `AdlessTests`; o entitlement de NetworkExtension
+permitido é `dns-settings`. O manager usa `matchDomains = [""]` e
+`matchDomainsNoSearch = true`. Salvar não equivale a habilitar: `isEnabled` é
+somente leitura e a aprovação final pertence ao usuário em Ajustes.
 
-## Serviço edge
+`AppViewModel.protectionIsConfirmed` exige assinatura, credenciais locais
+confirmadas, ausência de autorização pendente e `DNSSettingsState.enabled`.
+Esse estado exige o endpoint das credenciais atuais; um perfil Adless antigo
+habilitado é `staleEnabled` e não confirma proteção. Primeiro plano, notificações
+de configuração e retorno das operações provocam nova leitura. Expiração
+percebida pelo app leva à tentativa de remoção; falha exige orientação manual.
+Esse critério local não mede disponibilidade ou bloqueio real do serviço remoto.
 
-`apps/dns-worker/src/dns.ts` valida cabeçalho, exatamente uma pergunta, nomes
-com compressão segura, contagens, limites, EDNS0 e todos os tipos DNS sem
-lista restritiva. POST exige `application/dns-message`; GET usa `dns` em
-Base64URL. Erros estruturais retornam `FORMERR` quando há bytes suficientes.
-Falha dos dois resolvedores retorna `SERVFAIL` em uma mensagem DNS válida.
+O app guarda UUID de instalação, nonce aleatório e credenciais no Keychain
+`AfterFirstUnlockThisDeviceOnly`, sem derivar identidade de IDFA/IDFV/hardware.
+O par atual é derivado no Worker por HMAC, não gerado livremente pelo cliente.
+O nonce é persistido antes da requisição: mesma transação/nonce recupera o mesmo
+par, enquanto uma rotação exige transação admitida e novo nonce. Migração v1
+da mesma transação exige prova dos dois tokens antigos. O `installationId` estável preserva stats.
+Detalhes e estados de falha ficam no [README iOS](../apps/ios/README.md).
 
-`blocklist.ts` carrega a lista canônica em um `Set` e testa o nome completo e
-cada sufixo de label. A comparação é lowercase, sem ponto final, com nomes
-ASCII/Punycode; assim `sub.ads.example.com` corresponde a
-`ads.example.com`, mas `notads.example.com` não corresponde.
+## Autorização e disponibilidade
 
-Respostas bloqueadas usam o transaction ID recebido, repetem a pergunta e
-TTL 60 segundos. A consulta não alcança upstream. A resposta A é `0.0.0.0`,
-AAAA é `::` e outros tipos recebem NODATA. EDNS0 é preservado quando presente.
+`authorizeToken` reconhece o hash e papel no KV e lê o registro da instalação
+**antes** de consultar o DO de autoridade. Credencial corrente consulta/semeia a
+autoridade serializada; desconhecida não chega ao DO. O DO participa da decisão
+de autorização: a regra não é “nenhum DO antes da autorização”. A regra é
+“nenhum cache DNS, contador STATS ou upstream antes da decisão”.
 
-Consultas permitidas são enviadas sequencialmente para
-`https://cloudflare-dns.com/dns-query` e, somente em timeout, falha TLS ou de
-transporte, HTTP não aceito, corpo vazio ou DNS inválido, para
-`https://dns.quad9.net/dns-query`. Uma resposta DNS válida, incluindo
-NXDOMAIN, não dispara fallback. Não há DNS UDP/TCP em texto puro. O Worker
-mantém um cache por instalação e wire query (ID zerado,
-flags/tipo/classe/EDNS preservados) somente até o menor TTL recebido; cache negativo usa TTL de autoridade quando
-presente. Um circuit breaker por isolate abre após três falhas primárias por
-15 segundos.
+Assinatura expirada, revogada ou reembolsada permite somente DNS pass-through;
+reembolso é representado como estado `revoked`. Cancelar renovação mantém
+acesso até o prazo pago. Grace period pode estender o prazo; billing retry
+isoladamente não concede acesso. Tokens DNS substituídos continuam conhecidos
+em pass-through; stats substituído é recusado. Esse compromisso preserva
+resolução após perda da resposta de rotação, mas não revoga o uso do upstream
+de um DNS token vazado. Consulte [SECURITY](SECURITY.md).
 
-## Blocklist
+Falha do DO após reconhecimento no KV degrada DNS para pass-through e nega
+stats. Falha inicial lançada pelo KV só pode usar uma credencial reconhecida
+recentemente no mesmo isolate, durante a janela de dez minutos de
+`authorizeWithAvailability`; essa memória comprova reconhecimento, nunca
+assinatura ativa. Ausência de cache ou cache vencido resulta em erro; KV
+retornando registro ausente rejeita o token. Erro de leitura do registro legado,
+após reconhecimento, segue a degradação da autoridade. Não transformar
+desconhecido em fail-open.
 
-A fonte atual é OISD Small e a allowlist é aplicada por
-`tools/blocklists/generate_blocklist.py`. A saída canônica é publicada na
-landing e copiada para `apps/dns-worker/data/` por
-`tools/dns-worker/prepare_blocklist.py`. O metadata inclui versão derivada do
-conteúdo, contagem, checksum do texto e checksum do artefato público. O Worker
-confere schema, versão, ordenação, contagem e checksum antes de resolver.
+KV é eventualmente consistente e não oferece commit de múltiplas chaves.
+Emissão grava mappings/índices e usa o registro de instalação como ponto final
+de commit. `AUTHORITY` ordena eventos de assinatura, inclusive refund/revoke,
+para não depender apenas desses índices. A autoridade não torna todo o KV
+fortemente consistente. Ambientes Production/Sandbox têm chaves de índices e
+objetos distintos, mas compartilham os bindings locais declarados. JWS Sandbox
+com evidência de AppTransaction não prova criptograficamente origem TestFlight.
 
-O workflow rejeita fonte vazia, lista inválida e variação acima do limite sem
-`--allow-large-change`. Ele gera em diretório candidato e substitui cada
-artefato validado atomically; uma versão anterior válida permanece disponível
-para rollback no histórico de deploy.
+## Blocklist, cache e contadores
 
-## Estatísticas
+Matching usa nome exato e sufixos por label, lowercase/ASCII/Punycode. A allowlist
+é aplicada na geração, não por endpoint de edição em runtime. Respostas
+bloqueadas IN A/AAAA usam `0.0.0.0`/`::`; outros tipos recebem NODATA. ID/pergunta
+e EDNS são preservados, TTL bloqueado é 60 segundos.
 
-Quando bloqueia, o Worker agenda uma escrita best effort em
-`StatsDurableObject` com apenas `increment: 1`. O ID do Durable Object é
-derivado do `installationId`, portanto a troca de credenciais mantém o
-contador; seu armazenamento contém somente `blockedTotal` e `updatedAt`.
-QNAME, pacote DNS e IP não são dimensões nem valores persistidos.
+O cache em memória é por `installationId` e mensagem com ID zerado, preservando
+flags/tipo/classe/EDNS. Expira pelo menor TTL considerado pelo parser, atualiza
+TTL restante e reescreve o transaction ID. HTTP usa `no-store`. Pass-through
+não usa blocklist, cache DNS, rate limit ativo nem contador. Limites, circuit
+breaker e detalhes de TTL ficam em [dns-cloud](dns-cloud.md).
 
-`GET /v1/stats` exige `Authorization: Bearer <stats-token>`; o `dns-token` é
-rejeitado nesse caminho e o endpoint retorna `{ blockedTotal, updatedAt }`. O
-app lê em primeiro plano e após ativação, preserva o último valor offline e
-nunca reduz a UI.
-Rate limiting é mantido na edge por janela curta, usando somente
-`SHA-256(token):SHA-256(IP)` como chave em memória; token e IP brutos não são
-registrados nem gravados. Em caso de falha temporária do KV, apenas uma
-autorização positiva conhecida pode ser reutilizada por até 10 minutos e até
-seu `accessUntil`; tokens desconhecidos continuam rejeitados.
+Cada bloqueio agenda incremento best effort de `STATS`. A UI guarda total e
+baseline diário em [BlockingStatsStore.swift](../apps/ios/Adless/Services/BlockingStatsStore.swift)
+e não reduz o total diante de falha/reset remoto. O número diário é estimado
+a partir de leituras do total, não uma série temporal de consultas no servidor.
 
-Os tokens são credenciais bearer de baixo privilégio; a assinatura Apple é a
-autorização server-side. Não há conta, login, Railway ou banco externo.
+## Dados e limites de confiança
 
-## Privacidade e interferências
+| Local | Conteúdo implementado |
+| --- | --- |
+| iPhone | Credenciais/UUID/nonce no Keychain; snapshot de assinatura e totais locais |
+| KV `AUTH` | Hashes de tokens/nonce, mappings, UUIDs de instalação, IDs Apple, produtos, ambientes, datas, estados, claims/índices e marcadores de notificação |
+| DO `STATS` | Objetos por instalação com `blockedTotal` e `updatedAt` |
+| DO `AUTHORITY` | Objetos por assinatura/ambiente com eventos e estado ordenado, incluindo IDs Apple |
+| Memória do Worker | Lista, queries/respostas em cache, hashes token/IP para limites e reconhecimento recente |
+| Provedores | Cloudflare recebe requisição HTTPS/IP e consulta; upstream recebe consulta permitida; Sentry recebe diagnósticos configurados |
 
-Todas as consultas DNS escolhidas pelo iOS para o Adless passam pelo endpoint
-HTTPS do serviço. Consultas bloqueadas não seguem para um resolvedor; as
-permitidas seguem para Cloudflare DNS ou Quad9. O serviço não vende dados, não
-usa consultas para publicidade e não mantém histórico de domínios. Cloudflare
-é provedor da edge e os resolvedores aplicam suas próprias políticas. Logs de
-aplicação não recebem QNAME, pacote DNS, token, IP ou URL completa.
+Cliente e tokens bearer não provam pagamento; JWS verificado e autoridade da
+assinatura concedem acesso. Cloudflare termina TLS e permanece dentro do limite
+de confiança. Ausência de histórico DNS persistido no código não significa
+anonimato, ausência de metadados ou dados totalmente anônimos. Inventário,
+retenção, logs e procedimentos estão em [SECURITY](SECURITY.md).
 
-Isso não promete anonimato, ocultação de IP, ausência absoluta de logs de
-infraestrutura ou que o provedor de acesso não possa inferir destinos. Private
-Relay, “Limitar Rastreamento de Endereço IP”, outro perfil DNS, outra VPN,
-captive portal e políticas da rede podem substituir ou impedir o DNS salvo.
+## Decisões e alternativas abandonadas
+
+- DNS nativo delega resolução ao iOS sem manter processo do app aberto.
+- Packet Tunnel, DNS Proxy e DNS local estão fora da arquitetura atual: o
+  projeto não tem providers, interfaces, rotas ou extensão para executá-los.
+  Parsers Swift residuais são utilitários testados, não um resolvedor instalado.
+- Filtragem edge centraliza a política sem distribuir listas para cada iPhone.
+- StoreKit mantém compra/pagamento na Apple; o Worker verifica autorização sem
+  criar conta ou backend de pagamentos. IDs de assinatura continuam necessários.
+- Dois tokens restringem papéis; nonce persistido/derivação idempotente evita
+  instalar um token intermediário após retry. DO ordena eventos; KV mapeia credenciais.
+
+Private Relay, outra VPN/perfil DNS, captive portal e políticas de rede podem
+interferir. DNS não bloqueia todo anúncio servido pelo mesmo domínio do conteúdo.
+Testes necessários e lacunas estão em [TESTING](TESTING.md); pendências de código
+encontradas na auditoria ficam em [REPOSITORY_AUDIT](REPOSITORY_AUDIT.md).

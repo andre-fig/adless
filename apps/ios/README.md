@@ -1,93 +1,206 @@
-# Adless iOS app
+# Adless iOS
 
-Adless é um app SwiftUI de proteção DNS. Ele configura o DNS-over-HTTPS nativo
-do iOS com `NEDNSSettingsManager` e `NEDNSOverHTTPSSettings`; somente consultas
-DNS são enviadas ao serviço Adless para filtragem na edge. O restante do
-tráfego continua seguindo diretamente para seus destinos.
+Referência canônica da implementação local. **Implemented** significa presente
+no código; não comprova versão instalada, Worker publicado ou configuração da
+Apple. Instruções curtas: [AGENTS](AGENTS.md). Fluxo geral:
+[arquitetura](../../docs/ARCHITECTURE.md). Operação Apple:
+[ios-release](../../docs/ios-release.md). Cobertura:
+[testes](../../docs/TESTING.md).
 
-## Targets
+## Responsabilidades
 
-- `Adless` — app iOS e integração StoreKit 2;
-- `AdlessTests` — testes XCTest do app e das regras reutilizáveis.
+O app configura DNS-over-HTTPS nativo do iOS. O sistema envia as consultas
+selecionadas para o Worker; o app não recebe pacotes DNS nem filtra domínios
+localmente. Tráfego de sites, vídeos e outros aplicativos segue diretamente aos
+destinos. Railway hospeda a landing; o app atual não baixa manifest ou blocklist.
 
-Não há extensão embutida. O único entitlement de Network Extension do app é
-`dns-settings`; não há App Group, configuração `.mobileconfig`, perfil gerido,
-rota de tráfego ou API privada.
+| Arquivo / símbolo | Responsabilidade implementada |
+| --- | --- |
+| [AdlessApp.swift](Adless/AdlessApp.swift), `AppViewModel` | Inicialização, foreground, reconciliação, ativação/remoção e confirmação da UI |
+| [ContentView.swift](Adless/ContentView.swift) | Tela principal, contadores, paywall e alertas de Ajustes |
+| [SubscriptionView.swift](Adless/SubscriptionView.swift) | Compra, restore, planos e documentos legais embutidos |
+| [SubscriptionManager.swift](Adless/Services/SubscriptionManager.swift) | StoreKit 2: produtos, status de grupo, current entitlements e transaction updates |
+| [SubscriptionConfiguration.swift](Adless/Services/SubscriptionConfiguration.swift) | Product IDs, formatação da oferta e `SubscriptionAccessPolicy` |
+| [InstallationTokenStore.swift](Adless/Services/InstallationTokenStore.swift) | UUID da instalação, Keychain, nonce, migração e commit do par |
+| [DNSStatsAPIClient.swift](Adless/Services/DNSStatsAPIClient.swift) | Clientes HTTPS separados de stats e autorização |
+| [DNSCloudConfiguration.swift](Adless/Services/DNSCloudConfiguration.swift) | Validação da origem HTTPS, construção e reconhecimento do endpoint |
+| [DNSSettingsManager.swift](Adless/Managers/DNSSettingsManager.swift) | Actor que carrega, salva, relê e remove preferências Apple |
+| [BlockingStatsStore.swift](Adless/Services/BlockingStatsStore.swift) / [SubscriptionStorage.swift](Adless/Services/SubscriptionStorage.swift) | Cache agregado local e snapshot de acesso |
+| [SentryConfiguration.swift](Adless/Services/SentryConfiguration.swift) | Diagnósticos e sanitização; configurações remotas continuam externas |
+| [BuildEnvironment.swift](Shared/BuildEnvironment.swift) | Valores de build injetados via `Info.plist` |
+| [BlocklistParser.swift](Adless/Services/BlocklistParser.swift) / [DomainMatcher.swift](Adless/Services/DomainMatcher.swift) | Helpers de parsing/matching usados pelos XCTest; não fazem parte da resolução DNS |
+| [LogoView.swift](Adless/LogoView.swift) / [recursos](Adless/Resources) | Logo, ícones, entitlements, Info.plist e catálogo de strings |
 
-## Build e autorização
+O [projeto](Adless.xcodeproj/project.pbxproj) tem somente `Adless` e
+`AdlessTests`, SwiftUI/Combine, StoreKit 2, NetworkExtension, Security e Sentry
+via Swift Package Manager. O SDK Sentry está fixado no projeto. Não existe
+Packet Tunnel, DNS Proxy, `.appex`, App Group, `.mobileconfig`, configuração
+MDM, interface de rede ou rota própria. O entitlement de Network Extension
+é exclusivamente `dns-settings`.
 
-1. Abra `apps/ios/Adless.xcodeproj` no Xcode.
-2. Use `Adless Dev` para desenvolvimento local e `Adless` para archive oficial.
-3. Configure no App ID de cada ambiente a capability Network Extension com
-   `dns-settings` e regenere os profiles de desenvolvimento/distribuição.
-4. Compile o simulador para validar a UI e use um iPhone para validar o DNS
-   efetivo.
+## StoreKit e estados
 
-```sh
-xcodebuild -project apps/ios/Adless.xcodeproj -scheme Adless \
-  -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build
+**Implemented:** `SubscriptionManagerState` separa `checking`, `active` (produto,
+prazo e grace), `inactive` e `unavailable`. `Product.products(for:)` carrega os
+planos; status do grupo e transações devem estar verificados. Estados
+`.subscribed` e `.inGracePeriod` podem conceder acesso até `effectiveUntil`;
+revogação e prazo vencido não concedem. Cancelamento da renovação não cancela
+imediatamente o período já válido. Compra pendente exibe mensagem, compra
+cancelada não concede acesso, resultado não verificado é rejeitado.
+
+`Transaction.updates` acompanha alterações enquanto o processo está vivo;
+`AppStore.sync()` restaura compras por ação do usuário. `SubscriptionStorage`
+persiste produto, prazo, grace e data da última verificação em Application
+Support, com escrita atômica e proteção até o primeiro desbloqueio. Em falha
+temporária de consulta StoreKit, o snapshot pode sustentar acesso local somente
+até seu prazo; não concede autorização no Worker.
+
+Os produtos e a configuração de oferta local, elegibilidade por grupo e
+validação manual no App Store Connect têm fonte canônica em
+[ios-release](../../docs/ios-release.md). Não presuma trial disponível para
+qualquer assinante apenas porque o paywall o oferece.
+
+## Emissão, rotação e Keychain
+
+**Implemented:** `installationID()` cria UUID interno aleatório. Não usa IDFA,
+IDFV, Apple Account ou hardware. `StoredState` versão 2 mantém instalação,
+dois tokens de 256 bits, transaction IDs e nonces atual/pendente em um único
+Generic Password `installation-state-v2`, com
+`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`. Atributo de Keychain não
+vincula criptograficamente um bearer token a hardware; posse do token continua
+sendo suficiente para apresentá-lo ao servidor. Não prometa exclusão automática
+no uninstall ou migração das credenciais para outro dispositivo.
+
+```text
+StoreKit verified transaction + AppTransaction, quando disponível
+  → persistir installationId e rotationNonce antes da requisição
+  → DNSAuthorizationAPIClient.authorize → Worker /v1/authorization/register
+  → validar resposta e gravar ambos os tokens + metadados em um commit
+  → DNSSettingsManager.install → reler estado Apple → atualizar a UI
 ```
 
-Salvar uma configuração não significa que ela está ativa: `isEnabled` é
-somente leitura e o iOS exige que o usuário aprove a configuração em Ajustes.
-O app recarrega o estado real a cada entrada em primeiro plano e responde à
-notificação de alteração. Se a configuração for removida em Ajustes, o app
-mostra a proteção como desligada e pode instalá-la novamente ao tocar em Ativar.
+`authorizationAttempt(transactionId:)` reutiliza exatamente o nonce salvo nos
+retries da mesma transação, inclusive após resposta perdida ou escrita falha.
+Nova transação recebe nonce novo; pode substituir tentativa pendente anterior
+sem apagar o par confirmado. Enquanto existe nonce pendente, `credentials()`
+oculta o par antigo. O Worker deriva o par e armazena hashes; o iOS guarda os
+bearers porque precisa usá-los. O DNS token compõe o caminho DoH; o stats token
+é usado exclusivamente no Bearer de `GET /v1/stats`. Nunca registre o caminho
+com token, JWS, nonce ou credenciais.
 
-## Ambientes
+A migração dos três itens legados preserva instalação e par coerente no blob.
+Antes da primeira reconciliação desse par, envia ambos como prova de posse;
+retries da mesma tentativa podem repetir a prova até o commit. Não é uma
+promessa de apenas uma transmissão HTTP. O token único do MVP antigo é somente
+reconhecido e removido após migração/commit, nunca enviado ao servidor. Remoção
+dos itens legados é best effort.
 
-| Scheme | Configuration | App ID | DNS endpoint base | Display name |
-| --- | --- | --- | --- | --- |
-| `Adless Dev` | `Debug Dev` / `Release Dev` | `com.orbeworks.adless.dev` | `https://adless-dns.adless-production.workers.dev` | Adless Dev |
-| `Adless` | `Debug` / `Release` | `com.orbeworks.adless` | `https://adless-dns.adless-production.workers.dev` | Adless |
+Compra, restore e transaction update com acesso válido exigem reconciliação,
+mesmo com Keychain preenchido. O primeiro foreground de cada `AppViewModel`
+também força reconciliação. Foregrounds seguintes recarregam StoreKit e DNS,
+mas não necessariamente fazem outro POST se as credenciais já estão confirmadas.
 
-O app mantém um `installationId` interno e dois tokens de 256 bits aleatórios,
-`dns-token` e `stats-token`, como Generic Password no Keychain, com
-`ThisDeviceOnly`. Eles não são derivados de IDFA, IDFV, Apple Account ou
-hardware. O primeiro é usado somente no caminho DoH; o segundo somente no
-Bearer do contador.
+Se o Worker responder e o commit local de uma rotação falhar, o app tenta
+remover o perfil anterior e mantém o nonce para retry. Se a remoção falhar,
+orienta Ajustes. Se o par novo foi salvo mas o save das preferências DNS falhar,
+recarrega o perfil efetivamente persistido: uma URL antiga é `.staleEnabled`.
+No Worker, um token anterior conhecido é pass-through; a UI não confirma
+bloqueio dessa configuração residual. Limites dessa continuidade durante falhas
+de infraestrutura estão em [dns-cloud](../../docs/dns-cloud.md).
 
-## Ciclo de proteção
+## Instalação, ativação e remoção DNS
 
-Após uma compra/restauração válida, o app envia o JWS assinado do StoreKit ao
-Worker, salva as novas credenciais no Keychain e cria um endpoint individual
-`https://adless-dns.adless-production.workers.dev/<dns-token>/dns-query`, salva a configuração DoH da Apple e
-recarrega o estado. O iOS mantém a configuração enquanto o app não está
-aberto, inclusive após reinicialização e com a tela bloqueada. A assinatura
-StoreKit e o status server-side são as autoridades: quando expira, o Worker
-deixa de bloquear e o app tenta remover a configuração; se a remoção não for
-confirmada, a UI orienta a desativação manual em Ajustes.
+**Implemented:** `install()` carrega preferências e configura
+`NEDNSOverHTTPSSettings(servers: [])`, origem HTTPS do build, `matchDomains =
+[""]`, `matchDomainsNoSearch = true`, sem regras on-demand; no iOS 26+ define
+`allowFailover = false`. Depois de salvar, relê. `isEnabled` é somente leitura;
+salvar não substitui a ativação explícita do usuário exigida pela
+[API DNS Settings da Apple](https://developer.apple.com/documentation/networkextension/dns-settings).
 
-O endpoint aplica a blocklist na edge. Consultas permitidas seguem por DoH
-para Cloudflare DNS e, em falha transitória, Quad9. O app não conhece nem
-processa pacotes DNS individuais e não usa DNS em texto puro.
+`currentState()` distingue ausência, desabilitada, habilitada, habilitada antiga
+e inválida. Para `.enabled`, a preferência precisa pertencer ao Adless, estar
+habilitada, ter a URL exata das credenciais atuais e o escopo de domínio esperado.
+`remove()` só remove uma configuração reconhecida como Adless e confirma sua
+ausência após reler; erros não autorizam afirmar que o DNS foi removido.
 
-## Contadores
+A UI usa `AppViewModel.protectionIsConfirmed`: acesso StoreKit + credenciais
+presentes + nenhuma reconciliação pendente + estado `.enabled`. `isOn` também
+é verdadeiro para `.staleEnabled` e não deve dirigir a afirmação de proteção.
+Notificação de mudança das preferências e retorno ao primeiro plano atualizam
+o estado. Remoção manual do perfil deve aparecer como desligada e permitir nova
+instalação. Ao perder acesso, o app tenta remover a configuração; se falhar,
+mostra orientação manual. O Worker pode cessar o bloqueio independentemente do
+app, conforme a autoridade de assinatura.
 
-O app consulta `GET /v1/stats` ao entrar em primeiro plano e depois da ativação,
-autenticando com o `stats-token`. O cache local mantém o último total quando a API está
-offline e nunca reduz o valor exibido. Falhas do contador não desligam a
-proteção nem geram erro invasivo.
+Esse gate confirma o estado local conhecido; não mede saúde atual do Worker,
+KV ou upstream nem comprova que todos os apps usam o resolvedor do sistema.
 
-## Testes no dispositivo
+### Tutorial de ativação
 
-Teste em iPhone físico: ativação e remoção em Ajustes, reinicialização, tela
-bloqueada, Wi‑Fi/5G, modo avião, IPv4/IPv6, navegadores e apps diferentes.
-Registre também o comportamento com Private Relay, “Limitar Rastreamento de
-Endereço IP”, outro perfil DNS, outra VPN, captive portal e redes que bloqueiam
-DoH. O sistema ou outra configuração pode substituir o DNS do Adless; o app
-não promete prevalência nessas situações.
+**Implemented:** existe alerta textual localizado com o caminho. Não existe
+um tutorial com screenshots no código; esse material visual permanece
+**Pending** e não foi criado nesta auditoria.
 
-A suíte XCTest usa mocks e não depende da rede. O smoke test DoH opcional e as
-instruções operacionais estão em [`docs/dns-cloud.md`](../../docs/dns-cloud.md),
-[`docs/TESTING.md`](../../docs/TESTING.md) e
-[`docs/ios-release.md`](../../docs/ios-release.md).
+```text
+App: compra/restauração → autorização confirmada → botão de ativar
+  → aprovar a configuração, se o iOS pedir
+  → abrir Ajustes e voltar à tela principal
+  → Geral → VPN e Rede (ou VPN e Gerenciamento de Dispositivo)
+  → DNS → selecionar Adless
+  → voltar ao app → confirmação automática, sem segundo toque
+```
 
-## StoreKit
+| Idioma | Caminho mostrado no catálogo |
+| --- | --- |
+| PT-BR | Ajustes → Geral → VPN e Rede / VPN e Gerenciamento de Dispositivo → DNS → Adless |
+| EN | Settings → General → VPN & Network / VPN & Device Management → DNS → Adless |
+| ES | Ajustes → General → VPN y red / VPN y gestión de dispositivos → DNS → Adless |
 
-Os product IDs são `com.orbeworks.adless.pro.monthly` e
-`com.orbeworks.adless.pro.yearly`, no mesmo grupo de assinaturas, com trial de
-sete dias configurado no App Store Connect. Compras, restauração, cancelamento,
-grace period e expiração continuam sob StoreKit 2; o Worker valida server-side
-o JWS e recebe as notificações V2 da Apple. Não há conta nem validação em
-Railway.
+A nomenclatura do sistema deve ser conferida no iPhone alvo. O botão usa
+`UIApplication.openSettingsURLString`, que abre ajustes do app, não uma tela
+global de DNS; veja a [API pública](https://developer.apple.com/documentation/uikit/uiapplication/opensettingsurlstring).
+Não há deep link público específico de DNS adotável neste fluxo; `App-Prefs:`
+e `prefs:` são proibidos. Se a remoção automática falhar, navegue ao mesmo
+local e desative Adless manualmente, verificando acesso à rede.
+
+## Contadores e limites
+
+**Implemented:** stats usam sessão efêmera, sem cookies ou cache HTTP, timeout
+de 4 segundos; autorização usa timeout de 8 segundos. `refreshCloudStats()`
+consulta apenas quando a proteção local está confirmada, no foreground e após
+ativação. Falhas mantêm o último total sem desligar proteção. O contador total
+nunca diminui; o total diário usa baseline local e não equivale a um histórico
+remoto preciso por dia, especialmente após reinstalação ou longos intervalos
+sem abrir o app. Os arquivos locais ficam em Application Support; não há App Group.
+
+A configuração é gerida pelo sistema fora do ciclo de vida do processo. Persistência
+após reinicialização/tela bloqueada, trocas Wi-Fi/celular, IPv4/IPv6, modo avião,
+Private Relay, Limitar Rastreamento de Endereço IP, VPN, outro DNS, captive portal
+e redes que bloqueiam DoH exigem iPhone físico. O app não promete prevalecer
+sobre essas condições. `allowFailover = false` não cria fallback ao DNS comum
+quando Cloudflare/Quad9 ou a infraestrutura Adless falham.
+
+## Limitações verificáveis a revisar
+
+- **Pending — grace na autorização:** `snapshot(from:now:)` aceita prazo de
+  grace de `renewalInfo`, mas `currentEntitlementAuthorization()` exige
+  `transaction.expirationDate > Date()`. Reconciliação inicial/credenciais novas
+  durante grace após vencimento da transação precisa de teste integrado.
+- **Pending — atualização temporal:** não há timer dedicado para reconciliação
+  StoreKit/expiração no app; updates e foreground disparam avaliação. O gate
+  da UI não consulta saúde remota continuamente.
+- **Pending — localização:** o catálogo tem EN, PT-BR e ES para as chaves
+  presentes, inclusive o tutorial, mas falta a chave legal atual de coleta e
+  strings como `Authorizing`, `Reconnect to update DNS protection` e
+  `The subscription could not be authorized`. Alertas de remoção e textos
+  efetivamente renderizados precisam de conferência; fallback em inglês não é
+  tradução concluída. A política também tem descrição de persistência incompleta:
+  veja [App Privacy](../../docs/app-store-privacy-questionnaire.md).
+- **Pending — outras plataformas:** `SUPPORTED_PLATFORMS` inclui macOS e xros,
+  mas isso não comprova suporte funcional nem publicação nessas plataformas.
+  Build/archive operacional usa destino iOS explícito. O deployment target
+  iOS está no projeto e não é a disponibilidade mínima histórica das APIs.
+
+Build e XCTest estão no [AGENTS local](AGENTS.md); matriz automatizada/física em
+[TESTING](../../docs/TESTING.md). Comandos e critérios para artefato assinado,
+Sandbox e distribuição são canônicos em [ios-release](../../docs/ios-release.md).
