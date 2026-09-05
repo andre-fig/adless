@@ -211,6 +211,20 @@ export function withRemainingTTL(message: Uint8Array, ttl: number): Uint8Array {
   return result;
 }
 
+export function withMaximumTTL(message: Uint8Array, maximumTTL: number): Uint8Array {
+  const result = message.slice();
+  const parsed = parseDNSMessage(result, 1);
+  const maximum = Math.max(0, Math.min(maximumTTL, MAX_TTL));
+  for (const record of parsed.records) {
+    if (record.type === 41 || record.ttl <= maximum) continue;
+    result[record.ttlOffset] = maximum >>> 24;
+    result[record.ttlOffset + 1] = maximum >>> 16;
+    result[record.ttlOffset + 2] = maximum >>> 8;
+    result[record.ttlOffset + 3] = maximum & 0xff;
+  }
+  return result;
+}
+
 export function cacheKey(query: Uint8Array): string {
   const normalized = query.slice();
   normalized[0] = 0;
