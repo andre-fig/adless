@@ -7,13 +7,13 @@ privacidade; [TESTING.md](TESTING.md) centraliza cobertura e critérios de teste
 
 ## Estado local e evidência remota
 
-Última verificação operacional: **2026-09-04, UTC−3**
-(`2026-09-05T01:53:12Z` para as consultas públicas abaixo).
+Última verificação operacional: **2026-09-06, UTC−3**.
 
 | Estado | Evidência | O que permite concluir |
 | --- | --- | --- |
 | Implemented | [wrangler.toml](../apps/dns-worker/wrangler.toml), [worker.ts](../apps/dns-worker/src/worker.ts), código do workspace | Alvo local `adless-dns`, entrada `src/worker.ts`; não identifica a revisão publicada |
 | Deployed / Verified | GET público de `https://adless-dns.adless-production.workers.dev/healthz`: HTTP 200, `status=ok`, `environment=production` | Há serviço respondendo nesse hostname; health não consulta KV, DO, Apple, blocklist ou upstream |
+| Deployed / Verified | GET público de `https://adless-dns-development.adless-production.workers.dev/healthz`: HTTP 200, `status=ok`, `environment=development`; autorização StoreKit Xcode passou no simulador e no iPhone físico | O Worker Dev está publicado e aceita somente os certificados JWS Xcode explicitamente fixados para `com.orbeworks.adless.dev`; não comprova sozinho a interceptação de consultas DNS |
 | Deployed / Verified | Manifesto público da landing em `https://landing-production-9feb.up.railway.app/blocklists/manifest.json`: HTTP 200, versão `vccdec93540613cc1`, 58.216 domínios | Somente disponibilidade/metadados da lista publicada na landing; não confirma bundle do Worker |
 | Pending | Sem consulta autenticada da conta nesta auditoria | Deployment ID, version ID, código publicado, bindings efetivos, secret, migrations aplicadas, permissões, faturamento, logs e outros Workers da conta |
 | Pending | Sem smoke autenticado ou evento Apple real nesta auditoria | Emissão/rotação, Sandbox/Production, autorização DNS/stats e Notifications V2 remotos |
@@ -27,6 +27,14 @@ assinatura StoreKit Production nem de implantação da revisão local.
 Fonte: [handler.ts](../apps/dns-worker/src/handler.ts), `createDNSWorker`.
 O DoH aceita RFC 8484 em formato binário; não há resolução JSON, proxy de URL
 arbitrária, listener UDP/TCP ou configuração CORS no Worker.
+
+| Ambiente | Origem HTTPS | Consumidor |
+| --- | --- | --- |
+| Produção | `https://adless-dns.adless-production.workers.dev` | App oficial em TestFlight/App Store |
+| Desenvolvimento | `https://adless-dns-development.adless-production.workers.dev` | `Adless Dev` executado pelo Xcode |
+
+Os endpoints abaixo são relativos à origem do ambiente selecionado; KV,
+Durable Objects, segredo, bundle e política StoreKit também são separados.
 
 | Endpoint Implemented | Método | Contrato |
 | --- | --- | --- |
@@ -121,9 +129,16 @@ arquivo. `workers.dev` usa hostname fornecido pela Cloudflare;
 | `APPLE_ALLOWED_ENVIRONMENTS` | Localmente `Production` no registro normal |
 | `APPLE_NOTIFICATION_ENVIRONMENTS` | Localmente `Production,Sandbox` |
 | `APPLE_TESTFLIGHT_BUILD_VERSIONS` | Allowlist local dos builds `2` e `6`; não comprova que esses builds foram carregados/aprovados no TestFlight |
+| `XCODE_STOREKIT_CERTIFICATE_SHA256` | Somente no ambiente `development`; allowlist separada por vírgulas dos certificados ES256 presentes no `x5c` dos JWS StoreKit 2 do simulador e do aparelho físico. O certificado exportado por **Editor → Save Public Certificate** valida recibos locais e não deve ser presumido igual aos certificados dos JWS |
 
-**Implemented (automação):** os uploads de `develop` (interno) e `beta`
-(externo) adicionam o número validado pela Apple à allowlist do Worker existente,
+O ambiente Wrangler `development` publica `adless-dns-development` e declara
+bindings próprios de `AUTH`, `STATS` e `AUTHORITY`, além de segredo próprio. Ele
+aceita somente `environment=Xcode` e `com.orbeworks.adless.dev`; notificações
+Apple e TestFlight ficam desabilitados. O alvo top-level de produção conserva
+seus bindings, segredo, bundle e políticas Production/Sandbox.
+
+**Implemented (automação):** os uploads interno e externo da `beta` adicionam o
+número validado pela Apple à allowlist do Worker de produção,
 via `tools/dns-worker/testflight_builds.py`. O PATCH modifica somente esse binding;
 os demais são herdados no servidor. Não faz deploy de código dessas branches,
 não abre Sandbox genericamente e não toca KV/DO ou rotas. O deploy de código
@@ -207,6 +222,11 @@ nem smoke após deploy. Mudanças apenas em package/lock da raiz não constam no
 paths do gatilho. `wrangler@4` acompanha versões do major, sem fixação de minor.
 Essas limitações foram registradas, não corrigidas nesta auditoria.
 
+[deploy-dns-worker-development.yml](../.github/workflows/deploy-dns-worker-development.yml)
+é independente: publica somente o ambiente Wrangler `development` em push da
+`develop`, executa a suíte do Worker e verifica o health Dev. Ele não modifica o
+Worker de produção nem a allowlist de builds TestFlight.
+
 Após autorização explícita, revisão do diff, testes e conferência do alvo:
 
 ```sh
@@ -214,7 +234,7 @@ python3 -B tools/dns-worker/prepare_blocklist.py
 python3 -B tools/blocklists/validate_blocklist.py
 npm run test:dns-worker
 npm run build:dns-worker
-npx --yes wrangler@4 deploy --config apps/dns-worker/wrangler.toml
+npx --yes wrangler@4 deploy --env="" --config apps/dns-worker/wrangler.toml
 ```
 
 `npm --prefix apps/dns-worker run deploy` também existe, prepara lista e publica,

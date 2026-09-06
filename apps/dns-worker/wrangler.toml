@@ -36,3 +36,30 @@ class_name = "StatsDurableObject"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["StatsDurableObject"]
+
+# Isolated Worker used only by the Adless Dev scheme. It has independent KV,
+# Durable Objects, token-derivation secret, bundle identity, and StoreKit trust.
+[env.development.vars]
+DEPLOYMENT_ENV = "development"
+APPLE_BUNDLE_ID = "com.orbeworks.adless.dev"
+APPLE_APP_ID = ""
+APPLE_ALLOWED_ENVIRONMENTS = "Xcode"
+APPLE_NOTIFICATION_ENVIRONMENTS = ""
+APPLE_TESTFLIGHT_BUILD_VERSIONS = ""
+XCODE_STOREKIT_CERTIFICATE_SHA256 = "f3e5f6e5203ecaee304da66c012193d54665935639696c1b0654914118fd3af5,91cc159058c8819681b80d11b64a0e8cf8c4a0f71e57e523ae7ffd02fb794a35"
+
+[[env.development.kv_namespaces]]
+binding = "AUTH"
+id = "aa1d015b25d8424c8d6a9cec30c69399"
+
+[[env.development.durable_objects.bindings]]
+name = "STATS"
+class_name = "StatsDurableObject"
+
+[[env.development.durable_objects.bindings]]
+name = "AUTHORITY"
+class_name = "StatsDurableObject"
+
+[[env.development.migrations]]
+tag = "v1"
+new_sqlite_classes = ["StatsDurableObject"]

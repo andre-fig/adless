@@ -40,6 +40,13 @@ MDM, interface de rede ou rota própria. O entitlement de Network Extension
 
 ## StoreKit e estados
 
+Para teste em iPhone físico com produtos simulados, use
+[`tools/ios/install_adless_dev.sh`](../../tools/ios/install_adless_dev.sh). O
+script instala `com.orbeworks.adless.dev`, aponta exclusivamente para o Worker
+de desenvolvimento e inicia o scheme `Adless Dev` pelo Xcode para ativar
+`Adless.storekit`. Ele não instala nem altera o app oficial usado pela `beta` no
+TestFlight Internal/External.
+
 **Implemented:** `SubscriptionManagerState` separa `checking`, `active` (produto,
 prazo e grace), `inactive` e `unavailable`. `Product.products(for:)` carrega os
 planos; status do grupo e transações devem estar verificados. Estados

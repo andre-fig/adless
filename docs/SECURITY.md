@@ -68,9 +68,11 @@ fortemente consistentes. A Cloudflare também cacheia leituras negativas.
 ## Apple JWS, ambientes e notificações
 
 **Implemented:** [apple-jws.ts](../apps/dns-worker/src/apple-jws.ts),
-`verifyAppleJWS`, aceita ES256 com cadeia `x5c` de três certificados, raiz Apple
-G3 fixada, validade temporal, issuer/subject, extensões Apple e assinaturas da
-cadeia. [authorization.ts](../apps/dns-worker/src/authorization.ts) confere
+`verifyAppleJWS`, aceita ES256 com cadeia Apple `x5c` de três certificados, raiz
+Apple G3 fixada, validade temporal, issuer/subject, extensões Apple e assinaturas
+da cadeia. Somente no Worker Dev também aceita o `x5c` único do StoreKit Testing,
+após igualdade exata do SHA-256 configurado e validade do certificado.
+[authorization.ts](../apps/dns-worker/src/authorization.ts) confere
 bundle, produtos permitidos, identificadores e datas. A verificação é local;
 não há chamada Apple no caminho DNS. **Pending:** não há verificação online
 OCSP/CRL, e a suíte não demonstra uma cadeia Apple válida real de ponta a ponta.
@@ -83,6 +85,11 @@ variável: `validTestFlightAppTransaction` exige AppTransaction Apple com
 Isso limita o uso do JWS, mas não comprova criptograficamente que a execução
 veio de TestFlight. A Apple documenta que TestFlight usa Sandbox nas
 [notificações](https://developer.apple.com/documentation/appstoreservernotifications/environment).
+
+O ambiente Dev exige simultaneamente `APPLE_ALLOWED_ENVIRONMENTS=Xcode`, bundle
+`com.orbeworks.adless.dev`, pin do certificado, Transaction e AppTransaction
+Xcode com o mesmo `appTransactionId`. Esses dados ficam em Worker/KV/DO e segredo
+separados. O ambiente de produção não possui o pin e continua rejeitando Xcode.
 
 `handleAppleNotification` verifica `signedPayload` e JWS internos de transação
 e renovação, cruza bundle, produto, original transaction e ambiente. Em
