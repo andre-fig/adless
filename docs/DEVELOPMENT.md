@@ -75,6 +75,12 @@ bundle IDs são diferentes. A automação da interface exige permissão de
 Acessibilidade para o terminal/Codex controlar o Xcode. Mantenha o workspace
 temporário informado no final enquanto a sessão estiver ativa. Compras dessa
 sessão são simulações locais; TestFlight continua usando o Sandbox da Apple.
+O `DerivedData` temporário usado para instalar o primeiro bundle é removido
+automaticamente ao final do script; somente a cópia de fontes necessária para
+a sessão aberta no Xcode permanece. Diretórios antigos de diagnóstico com o
+prefixo `/private/tmp/adless` podem ser removidos com
+`tools/dev/cleanup-adless-temp.sh`; por padrão, o comando preserva os criados
+nas últimas 24 horas.
 
 A raiz declara somente `apps/landing-page` como workspace. Os scripts do Worker
 usam `npm --prefix apps/dns-worker` e compilador de `node_modules` da raiz; o
