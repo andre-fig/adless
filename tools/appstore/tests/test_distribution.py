@@ -162,6 +162,28 @@ class DistributionTests(unittest.TestCase):
 
 
 class WorkflowContractTests(unittest.TestCase):
+    def test_temporary_build_directories_are_cleaned_on_shell_exit(self):
+        common = (ROOT / ".githooks" / "common.sh").read_text(encoding="utf-8")
+        for function_name in ("run_worker_deploy_dry_runs", "run_ios_tests"):
+            with self.subTest(function_name=function_name):
+                start = common.index(f"{function_name}() (")
+                end = common.index("\n)\n", start)
+                function = common[start:end]
+                self.assertIn("trap '", function)
+                self.assertIn(" EXIT", function)
+                self.assertNotIn(" RETURN", function)
+
+    def test_daily_cleanup_covers_private_and_session_temp_roots(self):
+        cleanup = (ROOT / "tools" / "dev" / "cleanup-adless-temp.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("temp_roots=(/private/tmp)", cleanup)
+        self.assertIn("getconf DARWIN_USER_TEMP_DIR", cleanup)
+        self.assertIn('temp_roots+=("$session_temp_root")', cleanup)
+        self.assertIn('-type d -name \'adless*\'', cleanup)
+        self.assertIn('stat -f \'%u\'', cleanup)
+        self.assertIn('Skipping active temporary directory', cleanup)
+
     def test_promotion_workflows_open_only_the_expected_pull_requests(self):
         workflows = (
             ("open-develop-to-beta-pr.yml", "develop", "beta"),

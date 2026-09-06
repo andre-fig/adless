@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-temp_root=/private/tmp
 maximum_age_minutes="${ADLESS_TEMP_MAX_AGE_MINUTES:-1440}"
 
 case "$maximum_age_minutes" in
@@ -12,27 +11,38 @@ case "$maximum_age_minutes" in
     ;;
 esac
 
-test -d "$temp_root" || exit 0
 current_uid="$(id -u)"
+session_temp_root="$(getconf DARWIN_USER_TEMP_DIR 2>/dev/null || true)"
+session_temp_root="${session_temp_root:-${TMPDIR:-}}"
+session_temp_root="${session_temp_root%/}"
 
-find "$temp_root" -mindepth 1 -maxdepth 1 -type d -name 'adless*' \
-  -mmin "+$maximum_age_minutes" -print0 |
-while IFS= read -r -d '' candidate; do
-  test "$(dirname "$candidate")" = "$temp_root" || continue
-  case "$(basename "$candidate")" in
-    adless*) ;;
-    *) continue ;;
-  esac
-  test "$(stat -f '%u' "$candidate")" = "$current_uid" || continue
+temp_roots=(/private/tmp)
+if [ -n "$session_temp_root" ] && [ "$session_temp_root" != /private/tmp ]; then
+  temp_roots+=("$session_temp_root")
+fi
 
-  # shellcheck disable=SC2009
-  if ps ax -o command= | grep -F -- "$candidate" | grep -v grep >/dev/null 2>&1; then
-    echo "Skipping active temporary directory: $candidate"
-    continue
-  fi
+for temp_root in "${temp_roots[@]}"; do
+  test -d "$temp_root" || continue
 
-  find "$candidate" -depth -delete
-  echo "Removed stale temporary directory: $candidate"
+  find "$temp_root" -mindepth 1 -maxdepth 1 -type d -name 'adless*' \
+    -mmin "+$maximum_age_minutes" -print0 |
+  while IFS= read -r -d '' candidate; do
+    test "$(dirname "$candidate")" = "$temp_root" || continue
+    case "$(basename "$candidate")" in
+      adless*) ;;
+      *) continue ;;
+    esac
+    test "$(stat -f '%u' "$candidate")" = "$current_uid" || continue
+
+    # shellcheck disable=SC2009
+    if ps ax -o command= | grep -F -- "$candidate" | grep -v grep >/dev/null 2>&1; then
+      echo "Skipping active temporary directory: $candidate"
+      continue
+    fi
+
+    find "$candidate" -depth -delete
+    echo "Removed stale temporary directory: $candidate"
+  done
 done
 
 echo "Adless temporary cleanup completed."

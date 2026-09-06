@@ -93,12 +93,12 @@ run_worker_checks() {
   npm --prefix "$REPO_ROOT" run build:dns-worker
 }
 
-run_worker_deploy_dry_runs() {
+run_worker_deploy_dry_runs() (
   require_command npx "install Node.js 20 or newer"
 
   local dry_run_directory
   dry_run_directory="$(mktemp -d "${TMPDIR:-/tmp}/adless-wrangler-dry-run.XXXXXX")"
-  trap 'find "$dry_run_directory" -depth -delete' RETURN
+  trap 'test ! -d "$dry_run_directory" || find "$dry_run_directory" -depth -delete' EXIT
 
   (
     cd "$REPO_ROOT"
@@ -111,7 +111,7 @@ run_worker_deploy_dry_runs() {
       --dry-run \
       --outdir "$dry_run_directory/development"
   )
-}
+)
 
 run_landing_lint() {
   require_command npm "install Node.js 20 or newer"
@@ -128,7 +128,7 @@ run_landing_checks() {
   npm --prefix "$REPO_ROOT" run build:landing
 }
 
-run_ios_tests() {
+run_ios_tests() (
   require_command xcodebuild "install Xcode"
   require_command xcrun "install Xcode command-line tools"
 
@@ -140,7 +140,7 @@ run_ios_tests() {
   fi
 
   derived_data="$(mktemp -d "${TMPDIR:-/tmp}/adless-pre-push.XXXXXX")"
-  trap 'rm -rf "$derived_data"' RETURN
+  trap 'test ! -d "$derived_data" || find "$derived_data" -depth -delete' EXIT
 
   xcodebuild \
     -project "$REPO_ROOT/apps/ios/Adless.xcodeproj" \
@@ -149,4 +149,4 @@ run_ios_tests() {
     -derivedDataPath "$derived_data" \
     CODE_SIGNING_ALLOWED=NO \
     test
-}
+)
