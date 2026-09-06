@@ -4,7 +4,13 @@ import Sentry
 enum AdlessSentry {
     nonisolated private static let dsn = "https://2f1865aead67f3607d25bb035692fad2@o4511935178080256.ingest.us.sentry.io/4511957005697024"
 
+    nonisolated static func shouldStart(environment: [String: String]) -> Bool {
+        environment["XCTestConfigurationFilePath"] == nil
+            && environment["XCTestBundlePath"] == nil
+    }
+
     nonisolated static func start() {
+        guard shouldStart(environment: ProcessInfo.processInfo.environment) else { return }
         SentrySDK.start { options in
             options.dsn = dsn
 #if DEBUG

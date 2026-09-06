@@ -4,6 +4,17 @@ import XCTest
 
 @MainActor
 final class BlocklistTests: XCTestCase {
+    func testSentryDoesNotStartInsideXCTest() {
+        XCTAssertFalse(AdlessSentry.shouldStart(environment: ProcessInfo.processInfo.environment))
+        XCTAssertFalse(AdlessSentry.shouldStart(environment: [
+            "XCTestConfigurationFilePath": "/tmp/AdlessTests.xctestconfiguration"
+        ]))
+        XCTAssertFalse(AdlessSentry.shouldStart(environment: [
+            "XCTestBundlePath": "/tmp/AdlessTests.xctest"
+        ]))
+        XCTAssertTrue(AdlessSentry.shouldStart(environment: [:]))
+    }
+
     func testCanonicalParsingAndSubdomainMatching() throws {
         let entries = try BlocklistParser.parseCanonical(Data("ads.example.com\ntracker.example.com\n".utf8))
 
