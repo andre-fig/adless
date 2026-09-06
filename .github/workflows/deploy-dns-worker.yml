@@ -69,3 +69,10 @@ jobs:
           npx --yes wrangler@4 deploy --env="" --config apps/dns-worker/wrangler.toml \
             --var "APPLE_TESTFLIGHT_BUILD_VERSIONS:$TESTFLIGHT_BUILDS"
           python3 tools/dns-worker/testflight_builds.py verify --builds "$TESTFLIGHT_BUILDS"
+
+      - name: Verify production health endpoint
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 3 \
+            "https://adless-dns.adless-production.workers.dev/healthz" \
+            | python3 -c 'import json, sys; data=json.load(sys.stdin); assert data == {"status": "ok", "environment": "production"}, data'
