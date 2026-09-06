@@ -92,6 +92,20 @@ printf '%s\n' "$lock_state" | grep -Fq 'passcodeRequired: false' \
 temporary_root="$(mktemp -d "${TMPDIR:-/tmp}/adless-dev-install.XXXXXX")"
 temporary_ios="$temporary_root/ios"
 derived_data="$temporary_root/DerivedData"
+preserve_workspace=false
+
+cleanup_temporary_root() {
+  test -d "$temporary_root" || return 0
+  if [ "$preserve_workspace" = true ]; then
+    test ! -d "$derived_data" || find "$derived_data" -depth -delete
+    test ! -f "$temporary_root/signed-entitlements.plist" \
+      || find "$temporary_root/signed-entitlements.plist" -delete
+  else
+    find "$temporary_root" -depth -delete
+  fi
+}
+
+trap cleanup_temporary_root EXIT HUP INT TERM
 ditto "$source_ios" "$temporary_ios"
 echo "Preparing isolated Xcode workspace at $temporary_root"
 
@@ -160,7 +174,9 @@ on run arguments
 end run
 APPLESCRIPT
 
+preserve_workspace=true
 echo "Installed $expected_bundle_id on $device_name."
 echo "Xcode Run started with the Adless Dev scheme and Adless.storekit enabled."
 echo "The app points only to $expected_worker_url."
-echo "The temporary Xcode workspace remains at $temporary_root while the debug session is active."
+echo "The temporary source workspace remains at $temporary_ios while the debug session is active."
+echo "Temporary DerivedData is removed automatically when this installer exits."
