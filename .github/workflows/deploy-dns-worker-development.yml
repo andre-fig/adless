@@ -61,4 +61,7 @@ jobs:
 
       - name: Verify development health endpoint
         run: |
-          python3 -c 'import json, urllib.request; data=json.load(urllib.request.urlopen("https://adless-dns-development.adless-production.workers.dev/healthz", timeout=10)); assert data == {"status": "ok", "environment": "development"}, data'
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 3 \
+            "https://adless-dns-development.adless-production.workers.dev/healthz" \
+            | python3 -c 'import json, sys; data=json.load(sys.stdin); assert data == {"status": "ok", "environment": "development"}, data'
