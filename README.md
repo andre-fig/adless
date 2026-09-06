@@ -24,7 +24,9 @@ ficam em [dns-cloud](docs/dns-cloud.md) e [ios-release](docs/ios-release.md).
 
 A promoção esperada é `develop` → `beta` → `main`. Os dois workflows da
 `beta` partem da mesma branch, mas mantêm separadas as distribuições interna e
-externa. Veja [Desenvolvimento](docs/DEVELOPMENT.md) e
+externa. Pushes em `develop` abrem uma PR para `beta` quando ainda não existe
+uma aberta; pushes em `beta` fazem o mesmo para `main`. Essas automações nunca
+executam o merge. Veja [Desenvolvimento](docs/DEVELOPMENT.md) e
 [Apple e lançamento](docs/ios-release.md).
 
 ## Comece aqui

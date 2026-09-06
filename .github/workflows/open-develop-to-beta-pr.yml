@@ -1,0 +1,52 @@
+name: Open develop to beta PR
+
+on:
+  push:
+    branches:
+      - develop
+
+concurrency:
+  group: open-develop-to-beta-pr
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  open-promotion-pr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Open promotion PR if needed
+        run: |
+          set -euo pipefail
+
+          existing_pr="$(gh pr list \
+            --repo "$GITHUB_REPOSITORY" \
+            --base beta \
+            --head develop \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')"
+          if [ -n "$existing_pr" ]; then
+            echo "PR #$existing_pr from develop to beta is already open."
+            exit 0
+          fi
+
+          ahead_by="$(gh api \
+            "repos/$GITHUB_REPOSITORY/compare/beta...develop" \
+            --jq '.ahead_by')"
+          if [ "$ahead_by" -eq 0 ]; then
+            echo "develop has no commits pending in beta."
+            exit 0
+          fi
+
+          gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --base beta \
+            --head develop \
+            --title "Promote develop to beta" \
+            --body "Automated promotion PR from develop to beta. Review is required; this workflow never merges the PR."

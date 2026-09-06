@@ -40,6 +40,21 @@ run_actionlint() {
   actionlint "$REPO_ROOT"/.github/workflows/*.yml
 }
 
+run_shellcheck() {
+  local paths_file="$1"
+  local path
+
+  require_command shellcheck "brew install shellcheck"
+  while IFS= read -r path; do
+    [ -f "$REPO_ROOT/$path" ] || continue
+    case "$path" in
+      *.sh|.githooks/pre-commit|.githooks/pre-push)
+        shellcheck "$REPO_ROOT/$path"
+        ;;
+    esac
+  done < "$paths_file"
+}
+
 run_python_syntax() {
   local paths_file="$1"
   local path
@@ -76,6 +91,26 @@ run_worker_checks() {
   require_command npm "install Node.js 20 or newer"
   npm --prefix "$REPO_ROOT" run test:dns-worker
   npm --prefix "$REPO_ROOT" run build:dns-worker
+}
+
+run_worker_deploy_dry_runs() {
+  require_command npx "install Node.js 20 or newer"
+
+  local dry_run_directory
+  dry_run_directory="$(mktemp -d "${TMPDIR:-/tmp}/adless-wrangler-dry-run.XXXXXX")"
+  trap 'find "$dry_run_directory" -depth -delete' RETURN
+
+  (
+    cd "$REPO_ROOT"
+    npx --yes wrangler@4 deploy --env="" \
+      --config apps/dns-worker/wrangler.toml \
+      --dry-run \
+      --outdir "$dry_run_directory/production"
+    npx --yes wrangler@4 deploy --env development \
+      --config apps/dns-worker/wrangler.toml \
+      --dry-run \
+      --outdir "$dry_run_directory/development"
+  )
 }
 
 run_landing_lint() {

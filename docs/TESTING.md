@@ -34,6 +34,7 @@ Se testes complementares forem executados, direcione saídas para diretório tem
 | Componente / fonte | Implemented: o que os testes demonstram | O que não demonstram |
 | --- | --- | --- |
 | [Worker](../apps/dns-worker/test/worker.test.ts) | Wire DNS, autorização, migrações, estados e falhas com dependências simuladas | Runtime Cloudflare, propagação real do KV, credenciais Apple válidas ou versão publicada |
+| [Contratos de deploy](../tools/dns-worker/tests/test_deploy_workflows.py) | Health checks de produção/desenvolvimento usam `curl`, endpoint e ambiente correspondentes | Disponibilidade remota, propagação do deploy ou validade de secrets |
 | [Blocklists](../tools/blocklists/tests/test_blocklists.py) | Parsing/IDN, hosts/Adblock/domínios, deduplicação, allowlist, gzip/checksum, determinismo, rejeição de lista vazia/HTML/variação grande e matriz de domínios | Disponibilidade de download HTTPS real, integridade publicada e aceitabilidade de cada bloqueio |
 | [BlocklistTests.swift](../apps/ios/AdlessTests/BlocklistTests.swift) | Helpers de domínio, política de acesso/grace, formatter de oferta, persistência/contador, URLs/payload, gate de proteção e restore | Filtragem DNS no iPhone; elegibilidade real de oferta ou compra Apple |
 | [InstallationTokenStoreTests.swift](../apps/ios/AdlessTests/InstallationTokenStoreTests.swift) | Blob único, nonce persistido ao preparar a tentativa, retry após falha de commit, migração antiga e troca de tentativa pendente | POST integrado e acessibilidade real do Keychain após reboot/reinstalação |

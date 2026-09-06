@@ -34,6 +34,6 @@ if [ "$layout_only" = true ]; then
   exit 0
 fi
 
-script_directory="$(CDPATH= cd "$(dirname "$0")" && pwd)"
+script_directory="$(CDPATH='' cd "$(dirname "$0")" && pwd)"
 sh "$script_directory/verify_distribution_profile.sh" "$app"
 echo "Verified signed Adless.app archive with dns-settings and no embedded extensions."
