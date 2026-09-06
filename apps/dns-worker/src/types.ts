@@ -23,7 +23,7 @@ export interface SubscriptionAuthorityEvent {
   source: "record" | "transaction" | "notification";
   sourceId: string;
   reason: string;
-  environment: "Production" | "Sandbox";
+  environment: "Production" | "Sandbox" | "Xcode";
   originalTransactionId: string;
   transactionId?: string;
   productId: string;
@@ -55,7 +55,8 @@ export interface WorkerEnvironment {
   APPLE_ALLOWED_ENVIRONMENTS?: string;
   APPLE_NOTIFICATION_ENVIRONMENTS?: string;
   APPLE_TESTFLIGHT_BUILD_VERSIONS?: string;
-  DEPLOYMENT_ENV?: "production";
+  XCODE_STOREKIT_CERTIFICATE_SHA256?: string;
+  DEPLOYMENT_ENV?: "production" | "development";
 }
 
 export interface WorkerExecutionContext {

@@ -1,6 +1,10 @@
+import "reflect-metadata";
 import { strict as assert } from "node:assert";
-import { createHash } from "node:crypto";
+import { createHash, webcrypto } from "node:crypto";
 import { test } from "node:test";
+import { cryptoProvider, X509CertificateGenerator } from "@peculiar/x509";
+import { SignJWT } from "jose";
+import { verifyAppleJWS } from "../src/apple-jws.js";
 import { createBlocklist, normalizeDomain } from "../src/blocklist.js";
 import { createDNSWorker } from "../src/handler.js";
 import { BLOCKED_RESPONSE_TTL, parseDNSMessage } from "../src/dns.js";
@@ -35,6 +39,16 @@ const AUTH_ENV = {
   APPLE_ALLOWED_ENVIRONMENTS: "Production",
   APPLE_NOTIFICATION_ENVIRONMENTS: "Production,Sandbox",
   APPLE_TESTFLIGHT_BUILD_VERSIONS: "2",
+} as const;
+
+cryptoProvider.set(webcrypto as unknown as Crypto);
+const DEVELOPMENT_AUTH_ENV = {
+  AUTH_TOKEN_DERIVATION_SECRET: "test-only-development-secret-with-at-least-32-bytes",
+  APPLE_BUNDLE_ID: "com.orbeworks.adless.dev",
+  APPLE_ALLOWED_ENVIRONMENTS: "Xcode",
+  APPLE_NOTIFICATION_ENVIRONMENTS: "",
+  APPLE_TESTFLIGHT_BUILD_VERSIONS: "",
+  XCODE_STOREKIT_CERTIFICATE_SHA256: "f".repeat(64),
 } as const;
 
 class MemoryDOStorage implements StatsStorage {
@@ -145,7 +159,7 @@ function environmentForAuthorization(
 
 function latestAuthorityEvent(
   kv: MemoryKV,
-  environment: "Production" | "Sandbox" = "Production",
+  environment: "Production" | "Sandbox" | "Xcode" = "Production",
 ): SubscriptionAuthorityEvent | undefined {
   return [...kv.authority.objects.values()]
     .map((storage) => storage.values.get("authority:latest") as SubscriptionAuthorityEvent | undefined)
@@ -878,6 +892,42 @@ test("malformed StoreKit JWS cannot issue authorization credentials", async () =
   assert.equal(kv.values.size, 0);
 });
 
+test("single-certificate Xcode JWS requires one of the explicitly pinned signing certificates", async () => {
+  const keys = await webcrypto.subtle.generateKey(
+    { name: "ECDSA", namedCurve: "P-256" },
+    true,
+    ["sign", "verify"],
+  );
+  const verificationTime = new Date("2026-09-06T12:00:00Z");
+  const certificate = await X509CertificateGenerator.createSelfSigned({
+    serialNumber: "01",
+    name: "CN=StoreKit Test",
+    notBefore: new Date("2026-09-05T00:00:00Z"),
+    notAfter: new Date("2027-09-05T00:00:00Z"),
+    signingAlgorithm: { name: "ECDSA", hash: "SHA-256" },
+    keys: keys as CryptoKeyPair,
+  }, webcrypto as unknown as Crypto);
+  const certificateBytes = new Uint8Array(certificate.rawData);
+  const fingerprint = createHash("sha256").update(certificateBytes).digest("hex");
+  const jws = await new SignJWT({ environment: "Xcode", bundleId: "com.orbeworks.adless.dev" })
+    .setProtectedHeader({
+      alg: "ES256",
+      x5c: [Buffer.from(certificateBytes).toString("base64")],
+    })
+    .sign(keys.privateKey);
+
+  const payload = await verifyAppleJWS<{ environment: string; bundleId: string }>(jws, {
+    trustedLeafCertificateSHA256: `${"0".repeat(64)}, ${fingerprint}`,
+    verificationTime,
+  });
+  assert.deepEqual(payload, { environment: "Xcode", bundleId: "com.orbeworks.adless.dev" });
+  await assert.rejects(verifyAppleJWS(jws, {
+    trustedLeafCertificateSHA256: "0".repeat(64),
+    verificationTime,
+  }));
+  await assert.rejects(verifyAppleJWS(jws, { verificationTime }));
+});
+
 test("authorization fails closed when the token derivation secret is absent", async () => {
   const kv = new MemoryKV();
   const result = await authorizationResponse(kv, INSTALLATION_ID, testTransaction(), {
@@ -1421,6 +1471,87 @@ test("rejects Sandbox app evidence that does not match the TestFlight transactio
       assert.equal(kv.values.size, 0);
     });
   }
+});
+
+test("accepts Xcode StoreKit transactions only in the isolated development environment", async () => {
+  const kv = new MemoryKV();
+  const appTransactionId = "xcode-app-transaction-1";
+  const transaction = testTransaction({
+    bundleId: "com.orbeworks.adless.dev",
+    environment: "Xcode",
+    appTransactionId,
+  });
+  const appTransaction = testAppTransaction({
+    receiptType: "Xcode",
+    bundleId: "com.orbeworks.adless.dev",
+    appTransactionId,
+  });
+
+  const credentials = await registerTestInstallation(
+    kv,
+    INSTALLATION_ID,
+    transaction,
+    DEVELOPMENT_AUTH_ENV,
+    appTransaction,
+  );
+  assert.equal(credentials.installationId, INSTALLATION_ID);
+  assert.equal(latestAuthorityEvent(kv, "Xcode")?.environment, "Xcode");
+  assert.equal([...kv.values.keys()].some((key) => key.includes("subscription:Xcode:")), true);
+});
+
+test("production and incomplete development configurations reject Xcode StoreKit transactions", async (context) => {
+  const appTransactionId = "xcode-app-transaction-1";
+  const transaction = testTransaction({
+    bundleId: "com.orbeworks.adless.dev",
+    environment: "Xcode",
+    appTransactionId,
+  });
+  const appTransaction = testAppTransaction({
+    receiptType: "Xcode",
+    bundleId: "com.orbeworks.adless.dev",
+    appTransactionId,
+  });
+  const cases: Array<[string, AuthorizationEnvironment]> = [
+    ["production", AUTH_ENV],
+    ["missing pinned certificate", { ...DEVELOPMENT_AUTH_ENV, XCODE_STOREKIT_CERTIFICATE_SHA256: undefined }],
+    ["Xcode not explicitly allowed", { ...DEVELOPMENT_AUTH_ENV, APPLE_ALLOWED_ENVIRONMENTS: "Sandbox" }],
+    ["wrong bundle", { ...DEVELOPMENT_AUTH_ENV, APPLE_BUNDLE_ID: "com.orbeworks.adless" }],
+  ];
+
+  for (const [name, candidateEnvironment] of cases) {
+    await context.test(name, async () => {
+      const kv = new MemoryKV();
+      const response = await authorizationResponse(
+        kv,
+        INSTALLATION_ID,
+        transaction,
+        candidateEnvironment,
+        appTransaction,
+      );
+      assert.equal(response.status, 401);
+      assert.equal(kv.values.size, 0);
+    });
+  }
+});
+
+test("development environment rejects App Store Server Notifications", async () => {
+  const kv = new MemoryKV();
+  const response = await handleAppleNotification(
+    new Request("https://worker.example.test/v1/notifications/apple", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ signedPayload: "test-notification-jws" }),
+    }),
+    environmentForAuthorization(kv, DEVELOPMENT_AUTH_ENV),
+    {
+      now: () => AUTH_NOW,
+      verifyNotification: async () => testNotification({
+        data: { bundleId: "com.orbeworks.adless.dev", environment: "Sandbox" },
+      }),
+    },
+  );
+  assert.equal(response.status, 400);
+  assert.equal(kv.values.size, 0);
 });
 
 test("Sandbox notifications omit appAppleId and remain isolated from Production records", async () => {

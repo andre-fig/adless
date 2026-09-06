@@ -117,6 +117,18 @@ interceptação DNS. `Adless.storekit` simula StoreKit no Xcode; não comprova J
 aceito pela raiz Apple do Worker. TestFlight usa Sandbox; distribuição pública
 precisa repetir a validação com os produtos/ambiente reais.
 
+Para instalar no iPhone o app de desenvolvimento com essa sessão StoreKit e o
+Worker de desenvolvimento, mantenha o aparelho desbloqueado e execute:
+
+```sh
+tools/ios/install_adless_dev.sh
+```
+
+O instalador valida bundle ID, ambiente, endpoint e entitlements antes de
+instalar, depois inicia o app pelo LaunchAction `Adless Dev` do Xcode. Esse teste
+não é equivalente ao TestFlight: a `beta` alimenta separadamente TestFlight
+Internal e External, que usam o Sandbox da Apple e o app oficial.
+
 ## Matriz manual no iPhone
 
 **Pending até registrar evidências por build/dispositivo/ambiente.** Partir de

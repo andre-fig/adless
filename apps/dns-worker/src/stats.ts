@@ -22,7 +22,7 @@ function isAuthorityEvent(value: unknown): value is SubscriptionAuthorityEvent {
     && typeof event.reason === "string"
     && event.reason.length > 0
     && event.reason.length <= 64
-    && (event.environment === "Production" || event.environment === "Sandbox")
+    && (event.environment === "Production" || event.environment === "Sandbox" || event.environment === "Xcode")
     && isSafeIdentifier(event.originalTransactionId)
     && (event.transactionId === undefined || isSafeIdentifier(event.transactionId))
     && isSafeIdentifier(event.productId)

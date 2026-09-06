@@ -14,6 +14,19 @@ Configuração local de produtos, trial, workflows ou bindings não comprova que
 os serviços remotos estão configurados. Evidências e pendências de operação
 ficam em [dns-cloud](docs/dns-cloud.md) e [ios-release](docs/ios-release.md).
 
+## Branches e distribuição
+
+| Branch | Finalidade | Destino |
+| --- | --- | --- |
+| `develop` | Desenvolvimento isolado com o app `Adless Dev`, StoreKit local no Xcode e Worker `adless-dns-development` | Aparelhos/simuladores de desenvolvimento; não distribui pelo TestFlight |
+| `beta` | Validação do app oficial `Adless` | Dois workflows separados do Xcode Cloud: TestFlight Internal e TestFlight External |
+| `main` | Produção do app oficial e dos serviços públicos | App Store e Worker de produção |
+
+A promoção esperada é `develop` → `beta` → `main`. Os dois workflows da
+`beta` partem da mesma branch, mas mantêm separadas as distribuições interna e
+externa. Veja [Desenvolvimento](docs/DEVELOPMENT.md) e
+[Apple e lançamento](docs/ios-release.md).
+
 ## Comece aqui
 
 Leia [AGENTS.md](AGENTS.md) antes de editar. Para preparar o ambiente e entender
