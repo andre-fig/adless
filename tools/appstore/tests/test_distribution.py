@@ -162,6 +162,30 @@ class DistributionTests(unittest.TestCase):
 
 
 class WorkflowContractTests(unittest.TestCase):
+    def test_promotion_workflows_open_only_the_expected_pull_requests(self):
+        workflows = (
+            ("open-develop-to-beta-pr.yml", "develop", "beta"),
+            ("open-beta-to-main-pr.yml", "beta", "main"),
+        )
+        for filename, head, base in workflows:
+            with self.subTest(filename=filename):
+                text = (ROOT / ".github/workflows" / filename).read_text(encoding="utf-8")
+                compact = " ".join(text.split())
+                self.assertIn(f"- {head}", text)
+                self.assertIn("pull-requests: write", text)
+                self.assertIn("contents: read", text)
+                self.assertIn(f"--base {base}", compact)
+                self.assertIn(f"--head {head}", compact)
+                self.assertIn("--state open", compact)
+                self.assertIn(f"compare/{base}...{head}", compact)
+                self.assertIn("gh pr create", compact)
+                self.assertIn('if [ -n "$existing_pr" ]; then', text)
+                self.assertLess(text.index("gh pr list"), text.index("gh pr create"))
+                self.assertIn("concurrency:", text)
+                self.assertIn("cancel-in-progress: false", text)
+                self.assertNotIn("gh pr merge", compact)
+                self.assertNotIn("auto-merge", compact)
+
     def test_export_audience_and_build_number_are_explicit(self):
         for filename, internal in (("ExportOptions-TestFlight-Internal.plist", True),
                                    ("ExportOptions-TestFlight.plist", False), ("ExportOptions.plist", False)):

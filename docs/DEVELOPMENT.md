@@ -46,6 +46,13 @@ pelo scheme/configuração e pela seleção explícita `--env development`, enqu
 os dois fluxos da `beta` geram o app oficial. TestFlight Internal e External não
 são estágios sequenciais do mesmo workflow; cada um tem seu próprio workflow
 Xcode Cloud e seus próprios critérios de distribuição.
+Um push em `develop` abre uma PR de promoção para `beta` se nenhuma estiver
+aberta; um push em `beta` abre a correspondente PR para `main`. Os workflows
+apenas criam a PR, são serializados por par de branches e nunca fazem merge
+automático. Para funcionarem com `GITHUB_TOKEN`, o repositório precisa manter
+habilitada em **Settings → Actions → General → Workflow permissions** a opção
+**Allow GitHub Actions to create and approve pull requests**. Os workflows
+declaram somente `contents: read` e `pull-requests: write`; não aprovam PRs.
 
 ### Instalar Adless Dev em um iPhone com StoreKit local
 
