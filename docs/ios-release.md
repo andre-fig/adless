@@ -19,7 +19,7 @@ Testes detalhados: [TESTING](TESTING.md). Metadata e texto para revisão:
 | `Adless Dev` | `Debug Dev` / `Release Dev`, bundle `com.orbeworks.adless.dev`, nome Adless Dev |
 | `Adless` | `Debug` / `Release`, bundle `com.orbeworks.adless`, nome Adless; identidade oficial usada nos dois workflows |
 | Debug vs Release | Flags de compilação, otimização e ambiente Sentry; não determinam o ambiente assinado no JWS StoreKit |
-| StoreKit Testing no Xcode | `Adless.storekit` nos LaunchActions; o Worker Dev aceita somente o certificado Xcode fixado e o bundle `com.orbeworks.adless.dev` |
+| StoreKit Testing no Xcode | `Adless.storekit` nos LaunchActions; o Worker Dev aceita somente certificados JWS Xcode explicitamente fixados e o bundle `com.orbeworks.adless.dev` |
 | Sandbox no iPhone | Produtos reais configurados na Apple, transações de teste assinadas pela Apple; aprovação server-side ainda depende da política do Worker |
 | TestFlight interno/externo | Archive Release da identidade oficial, compras Sandbox; estar em TestFlight não comprova assinatura Production |
 | App Store pública | Distribuição oficial e compras Production, com aprovação/publicação separadas do sucesso do upload |
@@ -28,8 +28,8 @@ Testes detalhados: [TESTING](TESTING.md). Metadata e texto para revisão:
 `https://adless-dns-development.adless-production.workers.dev`; KV, Durable
 Objects e segredo de derivação são isolados do Worker oficial. Somente esse
 ambiente aceita `environment=Xcode`, o bundle `com.orbeworks.adless.dev`, uma
-AppTransaction correspondente e o certificado de assinatura StoreKit fixado por
-SHA-256. `Production.xcconfig` continua apontando para
+AppTransaction correspondente e um certificado de assinatura StoreKit presente
+na allowlist SHA-256 do ambiente Dev. `Production.xcconfig` continua apontando para
 `https://adless-dns.adless-production.workers.dev` e não aceita transações Xcode.
 No simulador Debug lançado sem
 `-useStoreKitProducts`, há opções somente visuais com `Product == nil` e compra
@@ -180,11 +180,14 @@ A política operacional é develop → beta → main, mas o código não
 comprova proteção de branches ou revisão obrigatória. Disparar workflow ou push
 pode publicar: exige autorização explícita, assim como upload/submissão manual.
 
-`develop` é exclusivamente a branch de desenvolvimento: usa `Adless Dev`,
-StoreKit local e o Worker de desenvolvimento, e não deve alimentar TestFlight.
-Os testes TestFlight Internal e External partem ambos da `beta`, em workflows
-Xcode Cloud independentes, usando o app oficial `Adless`. A `main` fica reservada
-à distribuição pública/App Store e aos serviços de produção.
+O trabalho começa na `develop`, usando `Adless Dev`, StoreKit local e o Worker
+de desenvolvimento; essa branch não alimenta TestFlight. Seus commits são
+promovidos para `beta` e depois `main`, incluindo os arquivos Dev, mas esses
+arquivos permanecem inativos fora do scheme/configuração e do ambiente Wrangler
+selecionados explicitamente. Os testes TestFlight Internal e External partem
+ambos da `beta`, em workflows Xcode Cloud independentes, usando o app oficial
+`Adless`. A `main` fica reservada à distribuição pública/App Store e aos serviços
+de produção.
 
 | Fluxo | Comportamento presente no workflow |
 | --- | --- |

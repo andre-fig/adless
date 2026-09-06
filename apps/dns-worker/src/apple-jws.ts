@@ -10,7 +10,7 @@ const APPLE_JWS_INTERMEDIATE_EXTENSION = "1.2.840.113635.100.6.2.1";
 
 export interface AppleJWSVerificationOptions {
   trustedRootCertificate?: Uint8Array;
-  /** SHA-256 of the single Xcode StoreKit Test signing certificate, in hex. */
+  /** Comma-separated SHA-256 pins for Xcode StoreKit Test signing certificates. */
   trustedLeafCertificateSHA256?: string;
   verificationTime?: Date;
 }
@@ -45,9 +45,10 @@ async function sameCertificate(left: X509Certificate, right: X509Certificate): P
     && leftThumbprint.every((value, index) => value === rightThumbprint[index]);
 }
 
-function normalizedSHA256(value: string | undefined): string | undefined {
-  const normalized = value?.trim().toLowerCase().replace(/:/g, "");
-  return normalized && /^[0-9a-f]{64}$/.test(normalized) ? normalized : undefined;
+function normalizedSHA256Pins(value: string | undefined): Set<string> {
+  return new Set((value ?? "").split(",")
+    .map((candidate) => candidate.trim().toLowerCase().replace(/:/g, ""))
+    .filter((candidate) => /^[0-9a-f]{64}$/.test(candidate)));
 }
 
 async function certificateSHA256(certificate: X509Certificate): Promise<string> {
@@ -62,13 +63,13 @@ async function verifyCertificateChain(header: Record<string, unknown>, options: 
   }
 
   try {
-    const pinnedLeafSHA256 = normalizedSHA256(options.trustedLeafCertificateSHA256);
-    if (chain.length === 1 && pinnedLeafSHA256) {
+    const pinnedLeafSHA256 = normalizedSHA256Pins(options.trustedLeafCertificateSHA256);
+    if (chain.length === 1 && pinnedLeafSHA256.size > 0) {
       const leaf = new X509Certificate(decodeBase64(chain[0] as string).buffer as ArrayBuffer);
       const verificationTime = options.verificationTime ?? new Date();
       if (verificationTime < leaf.notBefore
         || verificationTime > leaf.notAfter
-        || await certificateSHA256(leaf) !== pinnedLeafSHA256) {
+        || !pinnedLeafSHA256.has(await certificateSHA256(leaf))) {
         throw new AppleJWSVerificationError();
       }
       return await leaf.publicKey.export({ name: "ECDSA", namedCurve: "P-256" }, ["verify"]);

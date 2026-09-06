@@ -50,7 +50,8 @@ Worker de produção. Não compartilhe bindings ou origem entre eles.
 Debug/Release não definem o ambiente StoreKit: Xcode local usa `Adless.storekit`,
 TestFlight usa Sandbox e App Store pública usa Production. O Worker Dev aceita
 JWS local somente com `environment=Xcode`, bundle Dev, AppTransaction correspondente
-e certificado Xcode fixado; o Worker de produção não aceita esse ambiente.
+e certificado JWS presente na allowlist de hashes fixados; o Worker de produção
+não aceita esse ambiente.
 
 Comandos a partir da raiz, em ambiente com dependências já disponíveis:
 

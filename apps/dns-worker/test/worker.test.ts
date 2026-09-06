@@ -892,7 +892,7 @@ test("malformed StoreKit JWS cannot issue authorization credentials", async () =
   assert.equal(kv.values.size, 0);
 });
 
-test("single-certificate Xcode JWS requires the exact pinned signing certificate", async () => {
+test("single-certificate Xcode JWS requires one of the explicitly pinned signing certificates", async () => {
   const keys = await webcrypto.subtle.generateKey(
     { name: "ECDSA", namedCurve: "P-256" },
     true,
@@ -917,7 +917,7 @@ test("single-certificate Xcode JWS requires the exact pinned signing certificate
     .sign(keys.privateKey);
 
   const payload = await verifyAppleJWS<{ environment: string; bundleId: string }>(jws, {
-    trustedLeafCertificateSHA256: fingerprint,
+    trustedLeafCertificateSHA256: `${"0".repeat(64)}, ${fingerprint}`,
     verificationTime,
   });
   assert.deepEqual(payload, { environment: "Xcode", bundleId: "com.orbeworks.adless.dev" });

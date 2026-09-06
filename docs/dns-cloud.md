@@ -13,7 +13,7 @@ privacidade; [TESTING.md](TESTING.md) centraliza cobertura e critérios de teste
 | --- | --- | --- |
 | Implemented | [wrangler.toml](../apps/dns-worker/wrangler.toml), [worker.ts](../apps/dns-worker/src/worker.ts), código do workspace | Alvo local `adless-dns`, entrada `src/worker.ts`; não identifica a revisão publicada |
 | Deployed / Verified | GET público de `https://adless-dns.adless-production.workers.dev/healthz`: HTTP 200, `status=ok`, `environment=production` | Há serviço respondendo nesse hostname; health não consulta KV, DO, Apple, blocklist ou upstream |
-| Deployed / Verified | GET público de `https://adless-dns-development.adless-production.workers.dev/healthz`: HTTP 200, `status=ok`, `environment=development`; autorização StoreKit Xcode ponta a ponta passou em simulador | O Worker Dev está publicado e aceita o certificado Xcode fixado para `com.orbeworks.adless.dev`; não comprova interceptação DNS em iPhone físico |
+| Deployed / Verified | GET público de `https://adless-dns-development.adless-production.workers.dev/healthz`: HTTP 200, `status=ok`, `environment=development`; autorização StoreKit Xcode passou no simulador e no iPhone físico | O Worker Dev está publicado e aceita somente os certificados JWS Xcode explicitamente fixados para `com.orbeworks.adless.dev`; não comprova sozinho a interceptação de consultas DNS |
 | Deployed / Verified | Manifesto público da landing em `https://landing-production-9feb.up.railway.app/blocklists/manifest.json`: HTTP 200, versão `vccdec93540613cc1`, 58.216 domínios | Somente disponibilidade/metadados da lista publicada na landing; não confirma bundle do Worker |
 | Pending | Sem consulta autenticada da conta nesta auditoria | Deployment ID, version ID, código publicado, bindings efetivos, secret, migrations aplicadas, permissões, faturamento, logs e outros Workers da conta |
 | Pending | Sem smoke autenticado ou evento Apple real nesta auditoria | Emissão/rotação, Sandbox/Production, autorização DNS/stats e Notifications V2 remotos |
@@ -27,6 +27,14 @@ assinatura StoreKit Production nem de implantação da revisão local.
 Fonte: [handler.ts](../apps/dns-worker/src/handler.ts), `createDNSWorker`.
 O DoH aceita RFC 8484 em formato binário; não há resolução JSON, proxy de URL
 arbitrária, listener UDP/TCP ou configuração CORS no Worker.
+
+| Ambiente | Origem HTTPS | Consumidor |
+| --- | --- | --- |
+| Produção | `https://adless-dns.adless-production.workers.dev` | App oficial em TestFlight/App Store |
+| Desenvolvimento | `https://adless-dns-development.adless-production.workers.dev` | `Adless Dev` executado pelo Xcode |
+
+Os endpoints abaixo são relativos à origem do ambiente selecionado; KV,
+Durable Objects, segredo, bundle e política StoreKit também são separados.
 
 | Endpoint Implemented | Método | Contrato |
 | --- | --- | --- |
@@ -121,7 +129,7 @@ arquivo. `workers.dev` usa hostname fornecido pela Cloudflare;
 | `APPLE_ALLOWED_ENVIRONMENTS` | Localmente `Production` no registro normal |
 | `APPLE_NOTIFICATION_ENVIRONMENTS` | Localmente `Production,Sandbox` |
 | `APPLE_TESTFLIGHT_BUILD_VERSIONS` | Allowlist local dos builds `2` e `6`; não comprova que esses builds foram carregados/aprovados no TestFlight |
-| `XCODE_STOREKIT_CERTIFICATE_SHA256` | Somente no ambiente `development`; fixa o certificado ES256 de um único `x5c` usado pelo StoreKit Testing no Xcode |
+| `XCODE_STOREKIT_CERTIFICATE_SHA256` | Somente no ambiente `development`; allowlist separada por vírgulas dos certificados ES256 presentes no `x5c` dos JWS StoreKit 2 do simulador e do aparelho físico. O certificado exportado por **Editor → Save Public Certificate** valida recibos locais e não deve ser presumido igual aos certificados dos JWS |
 
 O ambiente Wrangler `development` publica `adless-dns-development` e declara
 bindings próprios de `AUTH`, `STATS` e `AUTHORITY`, além de segredo próprio. Ele

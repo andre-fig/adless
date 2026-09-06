@@ -39,11 +39,13 @@ silencioso do setup reproduzível.
 | `beta` | App oficial `Adless`, assinatura automática e Worker de produção | Dois workflows isolados do Xcode Cloud: um distribui ao TestFlight Internal e o outro ao TestFlight External |
 | `main` | App oficial e ambiente de produção | Submissão App Store, Worker de produção e landing Railway conforme seus filtros/configurações |
 
-O fluxo de promoção é `develop` → `beta` → `main`. Promover código não mistura
-as identidades: o scheme/configuração de desenvolvimento continua exclusivo de
-`develop`, enquanto os dois fluxos da `beta` geram o app oficial. TestFlight
-Internal e External não são estágios sequenciais do mesmo workflow; cada um tem
-seu próprio workflow Xcode Cloud e seus próprios critérios de distribuição.
+O fluxo de promoção é `develop` → `beta` → `main`, portanto os arquivos de todos
+os ambientes seguem para as branches posteriores. Isso não mistura as
+identidades em runtime: `Adless Dev` e `[env.development]` continuam isolados
+pelo scheme/configuração e pela seleção explícita `--env development`, enquanto
+os dois fluxos da `beta` geram o app oficial. TestFlight Internal e External não
+são estágios sequenciais do mesmo workflow; cada um tem seu próprio workflow
+Xcode Cloud e seus próprios critérios de distribuição.
 
 ### Instalar Adless Dev em um iPhone com StoreKit local
 
