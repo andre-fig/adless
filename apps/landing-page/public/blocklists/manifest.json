@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "version": "vccdec93540613cc1",
-  "generatedAt": "2026-08-21T04:04:35Z",
+  "version": "v5dbb3cb38746f6b6",
+  "generatedAt": "2026-09-06T07:53:31Z",
   "file": "blocklist.txt.gz",
   "downloadUrl": "blocklist.txt.gz",
   "compression": "gzip",
-  "sha256": "30ed636d3f9b8cb0ad8de3c1ee320b682e235b427b977e0d7793f2aa0fc61dcc",
-  "sizeBytes": 487849,
-  "uncompressedSizeBytes": 1123939,
-  "domainCount": 58216,
+  "sha256": "db76d6bca779bb00105e6abfd636f1134a4dae06eb9369f05333a90521f0e0fa",
+  "sizeBytes": 535724,
+  "uncompressedSizeBytes": 1223391,
+  "domainCount": 63376,
   "sources": [
     {
       "id": "oisd-small",
