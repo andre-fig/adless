@@ -217,6 +217,38 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Conectando" } }
       }
     },
+    "Checking protection" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Checking protection" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Verificando proteção" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Comprobando la protección" } }
+      }
+    },
+    "Protection unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Protection unavailable" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Proteção indisponível" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Protección no disponible" } }
+      }
+    },
+    "Confirming DNS and Worker status." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Confirming DNS and Worker status." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Confirmando o status do DNS e do Worker." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Confirmando el estado de DNS y del Worker." } }
+      }
+    },
+    "Adless could not confirm the Worker status." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless could not confirm the Worker status." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless não conseguiu confirmar o status do Worker." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless no pudo confirmar el estado del Worker." } }
+      }
+    },
     "Preparing your protection..." : {
       "extractionState" : "manual",
       "localizations" : {

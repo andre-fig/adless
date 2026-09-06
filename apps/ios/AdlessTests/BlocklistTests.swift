@@ -175,31 +175,42 @@ final class BlocklistTests: XCTestCase {
             hasAccess: true,
             hasCredentials: true,
             authorizationRequired: false,
+            remoteBlockingState: .enabled,
             dnsState: .enabled
         ))
         XCTAssertFalse(AppViewModel.protectionIsConfirmed(
             hasAccess: true,
             hasCredentials: true,
             authorizationRequired: true,
+            remoteBlockingState: .enabled,
             dnsState: .enabled
         ))
         XCTAssertFalse(AppViewModel.protectionIsConfirmed(
             hasAccess: true,
             hasCredentials: false,
             authorizationRequired: false,
+            remoteBlockingState: .enabled,
             dnsState: .enabled
         ))
         XCTAssertFalse(AppViewModel.protectionIsConfirmed(
             hasAccess: true,
             hasCredentials: true,
             authorizationRequired: false,
-            blockingIsEnabled: false,
+            remoteBlockingState: .paused,
             dnsState: .enabled
         ))
         XCTAssertFalse(AppViewModel.protectionIsConfirmed(
             hasAccess: true,
             hasCredentials: true,
             authorizationRequired: false,
+            remoteBlockingState: .unknown,
+            dnsState: .enabled
+        ))
+        XCTAssertFalse(AppViewModel.protectionIsConfirmed(
+            hasAccess: true,
+            hasCredentials: true,
+            authorizationRequired: false,
+            remoteBlockingState: .enabled,
             dnsState: .disabled
         ))
     }

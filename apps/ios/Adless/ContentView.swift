@@ -75,15 +75,11 @@ struct ContentView: View {
                     AdlessLogoView(size: 92)
 
                     VStack(spacing: 10) {
-                        Text(viewModel.isProtectionActive ? "Protection Active" : "Protection Off")
+                        Text(viewModel.protectionHeadline)
                             .font(.title.weight(.semibold))
                             .foregroundStyle(.primary)
 
-                        Text(!viewModel.hasSubscription
-                             ? "Block ads and trackers across your iPhone."
-                             : (viewModel.isProtectionActive
-                                ? "Adless is working quietly in the background."
-                                : "Your protection is paused."))
+                        Text(viewModel.protectionSummary)
                             .font(.subheadline)
                             .foregroundStyle(Color.primary.opacity(0.58))
                             .multilineTextAlignment(.center)
