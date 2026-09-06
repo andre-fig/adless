@@ -163,7 +163,8 @@ npm run test:dns-worker
 npm run build:dns-worker
 python3 -B -m unittest discover -s tools/blocklists/tests -v
 python3 -B tools/blocklists/validate_blocklist.py
-npx --yes wrangler@4 deploy --dry-run --config apps/dns-worker/wrangler.toml
+npx --yes wrangler@4 deploy --env="" --dry-run --config apps/dns-worker/wrangler.toml
+npx --yes wrangler@4 deploy --env development --dry-run --config apps/dns-worker/wrangler.toml
 ```
 
 O `build:dns-worker` executa TypeScript com `noEmit`; o teste compila para
@@ -191,6 +192,7 @@ npx --yes wrangler@4 versions list --config apps/dns-worker/wrangler.toml
 npx --yes wrangler@4 versions view "$ADLESS_WORKER_VERSION_ID" --config apps/dns-worker/wrangler.toml
 npx --yes wrangler@4 secret list --config apps/dns-worker/wrangler.toml
 curl --fail --silent --show-error https://adless-dns.adless-production.workers.dev/healthz
+curl --fail --silent --show-error https://adless-dns-development.adless-production.workers.dev/healthz
 ```
 
 `ADLESS_WORKER_VERSION_ID` é o identificador não secreto selecionado na lista,

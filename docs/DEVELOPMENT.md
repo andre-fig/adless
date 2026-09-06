@@ -46,6 +46,13 @@ pelo scheme/configuração e pela seleção explícita `--env development`, enqu
 os dois fluxos da `beta` geram o app oficial. TestFlight Internal e External não
 são estágios sequenciais do mesmo workflow; cada um tem seu próprio workflow
 Xcode Cloud e seus próprios critérios de distribuição.
+Um push em `develop` abre uma PR de promoção para `beta` se nenhuma estiver
+aberta; um push em `beta` abre a correspondente PR para `main`. Os workflows
+apenas criam a PR, são serializados por par de branches e nunca fazem merge
+automático. Para funcionarem com `GITHUB_TOKEN`, o repositório precisa manter
+habilitada em **Settings → Actions → General → Workflow permissions** a opção
+**Allow GitHub Actions to create and approve pull requests**. Os workflows
+declaram somente `contents: read` e `pull-requests: write`; não aprovam PRs.
 
 ### Instalar Adless Dev em um iPhone com StoreKit local
 
@@ -120,7 +127,7 @@ Eles ajudam o desenvolvimento local, mas não constituem a CI inteira.
 | Hook | O que realmente executa |
 | --- | --- |
 | [pre-commit](../.githooks/pre-commit) | `git diff --cached --check`; actionlint ao tocar workflows; sintaxe Python em blocklists/appstore/dns-worker; lint quando landing ou pacote/lock da raiz entra no stage |
-| [pre-push](../.githooks/pre-push) | Testes Python blocklists; testes/build Worker; typecheck/build landing; XCTest para iOS; testes offline de distribuição/allowlist e actionlint para workflows/scripts/exports/hooks; lockfile seleciona Worker e landing |
+| [pre-push](../.githooks/pre-push) | Shellcheck nos scripts shell alterados; testes Python blocklists; testes/build Worker; dry-run Wrangler de produção e desenvolvimento ao tocar Worker/deploy; typecheck/build landing; XCTest para iOS; testes offline de distribuição/allowlist e contratos de health check; actionlint para workflows/scripts/exports/hooks; lockfile seleciona Worker e landing |
 
 O pre-push escolhe o primeiro simulador iPhone disponível e usa DerivedData
 em diretório temporário. Num ref remoto novo, inspeciona todos os caminhos da
