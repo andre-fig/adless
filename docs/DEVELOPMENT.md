@@ -31,6 +31,49 @@ Não executar instalação ou configuração de hooks numa tarefa restrita a
 Markdown. `npm install` pode modificar o lockfile; não usá-lo como substituto
 silencioso do setup reproduzível.
 
+## Política de branches
+
+| Branch | Identidade/ambiente | Automação autorizada pelo desenho |
+| --- | --- | --- |
+| `develop` | `Adless Dev` (`com.orbeworks.adless.dev`), configurações `Debug Dev`/`Release Dev`, StoreKit local e Worker de desenvolvimento | Desenvolvimento local e deploy isolado de `adless-dns-development`; não alimenta TestFlight |
+| `beta` | App oficial `Adless`, assinatura automática e Worker de produção | Dois workflows isolados do Xcode Cloud: um distribui ao TestFlight Internal e o outro ao TestFlight External |
+| `main` | App oficial e ambiente de produção | Submissão App Store, Worker de produção e landing Railway conforme seus filtros/configurações |
+
+O fluxo de promoção é `develop` → `beta` → `main`. Promover código não mistura
+as identidades: o scheme/configuração de desenvolvimento continua exclusivo de
+`develop`, enquanto os dois fluxos da `beta` geram o app oficial. TestFlight
+Internal e External não são estágios sequenciais do mesmo workflow; cada um tem
+seu próprio workflow Xcode Cloud e seus próprios critérios de distribuição.
+
+### Instalar Adless Dev em um iPhone com StoreKit local
+
+Com o iPhone conectado, confiável, desbloqueado e com a tela acesa, execute da
+raiz do repositório:
+
+```sh
+tools/ios/install_adless_dev.sh
+```
+
+Se houver mais de um aparelho físico disponível, passe parte do nome ou o UDID:
+
+```sh
+tools/ios/install_adless_dev.sh 'iPhone de Andre'
+```
+
+O script valida antes do build que o scheme é `Adless Dev`, a configuração é
+`Debug Dev`, o bundle ID é `com.orbeworks.adless.dev`, o ambiente é
+`development`, o LaunchAction usa `Adless.storekit` e a URL é a do Worker de
+desenvolvimento. Ele compila numa cópia temporária de `apps/ios`, valida o app
+assinado, instala e inicia **Product → Run** no Xcode. Essa última etapa é
+necessária porque a sessão StoreKit local pertence ao LaunchAction do Xcode;
+abrir apenas o bundle instalado não ativa `Adless.storekit`.
+
+O script não altera o projeto original nem substitui o app oficial, pois os
+bundle IDs são diferentes. A automação da interface exige permissão de
+Acessibilidade para o terminal/Codex controlar o Xcode. Mantenha o workspace
+temporário informado no final enquanto a sessão estiver ativa. Compras dessa
+sessão são simulações locais; TestFlight continua usando o Sandbox da Apple.
+
 A raiz declara somente `apps/landing-page` como workspace. Os scripts do Worker
 usam `npm --prefix apps/dns-worker` e compilador de `node_modules` da raiz; o
 Worker não é um segundo workspace. As dependências JWS/X.509 também estão no
@@ -85,8 +128,8 @@ via commit/push apenas para validar: chamar os comandos relevantes diretamente.
 
 ## Workflows declarados e limites
 
-**Implemented:** todos os cinco workflows têm `concurrency`,
-`cancel-in-progress`, timeout e permissões de conteúdo explícitas. Quatro usam
+**Implemented:** os workflows versionados têm `concurrency`,
+`cancel-in-progress`, timeout e permissões de conteúdo explícitas. Deploys usam
 `contents: read`; atualização de blocklist usa `contents: write`.
 Não há `pull_request` nem job de testes geral nesses arquivos. Os YAMLs não
 referenciam GitHub Environments com aprovação; proteções e secrets remotos
@@ -95,9 +138,10 @@ permanecem **Pending** até inspeção autorizada do estado remoto.
 | Workflow | Gatilho declarado | Ação e lacuna observável |
 | --- | --- | --- |
 | [deploy-dns-worker.yml](../.github/workflows/deploy-dns-worker.yml) | `main` com filtros de caminho; manual | Prepara/valida lista, compila e publica Worker. Não executa suíte Worker nem smoke após deploy. Filtros não incluem pacote/lock da raiz. Runbook: [dns-cloud.md](dns-cloud.md). |
+| [deploy-dns-worker-development.yml](../.github/workflows/deploy-dns-worker-development.yml) | `develop` com filtros de caminho; manual | Testa, prepara, valida e publica somente `adless-dns-development`; verifica o health do ambiente Dev. |
 | Railway landing | conexão direta ao repositório `andre-fig/adless`, branch `main` | O serviço Railway usa `apps/landing-page` como raiz e publica após push; não passa pelo GitHub Actions. |
 | [update-blocklist.yml](../.github/workflows/update-blocklist.yml) | Domingo 03:17 UTC; manual | Testa/gera/valida e faz commit/push de seis artefatos; não publica Worker ou Railway diretamente. |
-| Xcode Cloud | `develop`, `beta` e `main`, configurados no App Store Connect | `develop`: TestFlight interno. `beta`: TestFlight externo com beta review. `main`: App Store com liberação após aprovação. |
+| Xcode Cloud | `beta` e `main`, configurados no App Store Connect | `beta`: TestFlight interno e externo em workflows isolados. `main`: App Store com liberação após aprovação. |
 
 Os dois workflows iOS usam o scheme `Adless`, não `Adless Dev`; detalhes,
 comandos App Store Connect e diferenças entre upload/revisão/disponibilidade

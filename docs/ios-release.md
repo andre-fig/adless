@@ -19,15 +19,18 @@ Testes detalhados: [TESTING](TESTING.md). Metadata e texto para revisão:
 | `Adless Dev` | `Debug Dev` / `Release Dev`, bundle `com.orbeworks.adless.dev`, nome Adless Dev |
 | `Adless` | `Debug` / `Release`, bundle `com.orbeworks.adless`, nome Adless; identidade oficial usada nos dois workflows |
 | Debug vs Release | Flags de compilação, otimização e ambiente Sentry; não determinam o ambiente assinado no JWS StoreKit |
-| StoreKit Testing no Xcode | `Adless.storekit` nos LaunchActions de ambos os schemes; JWS assinado pelo Xcode não passa na confiança Apple do Worker |
+| StoreKit Testing no Xcode | `Adless.storekit` nos LaunchActions; o Worker Dev aceita somente o certificado Xcode fixado e o bundle `com.orbeworks.adless.dev` |
 | Sandbox no iPhone | Produtos reais configurados na Apple, transações de teste assinadas pela Apple; aprovação server-side ainda depende da política do Worker |
 | TestFlight interno/externo | Archive Release da identidade oficial, compras Sandbox; estar em TestFlight não comprova assinatura Production |
 | App Store pública | Distribuição oficial e compras Production, com aprovação/publicação separadas do sucesso do upload |
 
-Ambos os xcconfigs apontam para
-`https://adless-dns.adless-production.workers.dev`; não há ambiente Worker de
-desenvolvimento isolado por usar `Adless Dev`. O `APPLE_BUNDLE_ID` local do Worker
-aceita a identidade oficial; não pressupor autorização de `com.orbeworks.adless.dev`.
+`Development.xcconfig` aponta para
+`https://adless-dns-development.adless-production.workers.dev`; KV, Durable
+Objects e segredo de derivação são isolados do Worker oficial. Somente esse
+ambiente aceita `environment=Xcode`, o bundle `com.orbeworks.adless.dev`, uma
+AppTransaction correspondente e o certificado de assinatura StoreKit fixado por
+SHA-256. `Production.xcconfig` continua apontando para
+`https://adless-dns.adless-production.workers.dev` e não aceita transações Xcode.
 No simulador Debug lançado sem
 `-useStoreKitProducts`, há opções somente visuais com `Product == nil` e compra
 indisponível. Os LaunchActions incluem esse argumento para StoreKit local.
@@ -170,16 +173,22 @@ python3 tools/appstore/appstore_connect.py --help
 
 ## Automação de distribuição
 
-**Implemented:** Xcode Cloud inicia os workflows configurados para `develop`,
-`beta` e `main`; GitHub Actions não possui mais workflows iOS automáticos.
+**Implemented:** Xcode Cloud mantém os workflows oficiais de TestFlight na
+`beta` e de App Store na `main`; GitHub Actions não possui workflows iOS.
 Execução manual respeita os mesmos guards de branch.
 A política operacional é develop → beta → main, mas o código não
 comprova proteção de branches ou revisão obrigatória. Disparar workflow ou push
 pode publicar: exige autorização explícita, assim como upload/submissão manual.
 
+`develop` é exclusivamente a branch de desenvolvimento: usa `Adless Dev`,
+StoreKit local e o Worker de desenvolvimento, e não deve alimentar TestFlight.
+Os testes TestFlight Internal e External partem ambos da `beta`, em workflows
+Xcode Cloud independentes, usando o app oficial `Adless`. A `main` fica reservada
+à distribuição pública/App Store e aos serviços de produção.
+
 | Fluxo | Comportamento presente no workflow |
 | --- | --- |
-| `develop` → TestFlight interno | Archive Release, exportação **internal-only**, inspeção, validação Apple, autorização do número no Worker, upload, espera VALID e associação somente ao grupo interno configurado |
+| `beta` → TestFlight interno | Archive Release, exportação **internal-only**, inspeção, validação Apple, autorização do número no Worker, upload, espera VALID e associação somente ao grupo interno configurado |
 | `beta` → TestFlight externo | Exportação sem restrição internal-only, mesmos gates, associação somente aos grupos externos do app e submissão à Beta App Review quando necessária; notificações automáticas quando aprovado |
 | `main` → App Store produção | Verifica versão previamente preparada, archive/exportação/inspeção, valida/upload, espera VALID, define `releaseType=AFTER_APPROVAL`, anexa e submete à revisão pública |
 
@@ -190,7 +199,7 @@ por branch. A exportação não renumera o binário. O archive automático inter
 pode usar assinatura de desenvolvimento; o IPA exportado passa pelo verificador
 completo de distribuição, assinatura, endpoint, versão e número esperados.
 
-`develop` e `beta` atualizam somente `APPLE_TESTFLIGHT_BUILD_VERSIONS` nas settings
+Os dois workflows da `beta` atualizam somente `APPLE_TESTFLIGHT_BUILD_VERSIONS` nas settings
 do Worker existente após validação Apple e antes do upload. Não enviam código
 dessas branches ao Worker de produção. Os demais bindings são herdados na
 Cloudflare, incluindo o secret opaco; a leitura posterior confirma a alteração.

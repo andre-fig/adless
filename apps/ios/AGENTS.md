@@ -44,10 +44,13 @@ perfis e gates Apple estão em [ios-release](../../docs/ios-release.md).
 ## Ambientes e validação
 
 `Adless Dev` usa Debug/Release Dev; `Adless` usa Debug/Release com identidade
-oficial. Ambos apontam para a mesma origem Worker. Isso não cria staging.
+oficial. `Adless Dev` aponta para o Worker `adless-dns-development`, com KV,
+Durable Objects, segredo e identidade StoreKit isolados; `Adless` aponta para o
+Worker de produção. Não compartilhe bindings ou origem entre eles.
 Debug/Release não definem o ambiente StoreKit: Xcode local usa `Adless.storekit`,
-TestFlight usa Sandbox e App Store pública usa Production. JWS local do Xcode
-não é prova Apple aceita pelo Worker; observe a política Sandbox no runbook.
+TestFlight usa Sandbox e App Store pública usa Production. O Worker Dev aceita
+JWS local somente com `environment=Xcode`, bundle Dev, AppTransaction correspondente
+e certificado Xcode fixado; o Worker de produção não aceita esse ambiente.
 
 Comandos a partir da raiz, em ambiente com dependências já disponíveis:
 

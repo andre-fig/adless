@@ -7,6 +7,6 @@
     "build": "../../node_modules/.bin/tsc -p tsconfig.json",
     "test": "../../node_modules/.bin/tsc -p tsconfig.test.json && node --test dist-test/test/*.test.js",
     "prepare:blocklist": "python3 ../../tools/dns-worker/prepare_blocklist.py",
-    "deploy": "npm run prepare:blocklist && npx --yes wrangler@4 deploy"
+    "deploy": "npm run prepare:blocklist && npx --yes wrangler@4 deploy --env=\"\""
   }
 }

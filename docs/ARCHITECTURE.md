@@ -106,8 +106,8 @@ KV é eventualmente consistente e não oferece commit de múltiplas chaves.
 Emissão grava mappings/índices e usa o registro de instalação como ponto final
 de commit. `AUTHORITY` ordena eventos de assinatura, inclusive refund/revoke,
 para não depender apenas desses índices. A autoridade não torna todo o KV
-fortemente consistente. Ambientes Production/Sandbox têm chaves de índices e
-objetos distintos, mas compartilham os bindings locais declarados. JWS Sandbox
+fortemente consistente. Production/Sandbox têm chaves e objetos distintos no
+Worker oficial; Xcode usa outro Worker e bindings isolados. JWS Sandbox
 com evidência de AppTransaction não prova criptograficamente origem TestFlight.
 
 ## Blocklist, cache e contadores

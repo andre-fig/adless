@@ -16,7 +16,8 @@ const AUTHORITY_TIMEOUT_MS = 750;
 
 export type AuthorizationStatus = "active" | "expired" | "revoked";
 export type TokenRole = "dns" | "stats";
-export type AppleEnvironment = "Production" | "Sandbox";
+export type AppleEnvironment = "Production" | "Sandbox" | "Xcode";
+type AppleServerEnvironment = Exclude<AppleEnvironment, "Xcode">;
 
 export interface AuthorizationKV {
   get(key: string, type?: "json" | "text"): Promise<unknown>;
@@ -110,7 +111,7 @@ export interface AppleTransactionPayload {
 }
 
 export interface AppleAppTransactionPayload {
-  receiptType: AppleEnvironment | "Xcode";
+  receiptType: AppleEnvironment;
   appAppleId?: number;
   bundleId: string;
   applicationVersion: string;
@@ -157,6 +158,8 @@ export interface AuthorizationEnvironment {
   APPLE_NOTIFICATION_ENVIRONMENTS?: string;
   /** Comma-separated CFBundleVersion values uploaded to TestFlight. */
   APPLE_TESTFLIGHT_BUILD_VERSIONS?: string;
+  /** Pins the Xcode StoreKit Test signing certificate for an isolated development Worker. */
+  XCODE_STOREKIT_CERTIFICATE_SHA256?: string;
 }
 
 export interface AuthorizationDependencies {
@@ -228,7 +231,7 @@ function isSubscriptionAuthorityEvent(value: unknown): value is SubscriptionAuth
     && typeof value.reason === "string"
     && value.reason.length > 0
     && value.reason.length <= 64
-    && (value.environment === "Production" || value.environment === "Sandbox")
+    && (value.environment === "Production" || value.environment === "Sandbox" || value.environment === "Xcode")
     && typeof value.originalTransactionId === "string"
     && value.originalTransactionId.length > 0
     && value.originalTransactionId.length <= MAX_APPLE_IDENTIFIER_LENGTH
@@ -381,16 +384,17 @@ function jsonResponse(body: unknown, status = 200): Response {
 function configuredAppleEnvironments(value: string | undefined, defaults: AppleEnvironment[]): Set<AppleEnvironment> {
   const configured = value?.split(",")
     .map((value) => value.trim())
-    .filter((value): value is AppleEnvironment => value === "Production" || value === "Sandbox");
-  return new Set(configured?.length ? configured : defaults);
+    .filter((value): value is AppleEnvironment => value === "Production" || value === "Sandbox" || value === "Xcode");
+  return new Set(value === undefined ? defaults : configured);
 }
 
 function allowedRegistrationEnvironments(env: AuthorizationEnvironment): Set<AppleEnvironment> {
   return configuredAppleEnvironments(env.APPLE_ALLOWED_ENVIRONMENTS, ["Production"]);
 }
 
-function allowedNotificationEnvironments(env: AuthorizationEnvironment): Set<AppleEnvironment> {
-  return configuredAppleEnvironments(env.APPLE_NOTIFICATION_ENVIRONMENTS, ["Production", "Sandbox"]);
+function allowedNotificationEnvironments(env: AuthorizationEnvironment): Set<AppleServerEnvironment> {
+  return new Set([...configuredAppleEnvironments(env.APPLE_NOTIFICATION_ENVIRONMENTS, ["Production", "Sandbox"])]
+    .filter((value): value is AppleServerEnvironment => value !== "Xcode"));
 }
 
 function allowedTestFlightBuildVersions(env: AuthorizationEnvironment): Set<string> {
@@ -418,7 +422,7 @@ function validTransaction(transaction: AppleTransactionPayload, env: Authorizati
         && transaction.revocationDate >= transaction.purchaseDate
         && transaction.revocationDate <= now + MAX_APPLE_CLOCK_SKEW_MS));
   return transaction.bundleId === (env.APPLE_BUNDLE_ID ?? "com.orbeworks.adless")
-    && (transaction.environment === "Production" || transaction.environment === "Sandbox")
+    && (transaction.environment === "Production" || transaction.environment === "Sandbox" || transaction.environment === "Xcode")
     && PRODUCT_IDS.has(transaction.productId)
     && identifiersAreValid
     && datesAreValid;
@@ -449,6 +453,31 @@ function validTestFlightAppTransaction(
     && appTransaction.receiptCreationDate <= now + MAX_APPLE_CLOCK_SKEW_MS;
 }
 
+function validXcodeAppTransaction(
+  appTransaction: AppleAppTransactionPayload | undefined,
+  transaction: AppleTransactionPayload,
+  env: AuthorizationEnvironment,
+  now: number,
+): boolean {
+  if (!appTransaction
+    || transaction.environment !== "Xcode"
+    || !allowedRegistrationEnvironments(env).has("Xcode")
+    || !env.XCODE_STOREKIT_CERTIFICATE_SHA256) return false;
+  return appTransaction.receiptType === "Xcode"
+    && appTransaction.bundleId === (env.APPLE_BUNDLE_ID ?? "com.orbeworks.adless")
+    && appTransaction.appAppleId === undefined
+    && typeof transaction.appTransactionId === "string"
+    && transaction.appTransactionId.length > 0
+    && transaction.appTransactionId.length <= MAX_APPLE_IDENTIFIER_LENGTH
+    && appTransaction.appTransactionId === transaction.appTransactionId
+    && typeof appTransaction.applicationVersion === "string"
+    && appTransaction.applicationVersion.length > 0
+    && appTransaction.applicationVersion.length <= MAX_APPLE_IDENTIFIER_LENGTH
+    && Number.isSafeInteger(appTransaction.receiptCreationDate)
+    && appTransaction.receiptCreationDate > 0
+    && appTransaction.receiptCreationDate <= now + MAX_APPLE_CLOCK_SKEW_MS;
+}
+
 function registrationEnvironmentIsAllowed(
   transaction: AppleTransactionPayload,
   appTransaction: AppleAppTransactionPayload | undefined,
@@ -458,11 +487,15 @@ function registrationEnvironmentIsAllowed(
   if (transaction.environment === "Production") {
     return allowedRegistrationEnvironments(env).has("Production");
   }
-  return validTestFlightAppTransaction(appTransaction, transaction, env, now);
+  if (transaction.environment === "Sandbox") {
+    return validTestFlightAppTransaction(appTransaction, transaction, env, now);
+  }
+  return validXcodeAppTransaction(appTransaction, transaction, env, now);
 }
 
 function validNotification(notification: AppleNotificationPayload, env: AuthorizationEnvironment, now = Date.now()): boolean {
   const data = notification.data;
+  const notificationEnvironments = allowedNotificationEnvironments(env);
   const configuredAppAppleId = env.APPLE_APP_ID ? Number(env.APPLE_APP_ID) : undefined;
   const appAppleIdMatches = data?.environment === "Sandbox"
     ? data.appAppleId === undefined
@@ -482,7 +515,9 @@ function validNotification(notification: AppleNotificationPayload, env: Authoriz
     && notification.signedDate <= now + MAX_APPLE_CLOCK_SKEW_MS
     && appAppleIdMatches
     && (!data?.bundleId || data.bundleId === (env.APPLE_BUNDLE_ID ?? "com.orbeworks.adless"))
-    && (!data?.environment || allowedNotificationEnvironments(env).has(data.environment));
+    && notificationEnvironments.size > 0
+    && (!data?.environment
+      || (data.environment !== "Xcode" && notificationEnvironments.has(data.environment)));
 }
 
 function validInstallationId(installationId: string): boolean {
@@ -627,7 +662,7 @@ function authorityEventFromLegacyAuthority(
   authority: LegacySubscriptionAuthorityRecord,
 ): SubscriptionAuthorityEvent | null {
   if (authority.schemaVersion !== 1
-    || (authority.environment !== "Production" && authority.environment !== "Sandbox")
+    || (authority.environment !== "Production" && authority.environment !== "Sandbox" && authority.environment !== "Xcode")
     || !isSafeIdentifier(authority.originalTransactionId)
     || !PRODUCT_IDS.has(authority.productId)
     || (authority.transactionId !== undefined && !isSafeIdentifier(authority.transactionId))
@@ -1048,7 +1083,11 @@ export async function handleAuthorizationRegister(
 
   try {
     const now = dependencies.now?.() ?? Date.now();
-    const jwsOptions = { ...dependencies.appleJWSOptions, verificationTime: dependencies.appleJWSOptions?.verificationTime ?? new Date(now) };
+    const jwsOptions = {
+      ...dependencies.appleJWSOptions,
+      trustedLeafCertificateSHA256: env.XCODE_STOREKIT_CERTIFICATE_SHA256,
+      verificationTime: dependencies.appleJWSOptions?.verificationTime ?? new Date(now),
+    };
     const transaction = dependencies.verifyTransaction
       ? await dependencies.verifyTransaction(transactionJWS)
       : await verifyAppleJWS<AppleTransactionPayload>(transactionJWS, jwsOptions);
@@ -1103,11 +1142,13 @@ export async function handleAppleNotification(
         : await verifyAppleJWS<AppleRenewalInfoPayload>(renewalJWS, jwsOptions)
       : undefined;
 
-    if (transaction && (!validTransaction(transaction, env, now)
+    if (transaction && (transaction.environment === "Xcode"
+      || !validTransaction(transaction, env, now)
       || !allowedNotificationEnvironments(env).has(transaction.environment))) {
       return jsonResponse({ error: "invalid transaction" }, 400);
     }
-    if (renewal && (!PRODUCT_IDS.has(renewal.productId ?? "")
+    if (renewal && (renewal.environment === "Xcode"
+      || !PRODUCT_IDS.has(renewal.productId ?? "")
       || typeof renewal.originalTransactionId !== "string"
       || renewal.originalTransactionId.length === 0
       || renewal.originalTransactionId.length > MAX_APPLE_IDENTIFIER_LENGTH
