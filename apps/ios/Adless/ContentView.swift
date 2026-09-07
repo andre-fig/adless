@@ -71,22 +71,20 @@ struct ContentView: View {
             VStack(spacing: 30) {
                 Spacer()
 
-                VStack(spacing: 34) {
+                VStack(spacing: 16) {
                     AdlessLogoView(size: 92)
 
                     VStack(spacing: 10) {
-                        Text(viewModel.isProtectionActive ? "Protection Active" : "Protection Off")
-                            .font(.title.weight(.semibold))
+                        Text(viewModel.protectionHeadline)
+                            .font(.title2.weight(.semibold))
                             .foregroundStyle(.primary)
 
-                        Text(!viewModel.hasSubscription
-                             ? "Block ads and trackers across your iPhone."
-                             : (viewModel.isProtectionActive
-                                ? "Adless is working quietly in the background."
-                                : "Your protection is paused."))
+                        Text(viewModel.protectionSummary)
                             .font(.subheadline)
                             .foregroundStyle(Color.primary.opacity(0.58))
                             .multilineTextAlignment(.center)
+                            .lineLimit(2, reservesSpace: true)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
 
@@ -162,20 +160,21 @@ struct ContentView: View {
                         Text(viewModel.isProtectionActive
                              ? "Browse cleaner. Stay private."
                              : "Turn Adless back on to keep blocking.")
-                            .font(.body.weight(.semibold))
+                            .font(.callout.weight(.semibold))
                             .foregroundStyle(.primary)
                             .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
 
                         Text(viewModel.isProtectionActive
                              ? "Adless keeps working even after you close the app."
                              : "Your blocking history is saved while protection is paused.")
-                            .font(.subheadline)
+                            .font(.footnote)
                             .foregroundStyle(Color.primary.opacity(0.58))
                             .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    // Keep the main layout stable when the paused-state
-                    // description wraps to a second line.
-                    .frame(height: 64, alignment: .top)
                     .padding(.top, 2)
                 } else {
                     Text("Start your free trial to turn on protection.")
@@ -199,7 +198,6 @@ struct ContentView: View {
             }
             .padding(.horizontal, 32)
             .padding(.vertical)
-            .offset(y: -52)
 
             if viewModel.isSubscriptionPresented {
                 ZStack {
@@ -327,13 +325,15 @@ private struct BlockingStatsView: View {
         VStack(spacing: 0) {
             VStack(spacing: 2) {
                 Text(blockedTodayValue)
-                    .font(.system(size: 42, weight: .semibold, design: .rounded))
+                    .font(.system(size: 38, weight: .semibold, design: .rounded))
                     .monospacedDigit()
 
                 Text("ad & tracker requests blocked today")
-                    .font(.subheadline)
+                    .font(.footnote)
                     .foregroundStyle(Color.primary.opacity(0.58))
                     .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 20)
@@ -348,7 +348,7 @@ private struct BlockingStatsView: View {
 
                 Text("all-time blocks")
             }
-            .font(.subheadline)
+            .font(.footnote)
             .foregroundStyle(Color.primary.opacity(0.58))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)

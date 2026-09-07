@@ -131,11 +131,19 @@ habilitada, ter a URL exata das credenciais atuais e o escopo de domínio espera
 ausência após reler; erros não autorizam afirmar que o DNS foi removido.
 
 A UI usa `AppViewModel.protectionIsConfirmed`: acesso StoreKit + credenciais
-presentes + bloqueio habilitado no Worker + nenhuma reconciliação pendente +
-estado `.enabled`. `isOn` também é verdadeiro para `.staleEnabled` e não deve
-dirigir a afirmação de proteção.
-Notificação de mudança das preferências e retorno ao primeiro plano atualizam
-o estado. Remoção manual do perfil deve aparecer como desligada e permitir nova
+presentes + resposta atual do Worker com `blockingEnabled=true` + nenhuma
+reconciliação de autorização pendente + estado DNS `.enabled`. O estado remoto
+é `unknown`, `enabled` ou `paused`; falha, timeout e resposta inválida permanecem
+`unknown` e nunca reutilizam um valor verdadeiro local para afirmar proteção.
+`isOn` também é verdadeiro para `.staleEnabled` e não deve dirigir essa
+afirmação.
+
+Abertura, foreground, notificação de mudança das preferências e conclusão de
+ativação/pausa usam o mesmo reconciliador. Cada execução invalida a anterior e
+relê o DNS depois da resposta remota, impedindo que uma resposta antiga ou uma
+mudança durante o GET publique estado obsoleto. Mudanças feitas nos Ajustes
+executam somente GET; apenas uma ação explícita de ativação/pausa no app envia
+PUT. Remoção manual do perfil deve aparecer como desligada e permitir nova
 instalação. O botão interno altera somente `blockingEnabled`; o perfil DNS fica
 habilitado e o Worker usa pass-through enquanto pausado. Ao perder acesso, o
 perfil também é preservado e a autoridade do Worker cessa o bloqueio.

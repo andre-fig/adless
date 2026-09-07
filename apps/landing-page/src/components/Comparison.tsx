@@ -63,9 +63,10 @@ const Comparison = () => {
           {/* Comparison rows */}
           <ComparisonItem label={t('localBlocking')} adless={true} others={false} />
           <ComparisonItem label={t('noExternalServers')} adless={true} others={false} />
+          <ComparisonItem label={t('noSignup')} adless={true} others={false} />
           <ComparisonItem label={t('noDataCollection')} adless={true} others={false} />
           <ComparisonItem label={t('nativeInterface')} adless={true} others={false} />
-          <ComparisonItem label={t('oneTimePurchase')} adless={true} others={false} />
+          <ComparisonItem label={t('beyondBrowser')} adless={true} others={false} />
         </div>
       </div>
     </section>

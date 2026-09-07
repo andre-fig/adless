@@ -1,7 +1,7 @@
 import Foundation
 @preconcurrency import NetworkExtension
 
-enum DNSSettingsState: String, Equatable {
+enum DNSSettingsState: String, Equatable, Sendable {
     case notConfigured
     case disabled
     case enabled

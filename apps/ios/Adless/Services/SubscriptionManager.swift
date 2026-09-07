@@ -196,36 +196,28 @@ final class SubscriptionManager: ObservableObject {
     private static func makeOption(from product: Product) -> SubscriptionOption {
         let isAnnual = product.id == SubscriptionConfiguration.yearlyProductID
         let trialText = product.subscription?.introductoryOffer.flatMap(SubscriptionOfferFormatter.trialDurationText)
-        let period = String(localized: isAnnual ? "year" : "month")
-        let renewalText = String(
-            format: String(localized: "Then %@ per %@.", defaultValue: "Then %@ per %@."),
-            product.displayPrice,
-            period
+        let renewalText = SubscriptionOfferFormatter.renewalText(
+            displayPrice: product.displayPrice,
+            isAnnual: isAnnual,
+            hasFreeTrial: trialText != nil
         )
 
         let description: String
         if isAnnual {
             let monthlyPrice = (product.price / Decimal(12)).formatted(product.priceFormatStyle)
-            let monthlyDescription = String(
-                format: String(localized: "annual_monthly_price_format", defaultValue: "%@/mo"),
-                monthlyPrice
-            )
+            let monthlyDescription = SubscriptionOfferFormatter.monthlyEquivalentText(displayPrice: monthlyPrice)
             description = [trialText, monthlyDescription].compactMap { $0 }.joined(separator: " · ")
         } else {
-            description = trialText ?? ""
+            description = trialText ?? String(localized: "Charged immediately")
         }
 
         return SubscriptionOption(
             id: product.id,
             name: String(localized: isAnnual ? "Annual" : "Monthly"),
             price: product.price,
-            displayPrice: String(
-                format: String(localized: "display_price_format", defaultValue: "%@ / %@"),
-                product.displayPrice,
-                period
-            ),
             description: description,
             renewalText: renewalText,
+            hasFreeTrial: trialText != nil,
             product: product
         )
     }

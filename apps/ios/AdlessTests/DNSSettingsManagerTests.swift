@@ -43,6 +43,7 @@ final class DNSSettingsManagerTests: XCTestCase {
             hasAccess: true,
             hasCredentials: true,
             authorizationRequired: false,
+            remoteBlockingState: .enabled,
             dnsState: reloadedState
         ), "an enabled profile with the superseded token is pass-through, not confirmed protection")
     }
@@ -70,6 +71,7 @@ final class DNSSettingsManagerTests: XCTestCase {
             hasAccess: true,
             hasCredentials: true,
             authorizationRequired: false,
+            remoteBlockingState: .enabled,
             dnsState: state
         ))
     }

@@ -4,6 +4,17 @@ import XCTest
 
 @MainActor
 final class BlocklistTests: XCTestCase {
+    func testSentryDoesNotStartInsideXCTest() {
+        XCTAssertFalse(AdlessSentry.shouldStart(environment: ProcessInfo.processInfo.environment))
+        XCTAssertFalse(AdlessSentry.shouldStart(environment: [
+            "XCTestConfigurationFilePath": "/tmp/AdlessTests.xctestconfiguration"
+        ]))
+        XCTAssertFalse(AdlessSentry.shouldStart(environment: [
+            "XCTestBundlePath": "/tmp/AdlessTests.xctest"
+        ]))
+        XCTAssertTrue(AdlessSentry.shouldStart(environment: [:]))
+    }
+
     func testCanonicalParsingAndSubdomainMatching() throws {
         let entries = try BlocklistParser.parseCanonical(Data("ads.example.com\ntracker.example.com\n".utf8))
 
@@ -62,6 +73,21 @@ final class BlocklistTests: XCTestCase {
             String(format: String(localized: "free_trial_new_subscriber_format", defaultValue: "%d %@ free for new subscribers"), 1, String(localized: "week"))
         )
     }
+
+#if DEBUG && os(iOS) && targetEnvironment(simulator)
+    func testSimulatorMonthlyPlanHasNoTrialAndAnnualPlanKeepsTrial() throws {
+        let monthly = try XCTUnwrap(
+            SubscriptionConfiguration.simulatorOptions.first { $0.id == SubscriptionConfiguration.monthlyProductID }
+        )
+        let yearly = try XCTUnwrap(
+            SubscriptionConfiguration.simulatorOptions.first { $0.id == SubscriptionConfiguration.yearlyProductID }
+        )
+
+        XCTAssertFalse(monthly.hasFreeTrial)
+        XCTAssertFalse(monthly.description.isEmpty)
+        XCTAssertTrue(yearly.hasFreeTrial)
+    }
+#endif
 
     func testSubscriptionStorageRoundTripsWithoutAnAppGroup() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
@@ -175,31 +201,42 @@ final class BlocklistTests: XCTestCase {
             hasAccess: true,
             hasCredentials: true,
             authorizationRequired: false,
+            remoteBlockingState: .enabled,
             dnsState: .enabled
         ))
         XCTAssertFalse(AppViewModel.protectionIsConfirmed(
             hasAccess: true,
             hasCredentials: true,
             authorizationRequired: true,
+            remoteBlockingState: .enabled,
             dnsState: .enabled
         ))
         XCTAssertFalse(AppViewModel.protectionIsConfirmed(
             hasAccess: true,
             hasCredentials: false,
             authorizationRequired: false,
+            remoteBlockingState: .enabled,
             dnsState: .enabled
         ))
         XCTAssertFalse(AppViewModel.protectionIsConfirmed(
             hasAccess: true,
             hasCredentials: true,
             authorizationRequired: false,
-            blockingIsEnabled: false,
+            remoteBlockingState: .paused,
             dnsState: .enabled
         ))
         XCTAssertFalse(AppViewModel.protectionIsConfirmed(
             hasAccess: true,
             hasCredentials: true,
             authorizationRequired: false,
+            remoteBlockingState: .unknown,
+            dnsState: .enabled
+        ))
+        XCTAssertFalse(AppViewModel.protectionIsConfirmed(
+            hasAccess: true,
+            hasCredentials: true,
+            authorizationRequired: false,
+            remoteBlockingState: .enabled,
             dnsState: .disabled
         ))
     }
