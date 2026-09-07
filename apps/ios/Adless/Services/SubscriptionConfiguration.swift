@@ -31,7 +31,7 @@ enum SubscriptionConfiguration {
             id: monthlyProductID,
             name: String(localized: "Monthly"),
             price: Decimal(string: "4.90")!,
-            description: String(localized: "Charged immediately · Cancel anytime"),
+            description: String(localized: "Charged immediately"),
             renewalText: SubscriptionOfferFormatter.renewalText(displayPrice: simulatorPrice(Decimal(string: "4.90")!), isAnnual: false, hasFreeTrial: false),
             hasFreeTrial: false,
             product: nil

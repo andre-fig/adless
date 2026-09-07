@@ -208,7 +208,7 @@ final class SubscriptionManager: ObservableObject {
             let monthlyDescription = SubscriptionOfferFormatter.monthlyEquivalentText(displayPrice: monthlyPrice)
             description = [trialText, monthlyDescription].compactMap { $0 }.joined(separator: " · ")
         } else {
-            description = trialText ?? String(localized: "Charged immediately · Cancel anytime")
+            description = trialText ?? String(localized: "Charged immediately")
         }
 
         return SubscriptionOption(

@@ -585,12 +585,12 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Términos de uso" } }
       }
     },
-    "Charged immediately · Cancel anytime" : {
+    "Charged immediately" : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Charged immediately · Cancel anytime" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Cobrança imediata · Cancele quando quiser" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Cobro inmediato · Cancela cuando quieras" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Charged immediately" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Cobrança imediata" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Cobro inmediato" } }
       }
     },
     "Then %@ billed annually." : {
