@@ -161,7 +161,17 @@ final class SubscriptionManager: ObservableObject {
                     let rhsIndex = SubscriptionConfiguration.productIDs.firstIndex(of: rhs.id) ?? .max
                     return lhsIndex < rhsIndex
                 }
-                options = products.map(Self.makeOption)
+                var loadedOptions: [SubscriptionOption] = []
+                for product in products {
+                    let isEligibleForIntroOffer = await product.subscription?.isEligibleForIntroOffer ?? false
+                    loadedOptions.append(
+                        Self.makeOption(
+                            from: product,
+                            isEligibleForIntroOffer: isEligibleForIntroOffer
+                        )
+                    )
+                }
+                options = loadedOptions
                 os_log("Loaded %{public}d subscription products", log: .default, type: .info, products.count)
                 if !products.isEmpty || attempt == 2 {
 #if DEBUG && os(iOS) && targetEnvironment(simulator)
@@ -193,9 +203,18 @@ final class SubscriptionManager: ObservableObject {
         }
     }
 
-    private static func makeOption(from product: Product) -> SubscriptionOption {
+    private static func makeOption(
+        from product: Product,
+        isEligibleForIntroOffer: Bool
+    ) -> SubscriptionOption {
         let isAnnual = product.id == SubscriptionConfiguration.yearlyProductID
-        let trialText = product.subscription?.introductoryOffer.flatMap(SubscriptionOfferFormatter.trialDurationText)
+        let configuredTrialText = product.subscription?.introductoryOffer.flatMap(
+            SubscriptionOfferFormatter.trialDurationText
+        )
+        let trialText = SubscriptionOfferFormatter.eligibleTrialText(
+            configuredTrialText: configuredTrialText,
+            isEligibleForIntroOffer: isEligibleForIntroOffer
+        )
         let renewalText = SubscriptionOfferFormatter.renewalText(
             displayPrice: product.displayPrice,
             isAnnual: isAnnual,
