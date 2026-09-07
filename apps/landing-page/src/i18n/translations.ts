@@ -23,28 +23,32 @@ export const translations = {
     benefit1Title: "System-wide blocking",
     benefit1Desc: "Works across all apps, not just your browser.",
     benefit2Title: "Real privacy",
-    benefit2Desc: "No browsing history stored by Adless. No Adless account.",
+    benefit2Desc:
+      "No browsing history stored by Adless. You don't need to create an account.",
     benefit3Title: "Light & efficient",
-    benefit3Desc: "Minimal battery usage with native performance.",
-    benefit4Title: "Smart DNS protection",
-    benefit4Desc: "Silent blocking without breaking your apps.",
-    benefit5Title: "Built for iOS",
-    benefit5Desc: "Native interface and behavior. Feels like Apple made it.",
+    benefit3Desc:
+      "Minimal battery usage with native performance. Once activated, you don't need to keep the app open.",
+    benefit4Title: "You're in control",
+    benefit4Desc: "Pause and resume blocking from the app whenever you need.",
+    benefit5Title: "Built for iPhone",
+    benefit5Desc:
+      "A simple interface to monitor your protection and blocking totals.",
 
     // How it works
     howTitle: "How it works",
-    howSubtitle: "Simple, transparent, with edge filtering.",
-    step1Title: "Secure DNS configured",
-    step1Desc: "Adless asks iOS to use its encrypted DNS protection.",
-    step2Title: "DNS filtering",
+    howSubtitle: "Set it up once. Control it from the app.",
+    step1Title: "Enable in Settings",
+    step1Desc:
+      "Follow the app's instructions to select Adless as the DNS service in iPhone Settings.",
+    step2Title: "Encrypted queries",
     step2Desc:
-      "Blocked DNS requests are answered at the edge. Allowed requests use encrypted HTTPS.",
-    step3Title: "Ads & trackers blocked",
+      "DNS queries are sent over an encrypted connection to the filtering service.",
+    step3Title: "Fewer ads and trackers",
     step3Desc: "Known ad and tracker domains are silently blocked.",
     step4Title: "Internet works normally",
     step4Desc: "Everything else loads as usual. Fast and reliable.",
     howNote:
-      "Adless only handles DNS. Your websites, videos, messages, and downloads continue directly to their destinations.",
+      "The content of web pages, videos, messages, and downloads does not pass through Adless.",
     noteLabel: "Note:",
 
     // Comparison
@@ -54,9 +58,10 @@ export const translations = {
     others: "Others",
     localBlocking: "DNS filtering",
     noExternalServers: "No traffic proxy",
+    noSignup: "No sign-up",
     noDataCollection: "No browsing history stored by Adless",
     nativeInterface: "Native iOS interface",
-    oneTimePurchase: "One-time purchase",
+    beyondBrowser: "Protection beyond the browser",
 
     // Privacy
     privacyTitle1: "Your privacy isn't a feature.",
@@ -101,29 +106,34 @@ export const translations = {
     benefit1Title: "Bloqueio em todo sistema",
     benefit1Desc: "Funciona em todos os apps, não só no navegador.",
     benefit2Title: "Privacidade real",
-    benefit2Desc: "Nenhum histórico guardado pelo Adless. Sem conta Adless.",
+    benefit2Desc:
+      "Nenhum histórico guardado pelo Adless. Você não precisa criar uma conta.",
     benefit3Title: "Leve e eficiente",
-    benefit3Desc: "Consumo mínimo de bateria com performance nativa.",
-    benefit4Title: "Proteção DNS inteligente",
-    benefit4Desc: "Bloqueio silencioso sem quebrar seus apps.",
-    benefit5Title: "Feito para iOS",
-    benefit5Desc: "Interface e comportamento nativos. Parece que a Apple fez.",
+    benefit3Desc:
+      "Consumo mínimo de bateria com performance nativa. Depois de ativado, não é preciso manter o app aberto.",
+    benefit4Title: "Você no controle",
+    benefit4Desc:
+      "Pause e retome o bloqueio pelo app sempre que precisar.",
+    benefit5Title: "Feito para iPhone",
+    benefit5Desc:
+      "Uma interface simples para acompanhar sua proteção e os totais de bloqueio.",
 
     // How it works
     howTitle: "Como funciona",
-    howSubtitle: "Simples, transparente e com filtragem na edge.",
-    step1Title: "DNS seguro configurado",
-    step1Desc: "O Adless pede ao iOS para usar sua proteção DNS criptografada.",
-    step2Title: "Filtragem DNS",
+    howSubtitle: "Configure uma vez. Controle pelo app.",
+    step1Title: "Ative nos Ajustes",
+    step1Desc:
+      "Siga as instruções do app para selecionar o Adless como serviço DNS nos Ajustes do iPhone.",
+    step2Title: "Consultas criptografadas",
     step2Desc:
-      "Consultas bloqueadas recebem resposta na edge. As permitidas usam HTTPS criptografado.",
-    step3Title: "Anúncios e rastreadores bloqueados",
+      "As consultas DNS são enviadas por uma conexão criptografada ao serviço de filtragem.",
+    step3Title: "Menos anúncios e rastreadores",
     step3Desc:
       "Domínios de anúncios e rastreadores conhecidos são bloqueados silenciosamente.",
     step4Title: "Internet funciona normalmente",
     step4Desc: "Todo o resto carrega como sempre. Rápido e confiável.",
     howNote:
-      "O Adless trata somente DNS. Sites, vídeos, mensagens e downloads continuam indo diretamente aos seus destinos.",
+      "O conteúdo de páginas, vídeos, mensagens e downloads não passam pelo Adless.",
     noteLabel: "Nota:",
 
     // Comparison
@@ -133,9 +143,10 @@ export const translations = {
     others: "Outros",
     localBlocking: "Filtragem DNS",
     noExternalServers: "Sem proxy de tráfego",
+    noSignup: "Sem cadastro",
     noDataCollection: "Sem histórico guardado pelo Adless",
     nativeInterface: "Interface iOS nativa",
-    oneTimePurchase: "Compra única",
+    beyondBrowser: "Proteção além do navegador",
 
     // Privacy
     privacyTitle1: "Sua privacidade não é um recurso.",
@@ -180,31 +191,34 @@ export const translations = {
     benefit1Title: "Bloqueo en todo el sistema",
     benefit1Desc: "Funciona en todas las apps, no solo en el navegador.",
     benefit2Title: "Privacidad real",
-    benefit2Desc: "Adless no guarda tu historial. Sin cuenta de Adless.",
+    benefit2Desc:
+      "Adless no guarda tu historial. No necesitas crear una cuenta.",
     benefit3Title: "Ligero y eficiente",
-    benefit3Desc: "Consumo mínimo de batería con rendimiento nativo.",
-    benefit4Title: "Protección DNS inteligente",
-    benefit4Desc: "Bloqueo silencioso sin romper tus apps.",
-    benefit5Title: "Hecho para iOS",
+    benefit3Desc:
+      "Consumo mínimo de batería con rendimiento nativo. Una vez activado, no necesitas mantener la app abierta.",
+    benefit4Title: "Tú tienes el control",
+    benefit4Desc:
+      "Pausa y reanuda el bloqueo desde la app cuando lo necesites.",
+    benefit5Title: "Hecho para iPhone",
     benefit5Desc:
-      "Interfaz y comportamiento nativos. Parece que Apple lo hizo.",
+      "Una interfaz sencilla para consultar tu protección y los totales de bloqueos.",
 
     // How it works
     howTitle: "Cómo funciona",
-    howSubtitle: "Simple, transparente y con filtrado en el edge.",
-    step1Title: "DNS seguro configurado",
+    howSubtitle: "Configúralo una vez. Contrólalo desde la app.",
+    step1Title: "Actívalo en Ajustes",
     step1Desc:
-      "Adless pide a iOS usar su protección DNS cifrada.",
-    step2Title: "Filtrado DNS",
+      "Sigue las instrucciones de la app para seleccionar Adless como servicio DNS en los Ajustes del iPhone.",
+    step2Title: "Consultas cifradas",
     step2Desc:
-      "Las consultas bloqueadas reciben una respuesta en el edge. Las permitidas usan HTTPS cifrado.",
-    step3Title: "Anuncios y rastreadores bloqueados",
+      "Las consultas DNS se envían mediante una conexión cifrada al servicio de filtrado.",
+    step3Title: "Menos anuncios y rastreadores",
     step3Desc:
       "Los dominios de anuncios y rastreadores conocidos se bloquean silenciosamente.",
     step4Title: "Internet funciona normalmente",
     step4Desc: "Todo lo demás carga como siempre. Rápido y confiable.",
     howNote:
-      "Adless solo gestiona DNS. Tus sitios, videos, mensajes y descargas continúan directamente a sus destinos.",
+      "El contenido de páginas, vídeos, mensajes y descargas no pasa por Adless.",
     noteLabel: "Nota:",
 
     // Comparison
@@ -214,9 +228,10 @@ export const translations = {
     others: "Otros",
     localBlocking: "Filtrado DNS",
     noExternalServers: "Sin proxy de tráfico",
+    noSignup: "Sin registro",
     noDataCollection: "Adless no guarda tu historial",
     nativeInterface: "Interfaz iOS nativa",
-    oneTimePurchase: "Compra única",
+    beyondBrowser: "Protección más allá del navegador",
 
     // Privacy
     privacyTitle1: "Tu privacidad no es una función.",
