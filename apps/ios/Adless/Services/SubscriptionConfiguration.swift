@@ -59,6 +59,14 @@ struct SubscriptionOption: Identifiable {
 }
 
 enum SubscriptionOfferFormatter {
+    static func eligibleTrialText(
+        configuredTrialText: String?,
+        isEligibleForIntroOffer: Bool
+    ) -> String? {
+        guard isEligibleForIntroOffer else { return nil }
+        return configuredTrialText
+    }
+
     static func monthlyEquivalentText(displayPrice: String) -> String {
         String(
             format: String(localized: "annual_monthly_price_format", defaultValue: "Equivalent to %@/mo"),

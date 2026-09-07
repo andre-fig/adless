@@ -74,6 +74,30 @@ final class BlocklistTests: XCTestCase {
         )
     }
 
+    func testIntroOfferPresentationRequiresStoreKitEligibility() {
+        let configuredTrialText = SubscriptionOfferFormatter.trialDurationText(value: 7, unit: .day)
+
+        XCTAssertEqual(
+            SubscriptionOfferFormatter.eligibleTrialText(
+                configuredTrialText: configuredTrialText,
+                isEligibleForIntroOffer: true
+            ),
+            configuredTrialText
+        )
+        XCTAssertNil(
+            SubscriptionOfferFormatter.eligibleTrialText(
+                configuredTrialText: configuredTrialText,
+                isEligibleForIntroOffer: false
+            )
+        )
+        XCTAssertNil(
+            SubscriptionOfferFormatter.eligibleTrialText(
+                configuredTrialText: nil,
+                isEligibleForIntroOffer: true
+            )
+        )
+    }
+
 #if DEBUG && os(iOS) && targetEnvironment(simulator)
     func testSimulatorMonthlyPlanHasNoTrialAndAnnualPlanKeepsTrial() throws {
         let monthly = try XCTUnwrap(

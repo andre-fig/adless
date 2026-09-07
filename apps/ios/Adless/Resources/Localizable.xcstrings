@@ -198,7 +198,7 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "These Terms of Use govern your use of Adless, a DNS filtering application developed by Orbe Works." } },
         "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Estes Termos de Uso regem o uso do Adless, um aplicativo de filtragem de DNS desenvolvido pela Orbe Works." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Estos Términos de uso rigen tu uso de Adless, una aplicación de filtrado DNS desarrollada por Orbe Works." } }
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Estos Términos de Uso rigen tu uso de Adless, una aplicación de filtrado DNS desarrollada por Orbe Works." } }
       }
     },
     "For support, contact a_figueiredo@icloud.com." : {
@@ -350,7 +350,7 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Adless is developed by Orbe Works. This Privacy Policy explains what happens when you use the Adless iOS app and website." } },
         "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O Adless é desenvolvido pela Orbe Works. Esta Política de Privacidade explica o que acontece quando você usa o app iOS e o site do Adless." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless está desarrollado por Orbe Works. Esta Política de privacidad explica qué ocurre cuando utilizas la app iOS y el sitio web de Adless." } }
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Adless está desarrollado por Orbe Works. Esta Política de Privacidad explica qué ocurre cuando utilizas la app iOS y el sitio web de Adless." } }
       }
     },
     "Adless may update the blocklist, app, or service to improve reliability and security. DNS protection depends on the saved iOS configuration and network availability, but uninterrupted operation cannot be guaranteed." : {
@@ -389,8 +389,8 @@
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Best Value · Save %d%%" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Melhor escolha · Economize %d%%" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Mejor opción · Ahorra %d%%" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Melhor Escolha · Economize %d%%" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Mejor Opción · Ahorra %d%%" } }
       }
     },
     "Block ads and trackers across your iPhone." : {
@@ -509,40 +509,40 @@
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Privacy Policy" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Política de privacidade" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Política de privacidad" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Política de Privacidade" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Política de Privacidad" } }
       }
     },
     "Protection Active" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Protection Active" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Proteção ativa" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Protección activa" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Proteção Ativa" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Protección Activa" } }
       }
     },
     "Protection Off" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Protection Off" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Proteção desativada" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Protección desactivada" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Proteção Desativada" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Protección Desactivada" } }
       }
     },
     "Restore Purchase" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Restore Purchase" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Restaurar compra" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Restaurar compra" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Restaurar Compra" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Restaurar Compra" } }
       }
     },
     "Start 7-Day Free Trial" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Start 7-Day Free Trial" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Iniciar período grátis de 7 dias" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Iniciar prueba gratuita de 7 días" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Iniciar Período Grátis de 7 Dias" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Iniciar Prueba Gratuita de 7 Días" } }
       }
     },
     "Subscribe now" : {
@@ -581,8 +581,8 @@
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Terms of Use" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Termos de uso" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Términos de uso" } }
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Termos de Uso" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Términos de Uso" } }
       }
     },
     "Charged immediately" : {
