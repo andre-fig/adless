@@ -489,6 +489,14 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Se realizará el cargo después de la prueba gratuita de 7 días. La suscripción se renovará automáticamente a menos que la canceles al menos 24 horas antes de que finalice el periodo actual." } }
       }
     },
+    "Payment will be charged when you confirm the purchase. The subscription renews automatically unless canceled at least 24 hours before the end of the current period." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Payment will be charged when you confirm the purchase. The subscription renews automatically unless canceled at least 24 hours before the end of the current period." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "O pagamento será cobrado quando você confirmar a compra. A assinatura será renovada automaticamente, a menos que seja cancelada pelo menos 24 horas antes do fim do período atual." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "El pago se cobrará cuando confirmes la compra. La suscripción se renovará automáticamente, a menos que se cancele al menos 24 horas antes del final del período actual." } }
+      }
+    },
     "Premium access required" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -537,6 +545,14 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Iniciar prueba gratuita de 7 días" } }
       }
     },
+    "Subscribe now" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Subscribe now" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Assinar agora" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Suscribirse ahora" } }
+      }
+    },
     "Start your free trial to turn on protection." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -567,6 +583,46 @@
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Terms of Use" } },
         "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Termos de uso" } },
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Términos de uso" } }
+      }
+    },
+    "Charged immediately · Cancel anytime" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Charged immediately · Cancel anytime" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Cobrança imediata · Cancele quando quiser" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Cobro inmediato · Cancela cuando quieras" } }
+      }
+    },
+    "Then %@ billed annually." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Then %@ billed annually." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Depois, %@ cobrados anualmente." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Después, %@ cobrados anualmente." } }
+      }
+    },
+    "%@ billed annually." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ billed annually." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "%@ cobrados anualmente." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "%@ cobrados anualmente." } }
+      }
+    },
+    "Then %@ billed monthly." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Then %@ billed monthly." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Depois, %@ cobrados mensalmente." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Después, %@ cobrados mensualmente." } }
+      }
+    },
+    "%@ billed monthly." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ billed monthly." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "%@ cobrados mensalmente." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "%@ cobrados mensualmente." } }
       }
     },
     "Then %@ per %@." : {
@@ -636,9 +692,9 @@
     "annual_monthly_price_format" : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@/mo" } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "%@/mês" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "%@/mes" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Equivalent to %@/mo" } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Equivale a %@/mês" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Equivale a %@/mes" } }
       }
     },
     "day" : {

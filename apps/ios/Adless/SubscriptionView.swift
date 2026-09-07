@@ -123,16 +123,9 @@ struct SubscriptionView: View {
                                                 .font(.subheadline.weight(.semibold))
                                             Spacer()
 
-                                            HStack(alignment: .center, spacing: 12) {
-                                                Text(option.displayPrice)
-                                                    .font(.subheadline.weight(.semibold))
-                                                    .lineLimit(1)
-                                                    .minimumScaleFactor(0.85)
-                                                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                                    .font(.body)
-                                                    .foregroundStyle(isSelected ? adlessBlue : Color.secondary)
-                                            }
-                                            .padding(.top, 7)
+                                            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                                .font(.body)
+                                                .foregroundStyle(isSelected ? adlessBlue : Color.secondary)
                                         }
 
                                         Text(option.description)
@@ -185,7 +178,11 @@ struct SubscriptionView: View {
                                 Button {
                                     Task { await manager.purchase(selectedOption) }
                                 } label: {
-                                    Text("Start 7-Day Free Trial")
+                                    Text(
+                                        selectedOption.hasFreeTrial
+                                            ? String(localized: "Start 7-Day Free Trial")
+                                            : String(localized: "Subscribe now")
+                                    )
                                         .fontWeight(.bold)
                                         .frame(maxWidth: .infinity)
                                 }
@@ -211,11 +208,17 @@ struct SubscriptionView: View {
                             .padding(.vertical, 4)
                     }
 
-                    Text("Payment will be charged after the 7-day free trial. The subscription renews automatically unless canceled at least 24 hours before the end of the current period.")
-                        .font(.caption)
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(mutedTextColor)
-                        .padding(.top, -12)
+                    if let selectedOption {
+                        Text(
+                            selectedOption.hasFreeTrial
+                                ? String(localized: "Payment will be charged after the 7-day free trial. The subscription renews automatically unless canceled at least 24 hours before the end of the current period.")
+                                : String(localized: "Payment will be charged when you confirm the purchase. The subscription renews automatically unless canceled at least 24 hours before the end of the current period.")
+                        )
+                            .font(.caption)
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(mutedTextColor)
+                            .padding(.top, -12)
+                    }
 
                     VStack(spacing: 22) {
                         HStack(spacing: 22) {

@@ -12,7 +12,7 @@ assunto abaixo tem uma fonte canônica para evitar checklists duplicados.
 | Verified | Falhas, troca de rede e proteção real em iPhone | [Testes](docs/TESTING.md) |
 | Pending | Alinhar landing, Privacy Policy, Terms e Support à implementação | [Landing](apps/landing-page/README.md) |
 | Pending | Conferir preços por moeda/território, oferta introdutória e elegibilidade | [Apple e lançamento](docs/ios-release.md) |
-| Pending | Remover os 7 dias gratuitos do plano mensal | [Apple e lançamento](docs/ios-release.md) |
+| Implemented | Remover os 7 dias gratuitos do plano mensal | [Apple e lançamento](docs/ios-release.md) |
 | Pending | Validação remota de Worker/bindings/JWS/notifications e publicação Apple | [Cloudflare](docs/dns-cloud.md) e [Apple](docs/ios-release.md) |
 
 O comportamento de falhas, trocas de rede e proteção real foi validado em

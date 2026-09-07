@@ -74,6 +74,21 @@ final class BlocklistTests: XCTestCase {
         )
     }
 
+#if DEBUG && os(iOS) && targetEnvironment(simulator)
+    func testSimulatorMonthlyPlanHasNoTrialAndAnnualPlanKeepsTrial() throws {
+        let monthly = try XCTUnwrap(
+            SubscriptionConfiguration.simulatorOptions.first { $0.id == SubscriptionConfiguration.monthlyProductID }
+        )
+        let yearly = try XCTUnwrap(
+            SubscriptionConfiguration.simulatorOptions.first { $0.id == SubscriptionConfiguration.yearlyProductID }
+        )
+
+        XCTAssertFalse(monthly.hasFreeTrial)
+        XCTAssertFalse(monthly.description.isEmpty)
+        XCTAssertTrue(yearly.hasFreeTrial)
+    }
+#endif
+
     func testSubscriptionStorageRoundTripsWithoutAnAppGroup() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }

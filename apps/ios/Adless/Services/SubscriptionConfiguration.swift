@@ -22,18 +22,18 @@ enum SubscriptionConfiguration {
             id: yearlyProductID,
             name: String(localized: "Annual"),
             price: Decimal(string: "29.90")!,
-            displayPrice: String(format: String(localized: "display_price_format", defaultValue: "%@ / %@"), simulatorPrice(Decimal(string: "29.90")!), String(localized: "year")),
-            description: String(format: String(localized: "free_trial_format", defaultValue: "%d %@ free"), 7, String(localized: "days")) + " · " + String(format: String(localized: "annual_monthly_price_format", defaultValue: "%@/mo"), simulatorPrice(Decimal(string: "2.49")!)),
-            renewalText: String(format: String(localized: "Then %@ per %@.", defaultValue: "Then %@ per %@."), simulatorPrice(Decimal(string: "29.90")!), String(localized: "year")),
+            description: SubscriptionOfferFormatter.trialDurationText(value: 7, unit: .day) + " · " + SubscriptionOfferFormatter.monthlyEquivalentText(displayPrice: simulatorPrice(Decimal(string: "2.49")!)),
+            renewalText: SubscriptionOfferFormatter.renewalText(displayPrice: simulatorPrice(Decimal(string: "29.90")!), isAnnual: true, hasFreeTrial: true),
+            hasFreeTrial: true,
             product: nil
         ),
         SubscriptionOption(
             id: monthlyProductID,
             name: String(localized: "Monthly"),
             price: Decimal(string: "4.90")!,
-            displayPrice: String(format: String(localized: "display_price_format", defaultValue: "%@ / %@"), simulatorPrice(Decimal(string: "4.90")!), String(localized: "month")),
-            description: String(format: String(localized: "free_trial_format", defaultValue: "%d %@ free"), 7, String(localized: "days")),
-            renewalText: String(format: String(localized: "Then %@ per %@.", defaultValue: "Then %@ per %@."), simulatorPrice(Decimal(string: "4.90")!), String(localized: "month")),
+            description: String(localized: "Charged immediately · Cancel anytime"),
+            renewalText: SubscriptionOfferFormatter.renewalText(displayPrice: simulatorPrice(Decimal(string: "4.90")!), isAnnual: false, hasFreeTrial: false),
+            hasFreeTrial: false,
             product: nil
         )
     ]
@@ -52,13 +52,39 @@ struct SubscriptionOption: Identifiable {
     let id: String
     let name: String
     let price: Decimal
-    let displayPrice: String
     let description: String
     let renewalText: String
+    let hasFreeTrial: Bool
     let product: Product?
 }
 
 enum SubscriptionOfferFormatter {
+    static func monthlyEquivalentText(displayPrice: String) -> String {
+        String(
+            format: String(localized: "annual_monthly_price_format", defaultValue: "Equivalent to %@/mo"),
+            priceText(displayPrice)
+        )
+    }
+
+    static func renewalText(displayPrice: String, isAnnual: Bool, hasFreeTrial: Bool) -> String {
+        let format: String
+        if isAnnual {
+            format = hasFreeTrial
+                ? String(localized: "Then %@ billed annually.")
+                : String(localized: "%@ billed annually.")
+        } else {
+            format = hasFreeTrial
+                ? String(localized: "Then %@ billed monthly.")
+                : String(localized: "%@ billed monthly.")
+        }
+        return String(format: format, priceText(displayPrice))
+    }
+
+    private static func priceText(_ displayPrice: String) -> String {
+        guard displayPrice.hasPrefix("R$") else { return displayPrice }
+        return "R$" + displayPrice.dropFirst(2).trimmingCharacters(in: .whitespaces)
+    }
+
     static func trialDurationText(for offer: Product.SubscriptionOffer) -> String? {
         guard offer.paymentMode == .freeTrial else { return nil }
         return trialDurationText(value: offer.period.value, unit: offer.period.unit)
@@ -68,6 +94,10 @@ enum SubscriptionOfferFormatter {
         value: Int,
         unit: Product.SubscriptionPeriod.Unit
     ) -> String {
+        if unit == .week && value == 1 {
+            return trialDurationText(value: 7, unit: .day)
+        }
+
         let unitName: String
         switch unit {
         case .day:

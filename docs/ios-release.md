@@ -45,23 +45,22 @@ e [Adless.storekit](../apps/ios/Adless.storekit) usam:
 
 | Plano | Product ID | Configuração somente local |
 | --- | --- | --- |
-| Mensal | `com.orbeworks.adless.pro.monthly` | P1M, preço de fixture 4.90, trial gratuito P1W |
+| Mensal | `com.orbeworks.adless.pro.monthly` | P1M, preço de fixture 4.90, sem oferta introdutória |
 | Anual | `com.orbeworks.adless.pro.yearly` | P1Y, preço de fixture 29.90, trial gratuito P1W |
 
 O arquivo StoreKit tem grupo `Adless Pro` / `ADLESSPRO`, storefront BRA,
 localizações en_US/pt_BR/es_ES, sem Family Sharing; grace de teste está
 inicialmente desabilitado. Valores de fixture não são preços ou configuração
 publicada. **Pending:** verificar ambos os produtos no mesmo grupo remoto,
-níveis apropriados, disponibilidade, preços, trial de uma semana por storefront,
+níveis apropriados, disponibilidade, preços, trial anual de uma semana por storefront,
 localizações, screenshots de revisão e acordos válidos.
 
 Cada pessoa só pode aproveitar uma oferta introdutória por grupo; trocar mensal
 por anual no mesmo grupo não concede outro trial. A UI deve ser testada com
 pessoas elegíveis e inelegíveis conforme as [regras Apple da oferta](https://developer.apple.com/help/app-store-connect/manage-subscriptions/set-up-introductory-offers-for-auto-renewable-subscriptions/).
-**Pending no código:** `SubscriptionManager.makeOption(from:)` lê a oferta
-mas não consulta elegibilidade; `SubscriptionView` contém CTA e aviso fixos de
-sete dias. Não aprove o paywall enquanto ele prometer trial a quem não tem
-direito. Esta auditoria registra a divergência, sem alterar a funcionalidade.
+**Pending no código:** `SubscriptionManager.makeOption(from:)` lê a oferta e a
+UI ajusta CTA e aviso ao plano selecionado, mas ainda não consulta elegibilidade.
+Não aprove o paywall enquanto ele prometer trial a quem não tem direito.
 
 ## Autorização Apple no Worker
 
