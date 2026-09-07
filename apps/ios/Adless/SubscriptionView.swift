@@ -209,15 +209,21 @@ struct SubscriptionView: View {
                     }
 
                     if let selectedOption {
-                        Text(
-                            selectedOption.hasFreeTrial
-                                ? String(localized: "Payment will be charged after the 7-day free trial. The subscription renews automatically unless canceled at least 24 hours before the end of the current period.")
-                                : String(localized: "Payment will be charged when you confirm the purchase. The subscription renews automatically unless canceled at least 24 hours before the end of the current period.")
-                        )
-                            .font(.caption)
-                            .multilineTextAlignment(.center)
-                            .foregroundStyle(mutedTextColor)
-                            .padding(.top, -12)
+                        let trialDisclosure = String(localized: "Payment will be charged after the 7-day free trial. The subscription renews automatically unless canceled at least 24 hours before the end of the current period.")
+                        let immediateChargeDisclosure = String(localized: "Payment will be charged when you confirm the purchase. The subscription renews automatically unless canceled at least 24 hours before the end of the current period.")
+
+                        ZStack {
+                            Text(trialDisclosure)
+                                .hidden()
+                            Text(immediateChargeDisclosure)
+                                .hidden()
+                            Text(selectedOption.hasFreeTrial ? trialDisclosure : immediateChargeDisclosure)
+                        }
+                        .font(.caption)
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(mutedTextColor)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, -12)
                     }
 
                     VStack(spacing: 22) {

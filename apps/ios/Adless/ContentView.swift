@@ -83,6 +83,7 @@ struct ContentView: View {
                             .font(.subheadline)
                             .foregroundStyle(Color.primary.opacity(0.58))
                             .multilineTextAlignment(.center)
+                            .lineLimit(2, reservesSpace: true)
                     }
                 }
 
@@ -195,7 +196,6 @@ struct ContentView: View {
             }
             .padding(.horizontal, 32)
             .padding(.vertical)
-            .offset(y: -52)
 
             if viewModel.isSubscriptionPresented {
                 ZStack {
