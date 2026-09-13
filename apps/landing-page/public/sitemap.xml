@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://adless.orbe.works/en/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://adless.orbe.works/en/" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://adless.orbe.works/pt-br/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://adless.orbe.works/es/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://adless.orbe.works/en/" />
+  </url>
+  <url>
+    <loc>https://adless.orbe.works/pt-br/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://adless.orbe.works/en/" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://adless.orbe.works/pt-br/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://adless.orbe.works/es/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://adless.orbe.works/en/" />
+  </url>
+  <url>
+    <loc>https://adless.orbe.works/es/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://adless.orbe.works/en/" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://adless.orbe.works/pt-br/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://adless.orbe.works/es/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://adless.orbe.works/en/" />
+  </url>
+  <url>
+    <loc>https://adless.orbe.works/en/privacy</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://adless.orbe.works/en/privacy" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://adless.orbe.works/pt-br/privacy" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://adless.orbe.works/es/privacy" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://adless.orbe.works/en/privacy" />
+  </url>
+  <url>
+    <loc>https://adless.orbe.works/pt-br/privacy</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://adless.orbe.works/en/privacy" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://adless.orbe.works/pt-br/privacy" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://adless.orbe.works/es/privacy" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://adless.orbe.works/en/privacy" />
+  </url>
+  <url>
+    <loc>https://adless.orbe.works/es/privacy</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://adless.orbe.works/en/privacy" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://adless.orbe.works/pt-br/privacy" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://adless.orbe.works/es/privacy" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://adless.orbe.works/en/privacy" />
+  </url>
+  <url>
+    <loc>https://adless.orbe.works/en/terms</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://adless.orbe.works/en/terms" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://adless.orbe.works/pt-br/terms" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://adless.orbe.works/es/terms" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://adless.orbe.works/en/terms" />
+  </url>
+  <url>
+    <loc>https://adless.orbe.works/pt-br/terms</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://adless.orbe.works/en/terms" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://adless.orbe.works/pt-br/terms" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://adless.orbe.works/es/terms" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://adless.orbe.works/en/terms" />
+  </url>
+  <url>
+    <loc>https://adless.orbe.works/es/terms</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://adless.orbe.works/en/terms" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://adless.orbe.works/pt-br/terms" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://adless.orbe.works/es/terms" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://adless.orbe.works/en/terms" />
+  </url>
+  <url>
+    <loc>https://adless.orbe.works/en/support</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://adless.orbe.works/en/support" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://adless.orbe.works/pt-br/support" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://adless.orbe.works/es/support" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://adless.orbe.works/en/support" />
+  </url>
+  <url>
+    <loc>https://adless.orbe.works/pt-br/support</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://adless.orbe.works/en/support" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://adless.orbe.works/pt-br/support" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://adless.orbe.works/es/support" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://adless.orbe.works/en/support" />
+  </url>
+  <url>
+    <loc>https://adless.orbe.works/es/support</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://adless.orbe.works/en/support" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://adless.orbe.works/pt-br/support" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://adless.orbe.works/es/support" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://adless.orbe.works/en/support" />
+  </url>
+</urlset>
