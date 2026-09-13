@@ -183,7 +183,7 @@ export const legalDocuments: Record<Language, Record<LegalPageId, LegalDocument>
       ]
     },
     "support": {
-      "title": "Suporte Adless",
+      "title": "Suporte",
       "intro": "O Adless é um aplicativo de proteção DNS criptografada para iPhone. Ele não usa uma conta Adless nem atua como proxy do seu tráfego geral de internet.",
       "sections": [
         {
