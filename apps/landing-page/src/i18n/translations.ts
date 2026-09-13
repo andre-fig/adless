@@ -350,6 +350,32 @@ export const legalUi = {
   }
 };
 
+export const notFoundUi: Record<Language, {
+  title: string;
+  description: string;
+  action: string;
+  eyebrow: string;
+}> = {
+  en: {
+    title: "Page not found",
+    description: "The page you’re looking for doesn’t exist or may have moved.",
+    action: "Back to Adless",
+    eyebrow: "ADLESS · 404",
+  },
+  pt: {
+    title: "Página não encontrada",
+    description: "A página que você procura não existe ou pode ter sido movida.",
+    action: "Voltar ao Adless",
+    eyebrow: "ADLESS · 404",
+  },
+  es: {
+    title: "Página no encontrada",
+    description: "La página que buscas no existe o puede haber cambiado de lugar.",
+    action: "Volver a Adless",
+    eyebrow: "ADLESS · 404",
+  },
+};
+
 
 export const translations = {
   en: {
