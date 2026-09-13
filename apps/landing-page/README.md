@@ -13,7 +13,7 @@ O único workspace npm da raiz é `@adless/landing-page`.
 | --- | --- |
 | [src/main.tsx](src/main.tsx), [src/App.tsx](src/App.tsx) | Entrada, providers de tema/idioma/Helmet/React Query, toasts e roteamento |
 | [src/pages/Index.tsx](src/pages/Index.tsx) | Seções da home e metadados localizados; canonical usa a origem do navegador |
-| [src/pages/PrivacyPolicy.tsx](src/pages/PrivacyPolicy.tsx), [Terms.tsx](src/pages/Terms.tsx), [Support.tsx](src/pages/Support.tsx) | Conteúdo público legal e de suporte, atualmente em inglês |
+| [src/pages/PrivacyPolicy.tsx](src/pages/PrivacyPolicy.tsx), [Terms.tsx](src/pages/Terms.tsx), [Support.tsx](src/pages/Support.tsx) | Conteúdo público legal e de suporte em EN/PT/ES; layout editorial compartilhado, índice responsivo e metadados localizados |
 | [src/i18n/LanguageContext.tsx](src/i18n/LanguageContext.tsx), [translations.ts](src/i18n/translations.ts) | EN/PT/ES; preferência `adless-language` em localStorage, depois idioma do navegador, fallback EN |
 | [src/components/ThemeProvider.tsx](src/components/ThemeProvider.tsx), [ThemeToggle.tsx](src/components/ThemeToggle.tsx) | Tema do sistema/claro/escuro via next-themes |
 | [src/components/ui](src/components/ui) | Primitivos reutilizáveis; presença no diretório não implica uso nas páginas |
@@ -75,10 +75,26 @@ altera somente Markdown. Não usar a copy pública como especificação técnica
 | **Pending** | `PrivacyPolicy` atribui ao app download de blocklists do Railway, ausente no iOS atual. Corrigir a responsabilidade descrita. |
 | **Pending** | A política diz que nomes bloqueados nunca seguem ao resolver; o Worker faz pass-through sem bloqueio para instalação conhecida sem assinatura válida. Descrever esse estado. |
 | **Pending** | `translations` promete funcionamento em todos os apps e sem quebra; `Comparison` afirma diferenças genéricas contra “Others” sem evidência no repositório. Compatibilizar com limitações reais de DNS e evitar garantia absoluta. |
-| **Pending** | `LegalLayout`, páginas legais/suporte, 404 e vários rótulos de acessibilidade continuam em inglês; `index.html` mantém `lang="en"` após troca visual de idioma. A tradução da home não prova localização integral. |
+| **Implemented / Pending** | Páginas legais/suporte e controles de idioma/tema localizados em EN/PT/ES; o provider atualiza `html.lang`. A página 404 e outros rótulos da home ainda precisam de revisão própria. |
+
 | **Pending** | `index.css` usa Google Fonts; [index.html](index.html) referencia imagem social em Lovable. Revisar metadados, terceiros e descrição da privacidade do site. Não inferir ausência de conexões externas. |
 | **Pending** | [NotFound.tsx](src/pages/NotFound.tsx) escreve `location.pathname` no console. Não encaminhar caminhos potencialmente sensíveis a telemetria nem usar tokens nas URLs do site. |
 | **Pending** | `Support` usa “VPN & Network” e simplifica ativação; validar instruções contra o [tutorial iOS](../ios/README.md) e a versão/idioma do aparelho. |
 
 Links para a App Store em `Hero` e `CTA` comprovam somente a URL configurada;
 disponibilidade pública do app depende das etapas de [lançamento Apple](../../docs/ios-release.md).
+
+
+## Validação da integração legal
+
+Execute `node --test apps/landing-page/tests/legal-translations.test.mjs` da raiz:
+12 testes verificam cobertura de seções, parágrafos, passos, controles e menções
+dos terceiros nos três idiomas. O texto inglês foi preservado integralmente;
+as pendências de revisão factual da política listadas acima não foram resolvidas
+por esta alteração visual e de tradução.
+
+Lint, TypeScript e build foram executados com sucesso nesta alteração; lint
+apresentou oito avisos preexistentes de Fast Refresh, sem erros.
+**Pending:** validação visual real desktop/mobile, claro/escuro, teclado e
+persistência de preferências. O navegador do ambiente de execução recusou o
+servidor local (`ERR_BLOCKED_BY_CLIENT`); build não é evidência de renderização.

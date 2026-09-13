@@ -42,6 +42,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    document.documentElement.lang = language === 'pt' ? 'pt-BR' : language;
+  }, [language]);
+
+  useEffect(() => {
     const detected = detectLanguage();
     setLanguageState(detected);
     setMounted(true);
