@@ -86,6 +86,10 @@ const Seo = ({
       <meta property="og:description" content={description} />
       <meta property="og:url" content={canonicalURL} />
       <meta property="og:image" content={socialImageURL} />
+      <meta property="og:image:secure_url" content={socialImageURL} />
+      <meta property="og:image:type" content="image/png" />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
       <meta property="og:image:alt" content="Adless app icon" />
       <meta property="og:locale" content={locale.ogLocale} />
       {localizedPath &&

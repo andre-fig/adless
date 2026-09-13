@@ -2,7 +2,7 @@ import type { Language } from "@/i18n/translations";
 
 export const SITE_ORIGIN = "https://adless.orbe.works";
 export const APP_STORE_URL = "https://apps.apple.com/app/id6803552143";
-export const SOCIAL_IMAGE_PATH = "/adless-social.png";
+export const SOCIAL_IMAGE_PATH = "/adless-social.png?v=2";
 
 export const languageConfig: Record<
   Language,
