@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { legalUi } from "@/i18n/translations";
 import type { Language } from "@/i18n/translations";
@@ -62,9 +62,9 @@ const LanguageSelector = () => {
           style={{ animationFillMode: "both" }}
         >
           {languages.map((item) => (
-            <a
+            <Link
               key={item.code}
-              href={localizedTarget(item.code, pathname)}
+              to={localizedTarget(item.code, pathname)}
               hrefLang={item.code === "pt" ? "pt-BR" : item.code}
               onClick={() => handleSelect(item.code)}
               className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left ${
@@ -75,7 +75,7 @@ const LanguageSelector = () => {
             >
               <span className="text-lg">{item.flag}</span>
               <span className="text-body-sm font-medium">{item.name}</span>
-            </a>
+            </Link>
           ))}
         </div>
       )}

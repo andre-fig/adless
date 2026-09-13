@@ -19,7 +19,7 @@ O único workspace npm da raiz é `@adless/landing-page`.
 | [src/components/ThemeProvider.tsx](src/components/ThemeProvider.tsx), [ThemeToggle.tsx](src/components/ThemeToggle.tsx) | Tema do sistema/claro/escuro via next-themes |
 | [src/components/ui](src/components/ui) | Primitivos reutilizáveis; presença no diretório não implica uso nas páginas |
 | [src/index.css](src/index.css), [tailwind.config.ts](tailwind.config.ts) | Tokens visuais, animações e estilos; CSS importa Inter do Google Fonts |
-| [vite.config.ts](vite.config.ts) | Base `/`, alias `@` para `src`, dev em porta 8080; tagger apenas no modo development |
+| [vite.config.ts](vite.config.ts) | Base `/`, alias `@` para `src` e servidor de desenvolvimento na porta 8080 |
 
 Rotas em `App`: `/`, homes `/en/`, `/pt-br/`, `/es/`, páginas legais sob
 cada prefixo de idioma, aliases legais sem prefixo e fallback `*`. O build gera

@@ -29,11 +29,12 @@ type LanguageProviderProps = {
 };
 
 export function LanguageProvider({ children, initialLanguage }: LanguageProviderProps) {
-  const [language, setLanguageState] = useState<Language>(initialLanguage ?? "en");
+  const [detectedLanguage, setDetectedLanguage] = useState<Language>("en");
+  const language = initialLanguage ?? detectedLanguage;
 
   useEffect(() => {
     if (!initialLanguage) {
-      setLanguageState(detectLanguage());
+      setDetectedLanguage(detectLanguage());
     }
   }, [initialLanguage]);
 
@@ -43,7 +44,7 @@ export function LanguageProvider({ children, initialLanguage }: LanguageProvider
 
   const setLanguage = (lang: Language) => {
     localStorage.setItem("adless-language", lang);
-    setLanguageState(lang);
+    setDetectedLanguage(lang);
   };
 
   const t = (key: TranslationKey): string => {
