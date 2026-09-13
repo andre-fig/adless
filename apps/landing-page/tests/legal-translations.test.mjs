@@ -5,7 +5,7 @@ import ts from 'typescript';
 
 const source = readFileSync(new URL('../src/i18n/translations.ts', import.meta.url), 'utf8');
 const compiled = ts.transpileModule(source, {compilerOptions: {module: ts.ModuleKind.ESNext}}).outputText;
-const {legalDocuments, legalUi} = await import('data:text/javascript;base64,' + Buffer.from(compiled).toString('base64'));
+const {legalDocuments, legalUi, notFoundUi} = await import('data:text/javascript;base64,' + Buffer.from(compiled).toString('base64'));
 
 for (const lang of ['en', 'pt', 'es']) {
   for (const page of ['privacy', 'terms', 'support']) {
@@ -35,5 +35,10 @@ for (const lang of ['en', 'pt', 'es']) {
       assert.ok(privacy.includes(disclosure));
     }
     assert.ok(JSON.stringify(legalDocuments[lang].terms).includes('24'));
+  });
+  test(`${lang}: localized not-found page`, () => {
+    assert.deepEqual(Object.keys(notFoundUi[lang]).sort(), Object.keys(notFoundUi.en).sort());
+    for (const value of Object.values(notFoundUi[lang])) assert.ok(value.trim().length > 0);
+    if (lang !== 'en') assert.notEqual(notFoundUi[lang].title, notFoundUi.en.title);
   });
 }
