@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLanguage } from '@/i18n/LanguageContext';
 import type { Language } from '@/i18n/translations';
+import { legalUi } from '@/i18n/translations';
 
 const languages: { code: Language; flag: string; name: string }[] = [
   { code: 'en', flag: '🇺🇸', name: 'English' },
@@ -36,7 +37,9 @@ const LanguageSelector = () => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-10 h-10 rounded-full bg-card shadow-apple-md flex items-center justify-center border border-border/50 transition-all duration-300 hover:shadow-apple-lg hover:scale-105 active:scale-95 text-lg"
-        aria-label="Select language"
+        aria-label={legalUi[language].language}
+        aria-expanded={isOpen}
+        onKeyDown={(event) => { if (event.key === 'Escape') setIsOpen(false); }}
       >
         {currentLang.flag}
       </button>

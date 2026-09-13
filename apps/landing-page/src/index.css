@@ -4,6 +4,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Legal pages share the landing tokens, with readable links in both themes. */
+.legal-page :is(a, button, summary):focus-visible {
+  outline: 2px solid hsl(var(--foreground));
+  outline-offset: 4px;
+}
+.legal-copy { overflow-wrap: anywhere; }
+.legal-copy a { color: hsl(var(--foreground)); text-decoration: underline; text-underline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  .legal-page *, html.transitioning .legal-page * { transition: none !important; animation: none !important; }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
