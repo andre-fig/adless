@@ -1,4 +1,3 @@
-import { Helmet } from "react-helmet-async";
 import { useLanguage } from "@/i18n/LanguageContext";
 import Hero from "@/components/Hero";
 import Benefits from "@/components/Benefits";
@@ -9,21 +8,22 @@ import CTA from "@/components/CTA";
 import Footer from "@/components/Footer";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageSelector from "@/components/LanguageSelector";
+import Seo from "@/components/Seo";
+import { languageHomePath } from "@/lib/site";
 
 const Index = () => {
-  const { t } = useLanguage();
-  const canonicalURL = typeof window === "undefined" ? "/" : `${window.location.origin}/`;
+  const { language, t } = useLanguage();
 
   return (
     <>
-      <Helmet>
-        <title>{t("pageTitle")}</title>
-        <meta name="description" content={t("pageDescription")} />
-        <meta property="og:title" content={t("pageTitle")} />
-        <meta property="og:description" content={t("pageDescription")} />
-        <meta name="twitter:card" content="summary_large_image" />
-        <link rel="canonical" href={canonicalURL} />
-      </Helmet>
+      <Seo
+        title={t("pageTitle")}
+        description={t("pageDescription")}
+        path={languageHomePath(language)}
+        language={language}
+        localizedPath="/"
+        structuredData
+      />
 
       <LanguageSelector />
       <ThemeToggle />

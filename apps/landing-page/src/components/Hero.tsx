@@ -1,4 +1,4 @@
-import adlessLogo from "@/assets/adless-logo.png";
+import adlessLogo from "@/assets/adless-logo.webp";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 const Hero = () => {
@@ -12,6 +12,9 @@ const Hero = () => {
           <img
             src={adlessLogo}
             alt="Adless"
+            width="512"
+            height="512"
+            decoding="async"
             className="w-28 h-28 md:w-36 md:h-36 mx-auto rounded-[1.75rem] shadow-apple-lg"
           />
         </div>
