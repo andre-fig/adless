@@ -3,21 +3,13 @@ import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { legalUi } from "@/i18n/translations";
 import type { Language } from "@/i18n/translations";
-import { languageHomePath } from "@/lib/site";
+import { localizedPathForLanguage } from "@/lib/site";
 
 const languages: { code: Language; flag: string; name: string }[] = [
   { code: "en", flag: "🇺🇸", name: "English" },
   { code: "pt", flag: "🇧🇷", name: "Português" },
   { code: "es", flag: "🇪🇸", name: "Español" },
 ];
-
-const localizedTarget = (language: Language, pathname: string) => {
-  const legalSuffix = ["/privacy", "/terms", "/support"].find((suffix) =>
-    pathname.endsWith(suffix),
-  );
-  const home = languageHomePath(language);
-  return legalSuffix ? `${home.slice(0, -1)}${legalSuffix}` : home;
-};
 
 const LanguageSelector = () => {
   const { language, setLanguage } = useLanguage();
@@ -64,7 +56,7 @@ const LanguageSelector = () => {
           {languages.map((item) => (
             <Link
               key={item.code}
-              to={localizedTarget(item.code, pathname)}
+              to={localizedPathForLanguage(item.code, pathname)}
               hrefLang={item.code === "pt" ? "pt-BR" : item.code}
               onClick={() => handleSelect(item.code)}
               className={`w-full px-4 py-3 flex items-center gap-3 transition-colors text-left ${

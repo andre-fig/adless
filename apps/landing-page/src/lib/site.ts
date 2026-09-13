@@ -21,3 +21,9 @@ export const languageFromPath = (pathname: string): Language | undefined => {
 };
 
 export const languageHomePath = (language: Language) => languageConfig[language].path;
+
+export const localizedPathForLanguage = (language: Language, pathname: string) => {
+  const pathWithoutLocale = pathname.replace(/^\/(?:en|pt-br|es)(?=\/|$)/, "") || "/";
+  const localizedRoot = languageHomePath(language).slice(0, -1);
+  return pathWithoutLocale === "/" ? `${localizedRoot}/` : `${localizedRoot}${pathWithoutLocale}`;
+};
