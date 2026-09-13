@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { LanguageProvider } from "@/i18n/LanguageContext";
@@ -75,16 +75,21 @@ export const AppRoutes = () => (
   </Routes>
 );
 
-const App = () => {
-  const initialLanguage = languageFromPath(window.location.pathname) ?? "en";
+const RoutedApp = () => {
+  const { pathname } = useLocation();
+  const initialLanguage = languageFromPath(pathname) ?? "en";
 
   return (
     <AppProviders initialLanguage={initialLanguage}>
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
-        <AppRoutes />
-      </BrowserRouter>
+      <AppRoutes />
     </AppProviders>
   );
 };
+
+const App = () => (
+  <BrowserRouter basename={import.meta.env.BASE_URL}>
+    <RoutedApp />
+  </BrowserRouter>
+);
 
 export default App;
