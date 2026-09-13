@@ -392,6 +392,32 @@ export const legalUi = {
   }
 };
 
+export const notFoundUi: Record<Language, {
+  title: string;
+  description: string;
+  action: string;
+  eyebrow: string;
+}> = {
+  en: {
+    title: "Page not found",
+    description: "The page you’re looking for doesn’t exist or may have moved.",
+    action: "Back to Adless",
+    eyebrow: "YOU’RE OFF THE CLEAN PATH",
+  },
+  pt: {
+    title: "Página não encontrada",
+    description: "A página que você procura não existe ou pode ter sido movida.",
+    action: "Voltar ao Adless",
+    eyebrow: "VOCÊ SAIU DO CAMINHO LIMPO",
+  },
+  es: {
+    title: "Página no encontrada",
+    description: "La página que buscas no existe o puede haber cambiado de lugar.",
+    action: "Volver a Adless",
+    eyebrow: "TE SALISTE DEL CAMINO LIMPIO",
+  },
+};
+
 
 export const translations = {
   en: {
