@@ -553,12 +553,12 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Suscribirse ahora" } }
       }
     },
-    "Start your free trial to turn on protection." : {
+    "Choose a plan to turn on protection." : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start your free trial to turn on protection." } },
-        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Comece seu período grátis para ativar a proteção." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Inicia tu prueba gratuita para activar la protección." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose a plan to turn on protection." } },
+        "pt-BR" : { "stringUnit" : { "state" : "translated", "value" : "Escolha um plano para ativar a proteção." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Elige un plan para activar la protección." } }
       }
     },
     "Subscription" : {
