@@ -1,4 +1,4 @@
-import adlessLogo from "@/assets/adless-logo.png";
+import adlessLogo from "@/assets/adless-logo.webp";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 const CTA = () => {
@@ -10,6 +10,10 @@ const CTA = () => {
         <img
           src={adlessLogo}
           alt="Adless"
+          width="512"
+          height="512"
+          loading="lazy"
+          decoding="async"
           className="w-20 h-20 mx-auto rounded-2xl shadow-apple-md mb-8"
         />
 

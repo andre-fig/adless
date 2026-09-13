@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "start": "serve --single --listen $PORT dist",
+    "build": "vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender.mjs",
+    "start": "serve --listen $PORT dist",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "typecheck": "npm run typecheck:app && npm run typecheck:node",

@@ -1,8 +1,10 @@
 import { useLanguage } from "@/i18n/LanguageContext";
+import { languageHomePath } from "@/lib/site";
 
 const Footer = () => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const currentYear = new Date().getFullYear();
+  const localizedRoot = languageHomePath(language).slice(0, -1);
 
   return (
     <footer className="py-12 px-6 border-t border-border">
@@ -13,13 +15,13 @@ const Footer = () => {
           </div>
 
           <nav className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3">
-            <a href={`${import.meta.env.BASE_URL}privacy`} className="text-body-sm text-muted-foreground hover:text-foreground transition-colors">
+            <a href={`${localizedRoot}/privacy`} className="text-body-sm text-muted-foreground hover:text-foreground transition-colors">
               {t('privacyPolicy')}
             </a>
-            <a href={`${import.meta.env.BASE_URL}terms`} className="text-body-sm text-muted-foreground hover:text-foreground transition-colors">
+            <a href={`${localizedRoot}/terms`} className="text-body-sm text-muted-foreground hover:text-foreground transition-colors">
               {t('terms')}
             </a>
-            <a href={`${import.meta.env.BASE_URL}support`} className="text-body-sm text-muted-foreground hover:text-foreground transition-colors">
+            <a href={`${localizedRoot}/support`} className="text-body-sm text-muted-foreground hover:text-foreground transition-colors">
               {t('support')}
             </a>
           </nav>
