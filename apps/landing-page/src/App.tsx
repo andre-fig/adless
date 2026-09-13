@@ -36,7 +36,7 @@ export const AppProviders = ({
       attribute="class"
       defaultTheme="system"
       enableSystem
-      disableTransitionOnChange={false}
+      disableTransitionOnChange
     >
       <LanguageProvider initialLanguage={initialLanguage}>
         <HelmetProvider context={helmetContext}>
