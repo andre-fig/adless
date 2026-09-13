@@ -177,7 +177,7 @@ struct ContentView: View {
                     }
                     .padding(.top, 2)
                 } else {
-                    Text("Start your free trial to turn on protection.")
+                    Text("Choose a plan to turn on protection.")
                         .font(.subheadline)
                         .foregroundStyle(Color.primary.opacity(0.58))
                         .multilineTextAlignment(.center)
