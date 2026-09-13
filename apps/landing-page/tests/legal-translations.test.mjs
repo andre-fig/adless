@@ -23,7 +23,8 @@ for (const lang of ['en', 'pt', 'es']) {
         }
         if (lang !== 'en') assert.notEqual(section.title, original.sections[index].title);
       });
-      assert.ok(JSON.stringify(document).includes('a_figueiredo@icloud.com'));
+      const includesContactEmail = JSON.stringify(document).includes('a_figueiredo@icloud.com');
+      assert.equal(includesContactEmail, page === 'support');
     });
   }
   test(`${lang}: localized controls and preserved privacy disclosures`, () => {

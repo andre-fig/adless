@@ -13,7 +13,7 @@
 .legal-copy a { color: hsl(var(--foreground)); text-decoration: underline; text-underline-offset: 4px; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto !important; }
-  .legal-page *, html.transitioning .legal-page * { transition: none !important; animation: none !important; }
+  .legal-page * { transition: none !important; animation: none !important; }
 }
 
 @layer base {
@@ -106,16 +106,6 @@
 
   html {
     scroll-behavior: smooth;
-  }
-
-  /* Smooth theme transitions */
-  html.transitioning,
-  html.transitioning *,
-  html.transitioning *::before,
-  html.transitioning *::after {
-    transition: background-color 0.3s ease, border-color 0.3s ease,
-      color 0.2s ease, box-shadow 0.3s ease !important;
-    transition-delay: 0s !important;
   }
 
   body {
