@@ -49,13 +49,6 @@ export const legalDocuments: Record<Language, Record<LegalPageId, LegalDocument>
           ],
           "steps": [],
           "title": "Children"
-        },
-        {
-          "paragraphs": [
-            "Questions about this policy can be sent to a_figueiredo@icloud.com."
-          ],
-          "steps": [],
-          "title": "Contact"
         }
       ],
       "title": "Privacy Policy"
@@ -107,13 +100,6 @@ export const legalDocuments: Record<Language, Record<LegalPageId, LegalDocument>
           ],
           "steps": [],
           "title": "Availability"
-        },
-        {
-          "paragraphs": [
-            "For support, contact a_figueiredo@icloud.com."
-          ],
-          "steps": [],
-          "title": "Contact"
         }
       ],
       "title": "Terms of Use"
@@ -165,13 +151,6 @@ export const legalDocuments: Record<Language, Record<LegalPageId, LegalDocument>
             "O Adless não é direcionado a crianças e não coleta intencionalmente informações pessoais de crianças."
           ],
           "steps": []
-        },
-        {
-          "title": "Contato",
-          "paragraphs": [
-            "Dúvidas sobre esta política podem ser enviadas para a_figueiredo@icloud.com."
-          ],
-          "steps": []
         }
       ]
     },
@@ -198,13 +177,6 @@ export const legalDocuments: Record<Language, Record<LegalPageId, LegalDocument>
           "title": "Disponibilidade",
           "paragraphs": [
             "Podemos atualizar a lista de bloqueio, o aplicativo ou o serviço para melhorar a confiabilidade e a segurança. A proteção DNS depende da configuração salva no iOS e da disponibilidade da rede, portanto não é possível garantir o funcionamento ininterrupto."
-          ],
-          "steps": []
-        },
-        {
-          "title": "Contato",
-          "paragraphs": [
-            "Para suporte, entre em contato com a_figueiredo@icloud.com."
           ],
           "steps": []
         }
@@ -280,13 +252,6 @@ export const legalDocuments: Record<Language, Record<LegalPageId, LegalDocument>
             "Adless no está dirigido a menores y no recopila conscientemente información personal de menores."
           ],
           "steps": []
-        },
-        {
-          "title": "Contacto",
-          "paragraphs": [
-            "Puedes enviar tus preguntas sobre esta política a a_figueiredo@icloud.com."
-          ],
-          "steps": []
         }
       ]
     },
@@ -313,13 +278,6 @@ export const legalDocuments: Record<Language, Record<LegalPageId, LegalDocument>
           "title": "Disponibilidad",
           "paragraphs": [
             "Podemos actualizar la lista de bloqueo, la aplicación o el servicio para mejorar la fiabilidad y la seguridad. La protección DNS depende de la configuración guardada en iOS y de la disponibilidad de la red, por lo que no se puede garantizar un funcionamiento ininterrumpido."
-          ],
-          "steps": []
-        },
-        {
-          "title": "Contacto",
-          "paragraphs": [
-            "Para obtener soporte, contacta con a_figueiredo@icloud.com."
           ],
           "steps": []
         }
