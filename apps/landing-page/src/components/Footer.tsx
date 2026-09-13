@@ -12,7 +12,7 @@ const Footer = () => {
             <span className="text-heading-md font-semibold text-foreground">Adless</span>
           </div>
 
-          <nav className="flex items-center gap-8">
+          <nav className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3">
             <a href={`${import.meta.env.BASE_URL}privacy`} className="text-body-sm text-muted-foreground hover:text-foreground transition-colors">
               {t('privacyPolicy')}
             </a>
