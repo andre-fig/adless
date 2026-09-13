@@ -72,7 +72,7 @@ estão no [README iOS](../apps/ios/README.md).
 
 O [wrangler.toml](../apps/dns-worker/wrangler.toml) local aceita Production
 normalmente; Sandbox depende de `AppTransaction` Apple-signed e da allowlist
-`APPLE_TESTFLIGHT_BUILD_VERSIONS`. Na verificação local essa lista contém `2` e `6`,
+`APPLE_TESTFLIGHT_BUILD_VERSIONS`. Na verificação local essa lista contém `2`, `6` e `7`,
 mas o workflow escolhe build number dinamicamente. **Pending:** antes de testar
 um novo build, comparar o número realmente enviado com a configuração remota
 publicada e validar o gate; o workflow iOS não altera/publica o Worker. Mudar a
